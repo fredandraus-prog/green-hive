@@ -9,7 +9,6 @@ services:
     buildCommand: npm ci && npm run build
     startCommand: npm run start:hosted
     healthCheckPath: /api/ready
-    maxShutdownDelaySeconds: 30
     envVars:
       - key: NODE_ENV
         value: production
