@@ -1,0 +1,261 @@
+# Changelog
+
+All notable Green Hive changes are recorded here. Internal platform packages use coordinated
+semantic versioning.
+
+## [Unreleased]
+
+No pending implementation is included after the `0.7.0` release gate.
+
+## [0.7.0] - 2026-08-20
+
+### Added
+
+- GH-0203 Audit Foundation through immutable migration `0011`.
+- Append-only `audit.events` with actor, tenant/app/project scope, outcome, request/correlation IDs
+  and bounded operational metadata.
+- Transactional capture for organization creation, member changes, app installation and project
+  create/archive/logical-delete lifecycle events.
+- Typed `@green-hive/audit` event catalog, contracts, validation, stable errors, service and
+  PostgreSQL repository.
+- Protected `GET /api/audit` endpoint and Reference App activity panel scoped by the server-validated
+  workspace cookie/session.
+- Audit-specific unit, embedded PostgreSQL, native Supabase, Project Service and HTTP/cookie
+  acceptance assertions.
+
+### Security
+
+- Authenticated clients receive only `SELECT` on `audit.events`; direct insert, update and delete
+  remain unavailable and have no RLS policy.
+- Cross-user, cross-app and cross-organization audit reads are denied.
+- Captured metadata excludes project names, arbitrary domain metadata, prompts, documents, raw
+  payloads, credentials, tokens and cookies.
+- Platform administrators see only the same safe operational event shape and cannot reuse the
+  tenant Audit Service or access private profiles/projects/settings.
+- Idempotent provisioning, archive and logical-delete retries do not emit duplicate lifecycle
+  events.
+
+### Changed
+
+- Authenticated database transactions now create one request/correlation UUID for downstream
+  accountability events.
+- Coordinated platform packages advance to `0.7.0`; the `REFERENCE_APP` product manifest remains
+  `0.1.0`.
+- Hosted staging advances to 11 immutable migrations with zero pending migrations and zero
+  disposable test artifacts.
+
+### Status
+
+- GH-0203 is `DONE` after embedded, local Supabase and dedicated hosted staging parity gates.
+- GH-0201 and GH-0202 remain partial only for exact hosted HTTPS/cookie and test-SMTP recovery
+  evidence.
+
+### Not included
+
+- Observability aggregation, retention/purge automation, external webhooks, Billing, AI, Redis,
+  Jobs, remote storage, feature flags or break-glass content access.
+
+## [0.6.0] - 2026-08-20
+
+### Added
+
+- Canonical `IDEAS_RADAR.md` with promotion gates for 21 explicitly deferred platform and product
+  ideas.
+- GH-0250 Organizations & Multi-Tenancy Foundation through immutable migrations `0007`–`0010`.
+- Personal and shared organizations, workspace memberships, organization app installations and
+  optional app-scoped roles.
+- Typed `WorkspaceService` and PostgreSQL repository in `@green-hive/projects`.
+- Transaction-local trusted organization selection validated against active database membership.
+- Reference App workspace selector, shared-workspace creation and HttpOnly preference cookie.
+- Cross-organization RLS, service and HTTP matrices on embedded PostgreSQL, Supabase local and the
+  dedicated hosted staging project.
+- Dedicated `green-hive-staging` Supabase project in `sa-east-1`, kept separate from the existing
+  Green Hive project.
+- Guarded Windows operations for database preflight, baseline application, hosted RLS/Project
+  Service tests and hosted Auth tests.
+- Hosted baseline with migrations `0001` through `0006`, the structural `REFERENCE_APP` seed,
+  immutable-ledger validation and non-destructive smoke checks.
+- Eight-scenario hosted Auth/account matrix covering confirmed signup, profile/project isolation,
+  trusted claims, refresh, logout and stable errors.
+- Six unit scenarios proving rejection of local, cross-project, non-TLS, transaction-pooler and
+  callback-mismatch staging configurations.
+- User-bound DPAPI credential handling and official Supabase CA verification outside the
+  repository and release artifacts.
+
+### Changed
+
+- Projects and settings now carry an immutable `organization_id` protected by composite membership,
+  installation and parent-project foreign keys.
+- `PLATFORM_ADMIN` retains operational app/organization metadata reads but no longer receives RLS
+  access to private profiles, projects or project settings.
+- Coordinated platform packages advance to `0.6.0`; the `REFERENCE_APP` product manifest remains
+  `0.1.0`.
+- Supabase Auth API-key headers now support both legacy JWT keys used by local development and the
+  new publishable/secret key format used by hosted staging.
+- Database SSL enforcement is enabled on staging; all Green Hive connections use
+  `sslmode=verify-full`.
+
+### Status
+
+- GH-0250 and GH-0251 through GH-0259 are `DONE` after local and hosted parity gates.
+- GH-0201 advances to `PARTIAL — STAGING_AUTH_CORE_PASS`.
+- GH-0202 advances to `PARTIAL — STAGING_SERVICE_PASS`.
+- Exact HTTPS hosting, hosted cookie-boundary validation and password recovery through dedicated
+  test SMTP remain required before either checkpoint is promoted to `DONE`.
+
+### Not included
+
+- Billing behavior, chargeback, portfolio forecasting, AI Insights, break-glass access, Redis,
+  Jobs, webhooks, remote storage or external app migration automation.
+
+## [0.5.0] - 2026-08-19
+
+### Added
+
+- Canonical React `19.2.8` and Vite `8.2.1` browser shell for the Reference App.
+- Fastify `5.12.1` HTTP adapter for Auth, profile and Project Service operations.
+- Responsive landing, signup, login, password recovery, profile and project screens.
+- One-command local preview that verifies Supabase, reapplies migrations/seed, builds and serves on
+  `127.0.0.1:3000`.
+- Four HTTP boundary unit scenarios and a seven-scenario native Supabase web matrix.
+- Dedicated browser/HTTP checkpoint and operation documentation.
+
+### Security
+
+- Access and refresh tokens are held in HttpOnly, same-site, host-only cookies and are never
+  returned to React or browser-accessible storage.
+- Password recovery now uses PKCE: the callback exposes only a single-use authorization code, not
+  access or refresh tokens.
+- Mutating endpoints require the exact application origin and JSON content type; bodies are capped
+  at 32 KiB.
+- Authenticated responses are private/no-store and include CSP, clickjacking, MIME-sniffing,
+  referrer, permissions and cross-origin opener protections.
+- Browser payload allowlists reject app, owner, admin and unknown scope fields before services run.
+- Local preview refuses non-loopback application, Auth or database endpoints.
+
+### Status
+
+- GH-0201 advances to `PARTIAL — LOCAL_WEB_PASS`.
+- GH-0202 advances to `PARTIAL — LOCAL_HTTP_PASS`.
+- GH-0204 is recorded as `PARTIAL — LOCAL_HTTP_BASELINE_PASS` for the safeguards already applied;
+  deployed HTTPS, rate limiting and secret operations remain pending.
+- Authorized Supabase staging remains the only unexecuted GH-0201/GH-0202 release gate.
+
+### Not included
+
+- Remote Supabase, staging deployment, production SMTP, social login, MFA, Billing, AI, Redis,
+  jobs, webhooks, storage or consumer-domain functionality.
+
+## [0.4.0] - 2026-08-18
+
+### Added
+
+- GH-0201 contracts and runtime validation in `@green-hive/auth` for signup, login, session
+  refresh, local/global logout, password recovery completion and BeeGreen account profiles.
+- Server-only `SupabaseServerAuthProvider` pinned to `@supabase/supabase-js@2.112.3`.
+- Verified token-to-`TrustedAppContext` conversion that accepts authorization claims only from
+  signed `app_metadata`.
+- Transaction-scoped authenticated PostgreSQL runner and owner-only profile repository/service.
+- Thin Reference App server facade composing Auth, profiles, Project Service and native RLS.
+- Ten-scenario native Supabase Auth matrix and nine new Auth/account unit scenarios.
+- Local Mailpit recovery validation, including following the recovery link and changing the
+  password.
+
+### Security
+
+- Service-role credentials remain encapsulated in the server adapter and never enter public types
+  or Reference App input.
+- Each public Auth operation uses an isolated non-persistent Supabase Auth client.
+- Recovery redirects are exact allowlist matches; client-supplied app/admin fields are rejected.
+- Local Auth and Mailpit containers bind explicitly to `127.0.0.1`; PostgreSQL keeps its required
+  Windows inbound firewall block.
+- Test users, projects and captured emails are removed after the guarded local gate.
+
+### Status
+
+- GH-0201 is `PARTIAL` with local implementation and native Auth integration approved.
+- Remote staging, framework-specific HTTP/browser integration and a production email provider were
+  not authorized and remain pending.
+- GH-0202 remains `PARTIAL`; its SQL and verified local session-to-service path pass, while HTTP and
+  staging cross-user validation remain.
+
+### Not included
+
+- Remote Supabase, production SMTP, social login, MFA rollout, Billing, AI, Redis, jobs, webhooks,
+  storage or domain functionality.
+
+## [0.3.0] - 2026-08-18
+
+### Added
+
+- GH-0104 `@green-hive/projects` contracts: `Project`, `ProjectStatus`, `CreateProjectInput`,
+  `ProjectRepository`, `ProjectService` and stable `ProjectError` codes.
+- Server-side `PostgresProjectRepository` with explicit JWT/context agreement checks in addition
+  to RLS.
+- Runtime validation for trusted context, project IDs, names and bounded JSON metadata.
+- Unit tests with a fake repository and an eight-scenario native Supabase integration matrix.
+
+### Behavior
+
+- `create` derives app and owner exclusively from verified context and creates `DRAFT` projects.
+- `list`/`get` remain scoped to owner and app and hide deleted or foreign resources.
+- `archive` and `softDelete` are idempotent; archived/deleted timestamps are not duplicated.
+- Owner commands reject platform administrators; administrative reads remain a separate SQL/RLS
+  boundary until the future Admin service exists.
+- Storage exceptions become safe stable errors without SQL text, provider details or nested causes.
+
+### Not included
+
+- HTTP endpoints, signup/login flows, Audit events, Billing, AI, Redis, jobs, webhooks or remote
+  services.
+
+## [0.2.1] - 2026-08-18
+
+### Added
+
+- Versioned Supabase CLI `2.115.0` and local-only PostgreSQL operation scripts.
+- Guarded `db:test:supabase` parity gate with exact target and destructive confirmations.
+- Native Supabase tests for ledger drift, seed identity, foreign keys and the complete RLS matrix.
+- Windows local-network and firewall validation for PostgreSQL port 54322.
+
+### Changed
+
+- Promoted GH-0102 and GH-0103 from `PARTIAL` to `DONE` after native Supabase parity passed.
+- Left the local database in a clean six-migration and `REFERENCE_APP`-seeded baseline.
+- Kept GH-0202 `PARTIAL`; authentication, API and staging integration remain deferred.
+
+### Not included
+
+- Project Service, Auth flows, Billing, AI, Redis, jobs, webhooks and remote services.
+
+## [0.2.0] - 2026-08-18
+
+### Added
+
+- GH-0102 database foundation with `hive`, `audit` and `reference_app` schemas.
+- Six immutable migrations, metadata headers and a checksum-enforced database ledger.
+- Supabase-linked app registry, user profiles, projects and project settings.
+- Structural `REFERENCE_APP` seed and separate disposable RLS fixtures.
+- Trusted `auth.uid()`/`auth.jwt()` helpers and owner/admin RLS policies.
+- Logical deletion through `hive.soft_delete_project(uuid)` with no physical client deletion.
+- Embedded and optional external Supabase/PostgreSQL isolation suites.
+- `db:validate`, `db:migrate`, `db:seed`, `db:test` and `db:test:external` commands.
+
+### Changed
+
+- Restored `@green-hive/core` as the single App Manifest authority.
+- Reconciled the monorepo to the 18 canonical platform packages and two canonical apps.
+- Standardized package-local TypeScript outputs and coordinated platform version `0.2.0`.
+- Added `DRAFT`, `ACTIVE`, `ARCHIVED` and `DELETED` project lifecycle states.
+
+### Security
+
+- App authority now comes only from signed `app_metadata.app_code`.
+- User ownership comes only from `auth.uid()`.
+- `auth.users` is the foreign-key authority for profiles and project owners.
+- Platform administrators receive cross-app reads but no mutation policies.
+- `user_metadata` and payload-provided identifiers cannot elevate access.
+
+### Not included
+
+- Billing, AI, Redis, queues, external webhooks, remote storage and consumer-domain features.

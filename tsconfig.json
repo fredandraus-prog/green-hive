@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@green-hive/core": [
+        "packages/core/src/index.ts"
+      ],
+      "@green-hive/auth": [
+        "packages/auth/src/index.ts"
+      ],
+      "@green-hive/audit": [
+        "packages/audit/src/index.ts"
+      ],
+      "@green-hive/projects": [
+        "packages/projects/src/index.ts"
+      ]
+    },
+    "types": [
+      "node",
+      "react",
+      "react-dom"
+    ],
+    "jsx": "react-jsx"
+  },
+  "include": ["apps/**/*.ts", "apps/**/*.tsx", "packages/**/*.ts"],
+  "exclude": [
+    "dist",
+    "node_modules"
+  ]
+}

@@ -1,0 +1,25 @@
+# Migrations
+
+The published sequence is immutable:
+
+1. schemas, `pgcrypto` and migration ledger;
+2. app registry;
+3. Supabase-linked user profiles;
+4. projects and lifecycle constraints;
+5. project settings and composite app boundary;
+6. trusted JWT helpers, grants and RLS.
+7. organizations, workspace memberships and backfill-safe personal workspaces;
+8. organization app installations and app-scoped memberships;
+9. organization scope and composite tenant foreign keys for projects/settings;
+10. trusted workspace selection, provisioning helpers and tenant-aware RLS.
+11. append-only Audit events, correlation metadata, transactional capture triggers and read RLS.
+
+Files `0001` through `0006` remain byte-for-byte unchanged. GH-0250 is expressed only through the
+next-numbered migrations `0007` through `0010`. GH-0203 is expressed only through migration
+`0011`; migrations `0001` through `0010` were not edited.
+
+Every SQL file begins with parseable migration ID, checkpoint, description and rollback strategy
+metadata. `migrations.json` stores the same description and strategy plus the immutable SHA-256.
+
+The only permitted idempotent DDL is `CREATE EXTENSION IF NOT EXISTS pgcrypto`, because extensions
+may be shared with other Supabase schemas. Managed schemas and tables fail on unexpected state.

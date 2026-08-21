@@ -1,0 +1,41 @@
+id,phase,priority,module,deliverable,depends_on,acceptance
+GH-0001,GH-0,P0,Docs/Architecture,Canonical Green Hive naming and package boundaries,,All platform docs use Green Hive; app boundary frozen
+GH-0002,GH-0,P0,App Registry,App Manifest validator/registry design,GH-0001,REFERENCE_APP manifest validates
+GH-0101,GH-1,P0,Repository,Create monorepo/workspace baseline,GH-0001,CI can install/typecheck/build empty apps/packages
+GH-0102,GH-1,P0,Database,Create local/staging PostgreSQL/Supabase environments,GH-0101,Migrations run from empty database
+GH-0103,GH-1,P0,Database,Implement apps/user_profiles/projects/settings migrations,GH-0102,Constraints/indexes/RLS scaffolding present
+GH-0104,GH-1,P0,Projects,Implement Project Service + app scope,GH-0103,Create/list/get/archive pass tests
+GH-0201,GH-2,P0,Auth,Implement auth/account integration,GH-0102,Signup/login/logout/recovery path works in staging
+GH-0202,GH-2,P0,Security,Implement RLS and authorization helpers,"GH-0103,GH-0201",Cross-user tests pass
+GH-0203,GH-2,P0,Audit,Implement audit event service,GH-0103,Core events stored without confidential payloads
+GH-0204,GH-2,P0,Security,Rate limits/secrets/security headers baseline,GH-0201,Security smoke tests pass
+GH-0301,GH-3,P0,Billing,Products/prices/purchases/payments schema/service,GH-0103,Catalog and purchase lifecycle works
+GH-0302,GH-3,P0,Billing,Fake/sandbox payment provider adapter,GH-0301,Success/failure/refund supported
+GH-0303,GH-3,P0,Billing,Verified idempotent webhook processing,GH-0302,Duplicate event has single effect
+GH-0304,GH-3,P0,Entitlements,Entitlement schema + can() service,GH-0301,Backend capability decisions pass tests
+GH-0401,GH-4,P0,Usage/Cost,Usage/cost/budget schema,GH-0103,Events and budgets persist with project scope
+GH-0402,GH-4,P0,Cost Guard,Reserve/consume/release decision service,"GH-0401,GH-0304",Concurrent reservation test passes
+GH-0403,GH-4,P0,Jobs,DB queue/job schema and enqueue service,GH-0103,Registered job queues idempotently
+GH-0404,GH-4,P0,Workers,Worker claim/retry/fail lifecycle,GH-0403,Transient/permanent retry tests pass
+GH-0501,GH-5,P0,AI,AIProvider interface + FakeAIProvider,GH-0404,CI executes deterministic fake task
+GH-0502,GH-5,P0,Trust,Data classification + Trust Policy service,GH-0202,Policy decisions tested
+GH-0503,GH-5,P0,AI,AI Gateway + model registry + schema validation,"GH-0501,GH-0502,GH-0402",Gateway records usage/cost and validates output
+GH-0504,GH-5,P0,AI,One real AI provider in staging,GH-0503,Controlled real staging task passes
+GH-0505,GH-5,P1,Search,SearchProvider interface + FakeSearchProvider,"GH-0502,GH-0402",Contract works without real search provider
+GH-0601,GH-6,P0,Files,Private file metadata/storage service,GH-0202,Owner-only file access tests pass
+GH-0602,GH-6,P0,Files,Signed URL download path,GH-0601,Authorized expiring URL works; unauthorized denied
+GH-0603,GH-6,P0,Rendering,Generic PDF render/store path,"GH-0601,GH-0404",Reference App generates private PDF/text artifact
+GH-0604,GH-6,P1,Notifications,Basic in-app notification service,GH-0404,Job completion notification visible
+GH-0701,GH-7,P0,i18n,Locale/language/formatting core,GH-0101,Reference App switches core locale safely
+GH-0702,GH-7,P0,UI,Shared accessible UI primitives,GH-0101,Reference App uses shared components
+GH-0703,GH-7,P0,Feature Flags,Flag registry/evaluation/admin hook,GH-0203,Kill switch test passes
+GH-0704,GH-7,P0,Errors,Stable error taxonomy + client mapping contract,GH-0101,Reference App handles platform errors without raw traces
+GH-0801,GH-8,P0,Admin,Minimal operational admin,"GH-0301,GH-0403,GH-0401",Can inspect users/projects/payments/jobs/cost/provider state
+GH-0802,GH-8,P0,Observability,Structured logs/correlation/provider metrics,GH-0403,Failed reference flow is traceable
+GH-0803,GH-8,P0,Backups,Automated backup configuration,GH-0102,Backup success observable
+GH-0804,GH-8,P0,Recovery,Perform and document restore test,GH-0803,Restore gate passes
+GH-0901,GH-9,P0,Reference App,Build Reference App manifest/shell,"GH-0702,GH-0002",Reference App creates project
+GH-0902,GH-9,P0,Reference App,Complete golden E2E platform flow,"GH-0901,GH-0304,GH-0503,GH-0603",All reference flow assertions pass
+GH-0903,GH-9,P0,DX,Developer integration docs and template,GH-0902,Developer can register second fake app from docs
+GH-1001,GH-10,P0,Release,Run all Green Hive release gates,"GH-0902,GH-0804",All P0 gates pass
+GH-1002,GH-10,P0,Release,Freeze GREEN_HIVE_1.0 configuration/release,GH-1001,Release version recorded and ready for first production app

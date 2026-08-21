@@ -1,0 +1,9 @@
+{
+  "projectRef": "rabkyesatfuezmrrzllx",
+  "projectName": "green-hive-staging",
+  "organizationId": "gekuydzbybxswoooqrsv",
+  "organizationName": "BeeGreen",
+  "region": "sa-east-1",
+  "authUrl": "https://rabkyesatfuezmrrzllx.supabase.co/auth/v1",
+  "databaseHost": "db.rabkyesatfuezmrrzllx.supabase.co"
+}

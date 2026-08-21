@@ -1,0 +1,21 @@
+{
+  "name": "@green-hive/auth",
+  "version": "0.7.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@green-hive/core": "0.7.0",
+    "@supabase/supabase-js": "2.112.3"
+  }
+}

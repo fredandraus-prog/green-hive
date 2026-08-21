@@ -1,0 +1,180 @@
+# Green Hive
+
+Green Hive is the reusable platform foundation for BeeGreen applications. This repository contains
+the canonical GH-0/GH-1 bootstrap advanced through **GH-0102 (Database Foundation)**,
+**GH-0103 (RLS and isolation)**, **GH-0104 (Project Service)** and the local implementation of
+**GH-0201/GH-0202 (Auth, accounts and the protected HTTP boundary)**. Version `0.7.0` completes
+**GH-0203 (Audit Foundation)** after **GH-0250 (Organizations & Multi-Tenancy Foundation)** and
+before Billing.
+
+The checkpoint is deliberately narrow. Billing, Entitlements, Cost Guard, AI, Search, Redis,
+external webhooks, remote storage and consumer-domain functionality remain out of scope.
+
+## What this checkpoint contains
+
+- the 18 canonical `@green-hive/*` packages, `hive-reference-app` and `hive-admin`;
+- canonical `AppManifestV1`, validator, App Registry and complete `REFERENCE_APP` manifest;
+- schemas `hive`, `audit` and `reference_app`;
+- eleven immutable migrations and a SHA-256 migration ledger;
+- organizations, memberships and tenant app installations around the global app registry;
+- tenant-scoped `projects` and `project_settings`;
+- a production-safe structural seed containing only `REFERENCE_APP`;
+- Supabase-native trusted context through `auth.uid()` and `auth.jwt()`;
+- owner/workspace/app isolation, operational-only platform administration and logical deletion;
+- typed `@green-hive/projects` service with create/list/get/archive/soft-delete operations;
+- typed `@green-hive/auth` services for signup, login, refresh, logout, password recovery and
+  account profiles;
+- server-only Supabase Auth adapter with exact redirect allowlisting and stable public errors;
+- a Reference App server facade that derives owner/app scope exclusively from a verified session;
+- automatic personal workspaces, shared-workspace creation and bounded member roles;
+- append-only `audit.events`, transactionally captured lifecycle events and correlation IDs;
+- typed tenant audit reader plus a payload-minimized Reference App activity view;
+- a responsive React/Vite Reference App with signup, login, recovery, profile and project screens;
+- a loopback-only Fastify HTTP boundary with HttpOnly cookies, exact-origin CSRF checks, PKCE
+  recovery, no-store responses and baseline security headers;
+- runtime validation, explicit trusted-context authorization and stable public project errors;
+- static, unit, embedded PostgreSQL and guarded local Supabase/PostgreSQL/Auth parity tests.
+
+## Clean verification
+
+```text
+npm ci
+npm run verify
+```
+
+`verify` removes generated outputs, checks formatting and platform boundaries, type-checks, builds
+all workspaces, validates migration integrity and runs the embedded RLS matrix.
+
+Database deployment requires a dedicated connection:
+
+```text
+set DATABASE_URL=postgresql://...
+npm run db:validate
+npm run db:migrate
+npm run db:seed
+```
+
+Connection strings belong in a secret manager or an untracked local environment file.
+
+The repository also carries a versioned Supabase CLI and an isolated local gate:
+
+```text
+npm run supabase:start
+npm run supabase:status
+npm run db:test:supabase
+npm run auth:test:supabase
+npm run web:test:supabase
+npm run verify:supabase
+npm run supabase:stop
+```
+
+The local stack starts PostgreSQL, Supabase Auth and Mailpit. Auth and Mailpit are recreated with
+explicit `127.0.0.1` bindings; PostgreSQL remains protected by the required Windows firewall rule.
+See [Local Supabase](docs/LOCAL-SUPABASE.md) for the network boundary and destructive-test
+safeguards.
+
+## Hosted staging workflow
+
+A dedicated Free-plan Supabase staging project is active in São Paulo. Its eleven-migration database
+baseline, cross-organization RLS matrix, Project/Workspace Service and server-side Auth core have
+passed without changing the production
+candidate or the pre-existing Green Hive project:
+
+```text
+npm run staging:database:preflight
+npm run staging:database:apply
+npm run staging:database:test
+npm run staging:auth:test
+```
+
+The Windows wrapper obtains user-bound encrypted credentials from the machine-local `.secrets`
+directory, uses the session pooler with official CA verification, and clears its process variables
+after each command. The apply command never resets or drops a remote schema; it applies only the
+canonical migrations and structural seed. Remote tests remove only their disposable users and
+rows. Exact HTTPS hosting, recovery callback/SMTP validation and post-hosting network restriction
+remain pending. See [Dedicated Supabase staging](docs/STAGING-SUPABASE.md).
+
+## Working local preview
+
+With Docker Desktop running, one command prepares the database, builds the web application and
+starts the complete Reference App:
+
+```text
+npm run reference-app:start
+```
+
+Open `http://127.0.0.1:3000`. The server is bound only to loopback. The recovery page is available
+at `http://127.0.0.1:3000/auth/recovery`, and development recovery messages can be inspected at
+`http://127.0.0.1:54324`. Stop the Reference App with `Ctrl+C`; use `npm run supabase:stop` when the
+local database is no longer needed.
+
+## Authentication model
+
+Passwords are handled only by Supabase Auth. The Green Hive server verifies access tokens with the
+Auth server, reads app and platform role only from trusted `app_metadata`, then creates a minimal
+`TrustedAppContext`. The service-role key exists only inside the server adapter and is never part of
+client configuration.
+
+The Reference App proves signup, login, refresh, local/global logout, PKCE password recovery,
+profile management and owned-project access through a real browser/server boundary. Access and
+refresh tokens are never returned to the React application or stored in browser-accessible
+storage; they remain in HttpOnly, same-site cookies.
+
+## Authorization model
+
+Project access requires all of the following:
+
+```text
+auth.uid() = projects.owner_user_id
+AND
+auth.jwt().app_metadata.app_code resolves to projects.app_id
+AND
+hive.current_organization_id() = projects.organization_id
+AND
+the app is actively installed in the selected organization
+AND
+projects.status <> DELETED
+```
+
+`user_metadata`, request payloads, arbitrary headers, query strings and environment variables are
+not authorization sources. A workspace cookie is only a preference until the server validates an
+active membership in the database transaction. `PLATFORM_ADMIN` can read app, organization and
+installation metadata but cannot automatically read private profiles, projects or settings.
+Logical deletion is exposed through `hive.soft_delete_project(uuid)`; authenticated users receive
+no physical project `DELETE` grant.
+
+## Audit model
+
+`audit.events` is append-only for authenticated users. PostgreSQL triggers capture organization,
+membership, app-installation and project-lifecycle changes inside the same transaction as the
+domain operation, preventing successful writes without their corresponding event. Repeated
+idempotent archive/delete/provisioning calls do not create duplicate lifecycle events.
+
+Each event carries a request and correlation ID, actor identity/type, organization, app, optional
+project, outcome and bounded operational metadata. Project names, arbitrary project metadata,
+documents, prompts, credentials, cookies, tokens and raw payloads are not recorded. Workspace
+members can read only events for the selected organization and app. Platform administrators can
+read the same safe operational event shape but do not gain access to private profile, project or
+settings content.
+
+## Migration discipline
+
+Applied migrations are immutable. The ledger records sequence, filename, checksum and rollback
+strategy. `db:migrate` refuses gaps, unknown versions, renamed files, checksum drift, rollback
+metadata drift and a managed schema without a ledger. Except for provisioning the shared
+`pgcrypto` extension, managed objects do not use `IF NOT EXISTS`.
+
+## Status
+
+GH-0102, GH-0103, GH-0104, GH-0203 and GH-0250 are `DONE`. GH-0201 is
+`PARTIAL — STAGING_AUTH_CORE_PASS`: local web,
+local recovery and hosted signup/login/profile/session gates pass, while hosted HTTPS recovery and
+test SMTP remain pending. GH-0202 is `PARTIAL — STAGING_SERVICE_PASS`: SQL RLS, Project Service and
+verified hosted Auth-to-service cross-user isolation pass, while the same flow through a deployed
+HTTPS/cookie boundary remains pending. See
+[Implementation status](docs/IMPLEMENTATION_STATUS.md), [Database](docs/DATABASE.md), [Trusted app
+context](docs/TRUSTED-APP-CONTEXT.md), [Auth and accounts](docs/AUTH-ACCOUNTS.md), [Project
+Service](docs/PROJECT-SERVICE.md), [Workspace Service](docs/WORKSPACE-SERVICE.md), [Reference App
+web](docs/REFERENCE-APP-WEB.md), [Audit](docs/AUDIT.md), [GH-0203 checkpoint](docs/CHECKPOINT-GH-0203.md),
+[GH-0250 checkpoint](docs/CHECKPOINT-GH-0250.md), [Ideas Radar](IDEAS_RADAR.md) and
+[Reconciliation](docs/RECONCILIATION-2026-08-18.md).

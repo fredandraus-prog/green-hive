@@ -1,0 +1,2 @@
+export const TRUST_CONTEXT_SOURCE = "SIGNED_APP_METADATA" as const;
+

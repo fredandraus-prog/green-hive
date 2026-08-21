@@ -1,0 +1,25 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/core" },
+    { "path": "./packages/auth" },
+    { "path": "./packages/projects" },
+    { "path": "./packages/billing" },
+    { "path": "./packages/entitlements" },
+    { "path": "./packages/cost-guard" },
+    { "path": "./packages/jobs" },
+    { "path": "./packages/ai" },
+    { "path": "./packages/search" },
+    { "path": "./packages/trust" },
+    { "path": "./packages/files" },
+    { "path": "./packages/audit" },
+    { "path": "./packages/i18n" },
+    { "path": "./packages/feature-flags" },
+    { "path": "./packages/notifications" },
+    { "path": "./packages/observability" },
+    { "path": "./packages/ui" },
+    { "path": "./packages/sdk" },
+    { "path": "./apps/hive-reference-app" },
+    { "path": "./apps/hive-admin" }
+  ]
+}

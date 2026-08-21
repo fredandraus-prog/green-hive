@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "registeredApps": [
+    "REFERENCE_APP"
+  ],
+  "note": "Runtime registration is validated by @green-hive/core. Database persistence begins in GH_MIG_002."
+}

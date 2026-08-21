@@ -1,0 +1,14 @@
+migration_id,phase,tables_or_scope,depends_on,acceptance
+GH_MIG_001,GH-1,Create hive/audit schemas and required extensions,,Migration runs on empty database
+GH_MIG_002,GH-1,hive.apps; hive.user_profiles,GH_MIG_001,Unique app_code and auth user FK validated
+GH_MIG_003,GH-1,hive.projects; hive.project_settings,GH_MIG_002,Project/app/owner constraints and RLS baseline pass
+GH_MIG_004,GH-3,hive.products; hive.prices,GH_MIG_002,Catalog constraints/versionable prices pass
+GH_MIG_005,GH-3,hive.purchases; hive.payments,"GH_MIG_003,GH_MIG_004",Provider refs/idempotency constraints pass
+GH_MIG_006,GH-3,hive.project_entitlements,GH_MIG_005,Entitlement linked to project/product/version
+GH_MIG_007,GH-4,hive.usage_budgets; usage_events; cost_events,GH_MIG_003,Project-scoped accounting and numeric constraints pass
+GH_MIG_008,GH-4,hive.jobs,GH_MIG_003,Queue indexes/status/idempotency fields present
+GH_MIG_009,GH-5,hive.providers; hive.ai_operations; hive.search_operations,GH_MIG_003,Provider metadata and op tracking ready
+GH_MIG_010,GH-6,hive.files; optional processing results,GH_MIG_003,Private file ownership/RLS pass
+GH_MIG_011,GH-6,hive.notifications,GH_MIG_003,User/project notification scope works
+GH_MIG_012,GH-7,hive.feature_flags; hive.configuration_releases,GH_MIG_002,Admin-only mutation and release tracking work
+GH_MIG_013,GH-2/8,audit.events,GH_MIG_001,Append service/admin access policy works

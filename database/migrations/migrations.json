@@ -1,0 +1,105 @@
+{
+  "formatVersion": 1,
+  "algorithm": "sha256",
+  "migrations": [
+    {
+      "version": 1,
+      "file": "0001_create_schemas.sql",
+      "sha256": "d415aaf05470d638179badf7868629f66552e75134d62b47644d28c21042fa8c",
+      "checkpoint": "GH-0102",
+      "description": "Create managed schemas, pgcrypto and the immutable migration ledger.",
+      "rollbackStrategyCode": "SNAPSHOT_OR_FORWARD_FIX",
+      "rollbackStrategy": "Restore the verified pre-migration snapshot; on an empty disposable environment only, remove the managed schemas and reapply."
+    },
+    {
+      "version": 2,
+      "file": "0002_create_apps.sql",
+      "sha256": "0413b74013b05bc08c5ae7545227760d72f366cfd786878b20a9cc6376a32ec7",
+      "checkpoint": "GH-0102",
+      "description": "Create the canonical Green Hive application registry.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_EMPTY_ENVIRONMENT_DROP",
+      "rollbackStrategy": "Prefer a forward fix; dropping hive.apps is permitted only before any app or project data exists in a disposable environment."
+    },
+    {
+      "version": 3,
+      "file": "0003_create_user_profiles.sql",
+      "sha256": "9593165d2becd58b6bd900632fe687fcf7ddf5e7829bcd5e15f15b4f4c732720",
+      "checkpoint": "GH-0102",
+      "description": "Create app-neutral profiles linked to the Supabase authentication authority.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_PROFILE_RESTORE",
+      "rollbackStrategy": "Prefer a forward fix; restore profiles from a verified backup before any destructive table removal."
+    },
+    {
+      "version": 4,
+      "file": "0004_create_projects.sql",
+      "sha256": "bdf45e08b0e0de66b93c4121488bbd5e7aa461619f7d12203a3adb398263b702",
+      "checkpoint": "GH-0103",
+      "description": "Create app-neutral projects with owner, app and lifecycle constraints.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_PROJECT_EXPORT_RESTORE",
+      "rollbackStrategy": "Prefer a forward fix; export and verify projects and dependent settings before any destructive rollback."
+    },
+    {
+      "version": 5,
+      "file": "0005_create_project_settings.sql",
+      "sha256": "2c60c10e072e4e0a0e1ef741bcf818f7c74b9ab022f5b175193555d66831ca02",
+      "checkpoint": "GH-0103",
+      "description": "Create locale and app-neutral project settings with a composite app boundary.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_SETTINGS_RESTORE",
+      "rollbackStrategy": "Prefer a forward fix; restore project settings from a verified backup before removing the table."
+    },
+    {
+      "version": 6,
+      "file": "0006_create_trusted_context_and_rls.sql",
+      "sha256": "589919c3e4698826d90f90efdc7a77c02cd888e93cd74694407ef6693ad13d5c",
+      "checkpoint": "GH-0103,GH-0202-PARTIAL",
+      "description": "Create trusted Supabase JWT context helpers and owner/admin RLS policies.",
+      "rollbackStrategyCode": "FORWARD_POLICY_FIX_OR_CONTROLLED_GRANT_REVOCATION",
+      "rollbackStrategy": "Deploy a forward policy correction; emergency rollback revokes affected grants only during a controlled maintenance window."
+    },
+    {
+      "version": 7,
+      "file": "0007_create_organizations.sql",
+      "sha256": "2deea9a517e3663103cd0616fd6d17315b4310b6fed24d96a5320de40afcfaf1",
+      "checkpoint": "GH-0251,GH-0252,GH-0253",
+      "description": "Create organizations and memberships, including backfill-safe personal workspaces.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_ORGANIZATION_EXPORT_RESTORE",
+      "rollbackStrategy": "Prefer a forward fix; export and verify organizations, memberships and their user references before any controlled restoration."
+    },
+    {
+      "version": 8,
+      "file": "0008_create_organization_apps.sql",
+      "sha256": "b130dd9002d89169132f76bbbbe6cbad48c4f6922240a7719bc5b929918c5f87",
+      "checkpoint": "GH-0254,GH-0255,GH-0259",
+      "description": "Create organization app installations and optional app-scoped memberships.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_INSTALLATION_EXPORT_RESTORE",
+      "rollbackStrategy": "Prefer a forward fix; export and verify app installations and app-scoped memberships before any controlled restoration."
+    },
+    {
+      "version": 9,
+      "file": "0009_scope_projects_to_organizations.sql",
+      "sha256": "818417979e03c05b4ad1bb0e5882fe76bf9a35689d75021395967dfb09a13ece",
+      "checkpoint": "GH-0254,GH-0256,GH-0259",
+      "description": "Add immutable organization scope to projects and project settings.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_TENANT_SCOPE_RESTORE",
+      "rollbackStrategy": "Prefer a forward fix; preserve and verify the organization mapping for every project and setting before a controlled restoration."
+    },
+    {
+      "version": 10,
+      "file": "0010_create_tenant_context_and_rls.sql",
+      "sha256": "5bb787a0068828be9855f2fb2117a8ff2f61a2bd4acf47e2bf67ac123430720a",
+      "checkpoint": "GH-0253,GH-0256,GH-0258,GH-0202-PARTIAL",
+      "description": "Create trusted organization selection, workspace provisioning and tenant-aware RLS.",
+      "rollbackStrategyCode": "FORWARD_POLICY_FIX_OR_CONTROLLED_TENANT_GRANT_REVOCATION",
+      "rollbackStrategy": "Deploy a forward tenant-policy correction; emergency rollback revokes affected organization grants only during a controlled maintenance window."
+    },
+    {
+      "version": 11,
+      "file": "0011_create_audit_events.sql",
+      "sha256": "40b0e0ca749bdfa0cf4e25538b7926b71c6e4fb04eba53cf0462e1429f3bd6c8",
+      "checkpoint": "GH-0203",
+      "description": "Create append-only tenant audit events and transactional core lifecycle capture.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_AUDIT_EXPORT_AND_TRIGGER_DISABLE",
+      "rollbackStrategy": "Prefer a forward fix; export and verify audit events before disabling only the affected capture trigger during controlled maintenance."
+    }
+  ]
+}
