@@ -19,9 +19,10 @@ The GH-0201 local implementation provides:
 - a transaction-scoped PostgreSQL executor using the `authenticated` role;
 - Reference App composition with the Project Service.
 
-Social login, production SMTP, MFA enforcement, account export/deletion workflow and remote staging
-are not part of this local checkpoint. The public local HTTP boundary is documented separately in
-`docs/REFERENCE-APP-WEB.md`.
+Social login, production SMTP, MFA enforcement and account export/deletion workflow are not part
+of this checkpoint. The dedicated Supabase staging Auth core has passed; the public local and
+prepared hosted HTTP boundaries are documented separately in `docs/REFERENCE-APP-WEB.md` and
+`docs/HOSTED-STAGING.md`.
 
 ## Public contracts
 
@@ -166,5 +167,6 @@ organization membership. Auth claims still contain no client-editable organizati
 
 The dedicated Supabase staging project now passes confirmed signup, login, refresh, logout,
 profile, owned-project and trusted-claim tests through the server-side service boundary. GH-0201
-stays `PARTIAL` until that flow also passes through the deployed HTTPS/cookie boundary and password
-recovery is delivered and completed through dedicated test SMTP.
+stays `PARTIAL` even though the Render runtime/CI contract passes locally. The flow must still pass
+through the deployed HTTPS/cookie boundary, and password recovery must be delivered and completed
+through the dedicated Mailtrap test SMTP path.

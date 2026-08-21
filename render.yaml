@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: green-hive-staging
+    runtime: node
+    plan: free
+    region: virginia
+    branch: main
+    autoDeployTrigger: checksPass
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start:hosted
+    healthCheckPath: /api/ready
+    maxShutdownDelaySeconds: 30
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GREEN_HIVE_RUNTIME_MODE
+        value: HOSTED_STAGING
+      - key: GREEN_HIVE_HTTP_LOGS
+        value: "true"
+      - key: GREEN_HIVE_DATABASE_POOL_MAX
+        value: "5"
+      - key: GREEN_HIVE_STAGING_PROJECT_REF
+        value: rabkyesatfuezmrrzllx
+      - key: GREEN_HIVE_SUPABASE_AUTH_URL
+        value: https://rabkyesatfuezmrrzllx.supabase.co/auth/v1
+      - key: GREEN_HIVE_APP_ORIGIN
+        sync: false
+      - key: GREEN_HIVE_AUTH_RECOVERY_REDIRECT
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: GREEN_HIVE_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: GREEN_HIVE_SUPABASE_SERVICE_ROLE_KEY
+        sync: false

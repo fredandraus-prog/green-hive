@@ -54,10 +54,10 @@ if (!publishableKey || !serviceRoleKey) throw new Error('Supabase local Auth key
 
 const applicationEnvironment = {
   ...runtimeEnvironment,
-  NODE_ENV: 'production',
+  NODE_ENV: 'development',
   GREEN_HIVE_RUNTIME_MODE: 'LOCAL_PREVIEW',
-  ALLOW_PRODUCTION_SEED: 'true',
   GREEN_HIVE_APP_ORIGIN: 'http://127.0.0.1:3000',
+  GREEN_HIVE_HTTP_LOGS: 'false',
   DATABASE_URL: status.DB_URL ?? LOCAL_SUPABASE_DATABASE_URL,
   GREEN_HIVE_SUPABASE_AUTH_URL: 'http://127.0.0.1:54321',
   GREEN_HIVE_SUPABASE_PUBLISHABLE_KEY: publishableKey,
@@ -67,7 +67,7 @@ const applicationEnvironment = {
 
 runNpm('db:migrate', applicationEnvironment);
 runNpm('db:seed', applicationEnvironment);
-runNpm('build', applicationEnvironment);
+runNpm('build', { ...applicationEnvironment, NODE_ENV: 'production' });
 
 const entrypoint = path.join(repositoryRoot, 'apps', 'hive-reference-app', 'dist', 'http-entry.js');
 const child = spawn(process.execPath, [entrypoint], {

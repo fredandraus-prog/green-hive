@@ -67,6 +67,7 @@ export interface ReferenceAppHttpServerOptions {
   readonly facade: ReferenceAppHttpFacade;
   readonly allowedOrigin: string;
   readonly secureCookies: boolean;
+  readonly readinessCheck?: () => Promise<void>;
   readonly webRoot?: string;
   readonly logger?: boolean;
 }
@@ -251,6 +252,9 @@ export async function createReferenceAppHttpServer(
     reply.header('Referrer-Policy', 'no-referrer');
     reply.header('Cross-Origin-Opener-Policy', 'same-origin');
     reply.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    if (options.secureCookies) {
+      reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
     reply.header(
       'Content-Security-Policy',
       "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
@@ -271,6 +275,14 @@ export async function createReferenceAppHttpServer(
   });
 
   application.get('/api/health', async () => ({ status: 'ok', app: 'REFERENCE_APP' }));
+  application.get('/api/ready', async (_request, reply) => {
+    try {
+      await options.readinessCheck?.();
+      return { status: 'ready', app: 'REFERENCE_APP' };
+    } catch {
+      return reply.code(503).send({ status: 'not_ready', app: 'REFERENCE_APP' });
+    }
+  });
 
   application.post('/api/auth/sign-up', async (request, reply) => {
     const body = exactObject(request.body, AUTH_BODY_KEYS, new AuthError('INVALID_AUTH_INPUT'));

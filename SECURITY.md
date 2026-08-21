@@ -26,8 +26,17 @@
   and bodies larger than 32 KiB are rejected.
 - Auth/API responses are private and non-cacheable; the local boundary emits CSP, frame denial,
   MIME-sniffing, referrer, permissions and cross-origin opener headers.
+- Hosted staging accepts only the explicit `HOSTED_STAGING` mode, `NODE_ENV=production`, an exact
+  non-loopback HTTPS origin and the confirmed Supabase project endpoints.
+- Render binds the private application listener to `0.0.0.0:$PORT`; authorization and CSRF still
+  use the exact public HTTPS origin, and HTTPS responses add HSTS.
+- Application startup never migrates or seeds the database. Readiness verifies the immutable
+  ledger, structural seed and critical tenant/audit objects without exposing database details.
+- GitHub CI runs a clean install, embedded isolation gate, release-manifest verification, secret
+  scan and high-severity dependency audit before an automatic Render deployment is eligible.
 
-Security implementation deepens in GH-2. This repository baseline already checks for obvious
-secret patterns, forbidden application-domain imports, trusted Auth context and native RLS
-isolation. Local HTTP headers and origin protections are now present. Deployed HTTPS, distributed
-rate limiting, MFA administration, secret rotation and staging remain future gates.
+Security implementation deepens in GH-2. This repository baseline already checks for
+high-confidence secret patterns, credential files, browser/server configuration leaks, forbidden
+application-domain imports, trusted Auth context and native RLS isolation. Hosted configuration is
+prepared but not yet deployed. Live HTTPS validation, distributed rate limiting, MFA
+administration and secret rotation remain future gates.

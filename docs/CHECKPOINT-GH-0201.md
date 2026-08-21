@@ -2,11 +2,13 @@
 
 ## Result
 
-Status: `PARTIAL - LOCAL_WEB_PASS; STAGING_NOT_AUTHORIZED`.
+Status: `PARTIAL - HOSTING_PREPARATION_PASS; HTTPS_SMTP_ACCEPTANCE_PENDING`.
 
-The local implementation now passes native Supabase Auth plus the React/Fastify browser and cookie
-boundary. The checkpoint is not marked `DONE` because the canonical specification requires the
-full account and owned-project path to pass in staging.
+The local implementation passes native Supabase Auth plus the React/Fastify browser and cookie
+boundary. The dedicated hosted Supabase project also passes the server-side Auth/account and
+owned-project core. A fail-closed Render runtime and CI contract now pass locally, but the
+checkpoint is not `DONE` until the complete path passes through deployed HTTPS cookies and
+Mailtrap-backed password recovery.
 
 ## Delivered
 
@@ -55,9 +57,19 @@ The local suite proves:
 All earlier database, RLS and Project Service native gates were rerun successfully after the Auth
 changes.
 
+## Hosting preparation delivered after platform 0.7.0
+
+- Render Node web-service Blueprint with CI-gated deploys and no automatic database mutation;
+- exact HTTPS origin/callback and confirmed Supabase project validation;
+- Render `0.0.0.0:$PORT` binding separated from the public security origin;
+- secure cookies, HSTS and database-backed readiness;
+- GitHub Actions clean-install verification and repository secret scan;
+- read-only hosted smoke command and dashboard runbook.
+
 ## Not delivered
 
-- remote Supabase staging;
+- deployed Render service and HTTPS/cookie acceptance evidence;
+- Mailtrap recovery acceptance through Supabase custom SMTP;
 - production SMTP;
 - social providers;
 - administrative MFA;
@@ -66,8 +78,8 @@ changes.
 
 ## Next gate
 
-1. create or link a Supabase staging project only after explicit authorization;
-2. configure exact HTTPS staging callback URLs and test SMTP;
-3. run signup/login/logout/recovery/owned-project and cross-user tests in staging;
-4. promote GH-0201 to `DONE` only after that evidence passes;
-5. finish GH-0202's staging authorization evidence.
+1. merge the prepared branch only after the complete local and GitHub CI gates pass;
+2. create the reviewed Render Blueprint and register the five server-only values;
+3. configure exact Supabase HTTPS callback URLs and Mailtrap test SMTP;
+4. run signup/login/logout/recovery/owned-project and cross-user tests through Render;
+5. promote GH-0201 to `DONE` only after that evidence passes.

@@ -1,6 +1,6 @@
 # Dedicated Supabase staging gate
 
-Status: `DATABASE_RLS_PROJECT_AUTH_CORE_PASS - HTTPS_SMTP_PENDING`.
+Status: `DATABASE_RLS_PROJECT_AUTH_CORE_PASS - HOSTING_PREPARED - HTTPS_SMTP_PENDING`.
 
 The Green Hive staging environment is an isolated hosted Supabase project. It is used only to
 validate canonical migrations, RLS, Project Service and Auth/account behavior before a public
@@ -23,9 +23,10 @@ the organization had no payment method or invoice and Spend Cap was enabled. Pla
 state can change outside this repository and must be rechecked before any future paid resource is
 created.
 
-Database SSL enforcement is enabled. Network access still accepts the standard Supabase public
-CIDRs because the future HTTPS host and its egress topology have not been chosen; restrict that
-boundary only after the hosting source addresses or supported pooler architecture are known.
+Database SSL enforcement is enabled. Render is the prepared HTTPS host, but no service exists and
+its egress topology has not been confirmed. Network access therefore still accepts the standard
+Supabase public CIDRs; restrict that boundary only after the real hosting source addresses or
+supported pooler architecture are known.
 
 Official references:
 
@@ -101,7 +102,7 @@ unrelated Auth users. The only canonical migrations remain under `database/migra
 Database, RLS, Project Service and server-side Auth core are no longer pending. GH-0201/GH-0202
 still require:
 
-1. an exact HTTPS host for the React/Fastify Reference App;
+1. creation and validation of the prepared exact HTTPS Render host for the React/Fastify app;
 2. matching Supabase Site URL and `/auth/recovery` redirect configuration;
 3. a dedicated test SMTP sender and mailbox retrieval path;
 4. server-only injection of the database and secret values into that host;
