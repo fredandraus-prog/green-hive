@@ -1,6 +1,6 @@
 # Implementation status
 
-Status date: 2026-08-20.
+Status date: 2026-08-21.
 
 | Checkpoint | Status | Validation | Remaining gate |
 |---|---|---|---|
@@ -10,10 +10,10 @@ Status date: 2026-08-20.
 | GH-0102 | DONE | original six immutable migrations, native FKs, ledger and seed pass on Supabase local | none |
 | GH-0103 | DONE | embedded and native Supabase owner/app isolation matrices pass | none |
 | GH-0104 | DONE | typed Project Service, runtime validation, unit and native Supabase integration tests | none |
-| GH-0201 | PARTIAL — STAGING_AUTH_CORE_PASS | local browser/recovery plus hosted signup, login, refresh, logout, profile and owned-project gates pass | hosted HTTPS cookie flow and password recovery through test SMTP |
-| GH-0202 | PARTIAL — STAGING_SERVICE_PASS | hosted RLS, Project Service and verified Auth-to-service cross-user/cross-app path pass | repeat the boundary through the deployed HTTPS API/cookies |
+| GH-0201 | PARTIAL — HOSTING_PREPARATION_PASS | local browser/recovery, hosted Auth core and fail-closed Render runtime/CI gates pass | deploy exact HTTPS cookie flow and password recovery through test SMTP |
+| GH-0202 | PARTIAL — HOSTING_PREPARATION_PASS | hosted RLS/Services plus protected Render boundary configuration and readiness tests pass | repeat isolation through the deployed HTTPS API/cookies |
 | GH-0203 | DONE | append-only tenant audit store, transactional lifecycle capture, safe metadata, local/staging RLS and service/HTTP tests | none |
-| GH-0204 | PARTIAL | local headers, exact-origin guard, body limit and secret boundary pass | deployed rate limits, HTTPS and secret operations |
+| GH-0204 | PARTIAL — HOSTING_PREPARATION_PASS | local headers, exact-origin/body/secret guards, HSTS configuration, CI and repository secret scan pass | validate HTTPS and secret operations, then add deployed rate limits |
 | GH-0250 | DONE | Organizations foundation, personal/shared workspaces and tenant-aware Project Service pass locally and on dedicated staging | none |
 | GH-0251–GH-0255 | DONE | organizations, workspace memberships, personal provisioning, app installations and app roles validated | none |
 | GH-0256–GH-0258 | DONE | trusted organization selection, tenant RLS, cross-organization matrix and shared workspace service validated | none |
@@ -34,3 +34,7 @@ bounded metadata. `PLATFORM_ADMIN` can read operational tenant/audit metadata bu
 to private profiles, projects or settings. The remaining Auth gate
 is intentionally narrower: host that same boundary on an exact HTTPS origin, configure the
 matching recovery callback and test SMTP, then repeat the HTTP/cookie and recovery paths there.
+
+The repository now contains a Render Blueprint, strict hosted runtime validation, database-backed
+readiness, a read-only hosted smoke command and GitHub CI. These are locally validated preparation,
+not deployment evidence: no Render service was created and no secret or SMTP value was registered.

@@ -12,7 +12,7 @@ const ignored = new Set([
   '.temp',
   '.branches',
 ]);
-const textExtensions = new Set(['.ts', '.tsx', '.mts', '.cts', '.js', '.mjs', '.json', '.md', '.csv', '.sql', '.css', '.html']);
+const textExtensions = new Set(['.ts', '.tsx', '.mts', '.cts', '.js', '.mjs', '.json', '.md', '.csv', '.sql', '.css', '.html', '.yaml', '.yml']);
 const errors = [];
 
 async function walk(dir) {

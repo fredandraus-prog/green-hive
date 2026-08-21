@@ -9,12 +9,13 @@
     "packages/*"
   ],
   "engines": {
-    "node": ">=22"
+    "node": ">=22 <25"
   },
   "scripts": {
     "clean": "node scripts/clean.mjs",
     "format:check": "node scripts/format-check.mjs",
     "lint": "node scripts/lint.mjs && node scripts/platform-lint.mjs",
+    "security:scan": "node scripts/security-scan.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build:types": "tsc -b tsconfig.build.json",
     "build:web": "vite build apps/hive-reference-app --config apps/hive-reference-app/vite.config.mjs",
@@ -32,6 +33,8 @@
     "web:test:supabase": "node scripts/web-test-supabase.mjs",
     "verify:supabase": "npm run db:test:supabase && npm run auth:test:supabase && npm run web:test:supabase",
     "reference-app:start": "node scripts/reference-app-local.mjs",
+    "start:hosted": "node apps/hive-reference-app/dist/http-entry.js",
+    "hosted:smoke": "node scripts/hosted-smoke.mjs",
     "supabase:start": "node scripts/supabase-local.mjs start",
     "supabase:status": "node scripts/supabase-local.mjs status",
     "supabase:stop": "node scripts/supabase-local.mjs stop",
@@ -43,7 +46,7 @@
     "staging:apply": "node scripts/staging-apply.mjs",
     "release:manifest": "node scripts/generate-release-manifest.mjs",
     "release:verify-manifest": "node scripts/verify-release-manifest.mjs",
-    "verify": "npm run clean && npm run format:check && npm run lint && npm run typecheck && npm run test:unit && npm run db:validate && npm run db:test && npm run build"
+    "verify": "npm run clean && npm run format:check && npm run lint && npm run security:scan && npm run typecheck && npm run test:unit && npm run db:validate && npm run db:test && npm run build"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.3.0",

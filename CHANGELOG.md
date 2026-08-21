@@ -5,7 +5,25 @@ semantic versioning.
 
 ## [Unreleased]
 
-No pending implementation is included after the `0.7.0` release gate.
+### Added
+
+- Fail-closed `HOSTED_STAGING` runtime contract for exact HTTPS origin, Render port binding,
+  Supabase project identity, verified database TLS, secure cookies and bounded pooling.
+- Render Blueprint with GitHub-check-gated deploys, secret placeholders and a database-backed
+  `/api/ready` health check.
+- GitHub Actions clean-install gate for the complete embedded verification, release manifest and
+  high-severity dependency audit.
+- High-confidence repository secret scan and browser/server configuration boundary check.
+- Public, read-only hosted smoke command and a deployment/rollback runbook.
+- Unit coverage for hosted/local runtime rejection, migration readiness, Blueprint safety, HSTS,
+  secure cookies and failure redaction.
+
+### Status
+
+- Hosting preparation passes locally; no Render service or remote configuration was created.
+- GH-0201 and GH-0202 remain `PARTIAL` until exact HTTPS/cookie and Mailtrap recovery evidence
+  passes on the deployed service.
+- Version remains `0.7.0`; `0.8.0` is reserved for the completed hosted acceptance gate.
 
 ## [0.7.0] - 2026-08-20
 

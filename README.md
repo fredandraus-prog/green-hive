@@ -32,6 +32,8 @@ external webhooks, remote storage and consumer-domain functionality remain out o
 - a responsive React/Vite Reference App with signup, login, recovery, profile and project screens;
 - a loopback-only Fastify HTTP boundary with HttpOnly cookies, exact-origin CSRF checks, PKCE
   recovery, no-store responses and baseline security headers;
+- a fail-closed hosted staging mode, Render Blueprint, database-backed readiness endpoint,
+  GitHub CI and repository secret scan prepared without registering remote secrets;
 - runtime validation, explicit trusted-context authorization and stable public project errors;
 - static, unit, embedded PostgreSQL and guarded local Supabase/PostgreSQL/Auth parity tests.
 
@@ -91,8 +93,19 @@ The Windows wrapper obtains user-bound encrypted credentials from the machine-lo
 directory, uses the session pooler with official CA verification, and clears its process variables
 after each command. The apply command never resets or drops a remote schema; it applies only the
 canonical migrations and structural seed. Remote tests remove only their disposable users and
-rows. Exact HTTPS hosting, recovery callback/SMTP validation and post-hosting network restriction
-remain pending. See [Dedicated Supabase staging](docs/STAGING-SUPABASE.md).
+rows. The exact HTTPS runtime, CI and Render Blueprint now pass locally, but no Render service or
+remote secret has been created. Recovery callback/SMTP validation and post-hosting network
+restriction remain pending. See [Hosted staging preparation](docs/HOSTED-STAGING.md) and
+[Dedicated Supabase staging](docs/STAGING-SUPABASE.md).
+
+The committed Blueprint builds only the application; startup never applies migrations or seed.
+Once the reviewed branch is merged and the service is configured, its public read-only gate is:
+
+```powershell
+$env:GREEN_HIVE_HOSTED_APP_ORIGIN = "https://your-service.onrender.com"
+npm run hosted:smoke
+Remove-Item Env:GREEN_HIVE_HOSTED_APP_ORIGIN
+```
 
 ## Working local preview
 
@@ -166,15 +179,14 @@ metadata drift and a managed schema without a ledger. Except for provisioning th
 
 ## Status
 
-GH-0102, GH-0103, GH-0104, GH-0203 and GH-0250 are `DONE`. GH-0201 is
-`PARTIAL — STAGING_AUTH_CORE_PASS`: local web,
-local recovery and hosted signup/login/profile/session gates pass, while hosted HTTPS recovery and
-test SMTP remain pending. GH-0202 is `PARTIAL — STAGING_SERVICE_PASS`: SQL RLS, Project Service and
-verified hosted Auth-to-service cross-user isolation pass, while the same flow through a deployed
-HTTPS/cookie boundary remains pending. See
+GH-0102, GH-0103, GH-0104, GH-0203 and GH-0250 are `DONE`. GH-0201 and GH-0202 are
+`PARTIAL — HOSTING_PREPARATION_PASS`: local web/recovery and hosted server-side Auth, RLS and
+service gates pass, and the exact Render runtime/CI/readiness contract now passes locally. The
+deployed HTTPS/cookie boundary and test-SMTP recovery evidence remain pending. See
 [Implementation status](docs/IMPLEMENTATION_STATUS.md), [Database](docs/DATABASE.md), [Trusted app
 context](docs/TRUSTED-APP-CONTEXT.md), [Auth and accounts](docs/AUTH-ACCOUNTS.md), [Project
 Service](docs/PROJECT-SERVICE.md), [Workspace Service](docs/WORKSPACE-SERVICE.md), [Reference App
-web](docs/REFERENCE-APP-WEB.md), [Audit](docs/AUDIT.md), [GH-0203 checkpoint](docs/CHECKPOINT-GH-0203.md),
+web](docs/REFERENCE-APP-WEB.md), [Hosted staging](docs/HOSTED-STAGING.md), [Audit](docs/AUDIT.md),
+[GH-0203 checkpoint](docs/CHECKPOINT-GH-0203.md),
 [GH-0250 checkpoint](docs/CHECKPOINT-GH-0250.md), [Ideas Radar](IDEAS_RADAR.md) and
 [Reconciliation](docs/RECONCILIATION-2026-08-18.md).

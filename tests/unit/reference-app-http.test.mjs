@@ -194,6 +194,48 @@ test('HTTP boundary keeps sessions in HttpOnly same-site cookies', async () => {
   }
 });
 
+test('hosted health contract reports readiness without exposing failures', async () => {
+  let ready = false;
+  const application = await createReferenceAppHttpServer({
+    facade: new FakeFacade(),
+    allowedOrigin: 'https://green-hive-staging.onrender.com',
+    secureCookies: true,
+    readinessCheck: async () => {
+      if (!ready) throw new Error('database details must remain private');
+    },
+  });
+  try {
+    const live = await application.inject({ method: 'GET', url: '/api/health' });
+    assert.equal(live.statusCode, 200);
+    assert.equal(live.headers['strict-transport-security'], 'max-age=31536000; includeSubDomains');
+
+    const signedIn = await application.inject({
+      method: 'POST',
+      url: '/api/auth/sign-in',
+      headers: {
+        origin: 'https://green-hive-staging.onrender.com',
+        'content-type': 'application/json',
+      },
+      payload: { email: 'web@example.test', password: 'StrongPass123' },
+    });
+    assert.ok(
+      signedIn.headers['set-cookie'].every((value) => /HttpOnly/i.test(value) && /Secure/i.test(value)),
+    );
+
+    const unavailable = await application.inject({ method: 'GET', url: '/api/ready' });
+    assert.equal(unavailable.statusCode, 503);
+    assert.deepEqual(unavailable.json(), { status: 'not_ready', app: 'REFERENCE_APP' });
+    assert.doesNotMatch(unavailable.body, /database details/);
+
+    ready = true;
+    const available = await application.inject({ method: 'GET', url: '/api/ready' });
+    assert.equal(available.statusCode, 200);
+    assert.deepEqual(available.json(), { status: 'ready', app: 'REFERENCE_APP' });
+  } finally {
+    await application.close();
+  }
+});
+
 test('HTTP boundary rejects cross-origin mutations and forged scope fields', async () => {
   const application = await createReferenceAppHttpServer({
     facade: new FakeFacade(),

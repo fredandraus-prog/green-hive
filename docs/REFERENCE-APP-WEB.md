@@ -12,18 +12,18 @@ Billing, AI, Redis, jobs, webhooks, remote storage or consumer-domain behavior.
 ## Runtime topology
 
 ```text
-Browser at 127.0.0.1:3000
+Browser at exact local HTTP or hosted HTTPS origin
         |
         | same-origin JSON + HttpOnly cookies
         v
 Fastify Reference App boundary
         |
-        +--> Supabase Auth at 127.0.0.1:54321
+        +--> Supabase Auth (loopback local or confirmed hosted project)
         |
         +--> ReferenceAppServer -> Account/Project/Audit Services
                                              |
                                              v
-                                PostgreSQL/RLS at 127.0.0.1:54322
+                                PostgreSQL/RLS (loopback or TLS session pooler)
 ```
 
 React never receives the Supabase service-role key, access token, refresh token, database URL or
@@ -42,6 +42,8 @@ Browser routes:
 
 HTTP routes:
 
+- `GET /api/health` — process liveness only;
+- `GET /api/ready` — migration, seed and critical database readiness;
 - `POST /api/auth/sign-up`;
 - `POST /api/auth/sign-in`;
 - `POST /api/auth/refresh`;
@@ -76,6 +78,10 @@ account services still repeat explicit authorization and PostgreSQL still applie
   cross-origin opener headers.
 - The server is bound to the configured hostname; local preview mode refuses anything except the
   canonical loopback application, Auth and database endpoints.
+- Hosted mode binds to Render's private `0.0.0.0:$PORT` listener while retaining the exact public
+  HTTPS origin for mutation checks. It rejects local, cross-project and non-TLS configuration.
+- Hosted HTTPS responses include HSTS. Readiness failures are `503` responses without provider or
+  database details.
 - React uses neither `localStorage` nor `sessionStorage` for authentication.
 
 ## Password recovery
@@ -85,8 +91,8 @@ a short-lived HttpOnly cookie. The email redirects with a single-use authorizati
 identifier. The server exchanges them, consumes the verifier state and only then writes the normal
 session cookies. Access and refresh tokens never appear in the callback URL.
 
-The local flow sends mail exclusively to Mailpit. Production SMTP and deployed callback URLs are
-not configured in this repository.
+The local flow sends mail exclusively to Mailpit. Hosted test recovery will be sent by Supabase
+Auth to Mailtrap; SMTP credentials never enter the application host or this repository.
 
 ## Local operation
 
@@ -120,5 +126,6 @@ console warnings or errors.
 ## Remaining gate
 
 The dedicated Supabase staging project now passes the server-side signup, session, cross-user and
-owned-project core. GH-0201 and GH-0202 remain `PARTIAL` until the same flow passes through the
-deployed HTTPS/cookie boundary and hosted password recovery is completed through test SMTP.
+owned-project core. The Render runtime, Blueprint, CI and readiness contract pass locally, but no
+service has been created. GH-0201 and GH-0202 remain `PARTIAL` until the same flow passes through
+the deployed HTTPS/cookie boundary and hosted password recovery is completed through Mailtrap.

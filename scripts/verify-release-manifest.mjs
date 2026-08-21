@@ -18,6 +18,10 @@ const ignoredDirectories = new Set([
 const ignoredFiles = new Set(['MANIFEST-SHA256.txt', '.env']);
 const ignoredExtensions = new Set(['.log', '.tmp', '.zip']);
 
+function isIgnoredFile(name) {
+  return ignoredFiles.has(name) || (name.startsWith('.env.') && name !== '.env.example');
+}
+
 async function walk(directory) {
   const files = [];
   for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -25,7 +29,7 @@ async function walk(directory) {
     const fullPath = path.join(directory, entry.name);
     if (entry.isDirectory()) {
       files.push(...(await walk(fullPath)));
-    } else if (!ignoredFiles.has(entry.name) && !ignoredExtensions.has(path.extname(entry.name))) {
+    } else if (!isIgnoredFile(entry.name) && !ignoredExtensions.has(path.extname(entry.name))) {
       files.push(fullPath);
     }
   }
