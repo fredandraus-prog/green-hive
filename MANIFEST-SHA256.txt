@@ -169,7 +169,7 @@ be6e9c1657a20387ac2303085407b9e3feed6c1f08b63a6f748e29bdee7ad443 | 69 | packages
 4bbb0b94f2e20614732cdc61d7b4760fee5e227524a7762dcc31970f576f88cb | 52 | packages/ui/src/index.ts
 40e391dea6bc34fad2af957df704c6bc2022c77af46d47e7d23a428b60f49e45 | 197 | packages/ui/tsconfig.json
 fc60081f2f1af097519f16cc4849e6e21e4b8423df9edf4462fe51d3216becef | 9499 | README.md
-cefc19cf2256f5e5ec2e2cbdafa0cb5cd040ff1b1c14e4920666c4127fed6073 | 1009 | render.yaml
+7c37935afe2ed4b76395e410e6b12f53b855427cc6310141b078b99f7ef323fa | 1023 | render.yaml
 fe7f12a85a6f8c4e609745a30dfbe5cb766d0cdc854075b6f980c4a4f914906e | 3639 | scripts/auth-test-supabase.mjs
 6bb7c358cd77ec6baa8e6e032f22aa62c1f9c882048efdc5ea1fcbf7eb148f64 | 677 | scripts/clean.mjs
 dfbe814bff432c8085e2cb7ba5b4b29ebcfb8db4a1ea3d9adfd6454ed25c9f91 | 3574 | scripts/db-migrate.mjs
@@ -203,7 +203,7 @@ ba4c7a37a0916c67dea6dc5c2ac8c663e292e6b188f1e4a3d8ac71b13a06a4cd | 1758 | tests/
 a055315b5142b5e4a3b7afa923efbb23e690424e21314095bc76cee630146a43 | 2705 | tests/unit/audit-service.test.mjs
 a5cc7030d63a2abf4e0b04e215191091d39c77c7b71a9ff003c90262b6bfe723 | 12418 | tests/unit/auth-service.test.mjs
 be677e4431c7e462fdd5d8ff38aba6e638603f78a4ece3c6c5ccab7e797f7221 | 473 | tests/unit/database-validator.test.mjs
-6bcb046d08c7bbe3f5dc1495f724ad960c8211acd727d099b43b4a7f8eb9f262 | 1560 | tests/unit/hosting-contract.test.mjs
+5a29e10aac301952fdf8ededc507a8a7d749fd0579e63be9baef9edff134b05a | 1574 | tests/unit/hosting-contract.test.mjs
 9cfad26199fde4a2f10a3a36de3f940d61bd017dfa8baefeb0340abc5e5f2ea8 | 1715 | tests/unit/local-supabase-guard.test.mjs
 3a303b531fdc1ed4c5e957fa78a363befb1269df7258973db8fff3e953569ff2 | 2347 | tests/unit/migration-state.test.mjs
 d9d27e3ba324be81a4833ab6f261b0d50c275ca991ea2c20673717e5928752e6 | 8758 | tests/unit/project-service.test.mjs
