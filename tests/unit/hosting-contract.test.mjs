@@ -8,7 +8,7 @@ test('Render Blueprint is a guarded web service without automatic database mutat
   assert.match(blueprint, /runtime: node/);
   assert.match(blueprint, /region: virginia/);
   assert.match(blueprint, /autoDeployTrigger: checksPass/);
-  assert.match(blueprint, /buildCommand: npm ci && npm run build/);
+  assert.match(blueprint, /buildCommand: npm ci --include=dev && npm run build/);
   assert.match(blueprint, /startCommand: npm run start:hosted/);
   assert.match(blueprint, /healthCheckPath: \/api\/ready/);
   assert.doesNotMatch(blueprint, /db:migrate|db:seed|preDeployCommand/);
