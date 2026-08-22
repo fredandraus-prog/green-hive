@@ -32,8 +32,8 @@ external webhooks, remote storage and consumer-domain functionality remain out o
 - a responsive React/Vite Reference App with signup, login, recovery, profile and project screens;
 - a loopback-only Fastify HTTP boundary with HttpOnly cookies, exact-origin CSRF checks, PKCE
   recovery, no-store responses and baseline security headers;
-- a fail-closed hosted staging mode, Render Blueprint, database-backed readiness endpoint,
-  GitHub CI and repository secret scan prepared without registering remote secrets;
+- a fail-closed hosted staging mode, Free Render Blueprint, fingerprint-pinned Supabase CA,
+  database-backed readiness endpoint, GitHub CI and repository secret scan;
 - runtime validation, explicit trusted-context authorization and stable public project errors;
 - static, unit, embedded PostgreSQL and guarded local Supabase/PostgreSQL/Auth parity tests.
 
@@ -89,17 +89,20 @@ npm run staging:database:test
 npm run staging:auth:test
 ```
 
-The Windows wrapper obtains user-bound encrypted credentials from the machine-local `.secrets`
-directory, uses the session pooler with official CA verification, and clears its process variables
-after each command. The apply command never resets or drops a remote schema; it applies only the
-canonical migrations and structural seed. Remote tests remove only their disposable users and
-rows. The exact HTTPS runtime, CI and Render Blueprint now pass locally, but no Render service or
-remote secret has been created. Recovery callback/SMTP validation and post-hosting network
-restriction remain pending. See [Hosted staging preparation](docs/HOSTED-STAGING.md) and
+The Windows wrapper obtains user-bound encrypted credentials from the machine-local Engine
+`.secrets` directory beside this repository, uses the session pooler with official CA verification,
+and clears its process variables after each command. The apply command never resets or drops a
+remote schema; it applies only the canonical migrations and structural seed. Remote tests remove
+only their disposable users and rows. A Free Render service and its secret environment entries
+now exist. Its build passes, and this source includes the public Supabase trust anchor required
+for a fully verified database connection; a healthy redeploy and the hosted acceptance matrix
+remain pending. Recovery callback/SMTP validation and post-hosting network restriction also
+remain pending. See [Hosted staging preparation](docs/HOSTED-STAGING.md) and
 [Dedicated Supabase staging](docs/STAGING-SUPABASE.md).
 
 The committed Blueprint builds only the application; startup never applies migrations or seed.
-Once the reviewed branch is merged and the service is configured, its public read-only gate is:
+Once the TLS correction is reviewed, merged and healthy on the existing service, its public
+read-only gate is:
 
 ```powershell
 $env:GREEN_HIVE_HOSTED_APP_ORIGIN = "https://your-service.onrender.com"

@@ -5,14 +5,14 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
-$greenHiveRoot = Split-Path -Parent (Split-Path -Parent $repositoryRoot)
+$engineRoot = Split-Path -Parent $repositoryRoot
 $configurationPath = Join-Path $repositoryRoot 'supabase\staging-project.json'
 $poolerPath = Join-Path $repositoryRoot 'supabase\.temp\pooler-url'
 $linkedProjectPath = Join-Path $repositoryRoot 'supabase\.temp\project-ref'
-$secretPath = Join-Path $greenHiveRoot '.secrets\green-hive-staging-db-password.dpapi'
-$publishableKeyPath = Join-Path $greenHiveRoot '.secrets\green-hive-staging-publishable-key.dpapi'
-$serviceRoleKeyPath = Join-Path $greenHiveRoot '.secrets\green-hive-staging-secret-key.dpapi'
-$certificatePath = Join-Path $greenHiveRoot '.secrets\prod-ca-2021.crt'
+$secretPath = Join-Path $engineRoot '.secrets\green-hive-staging-db-password.dpapi'
+$publishableKeyPath = Join-Path $engineRoot '.secrets\green-hive-staging-publishable-key.dpapi'
+$serviceRoleKeyPath = Join-Path $engineRoot '.secrets\green-hive-staging-secret-key.dpapi'
+$certificatePath = Join-Path $repositoryRoot 'config\supabase-root-2021-ca.crt'
 
 foreach ($requiredPath in @(
   $configurationPath,

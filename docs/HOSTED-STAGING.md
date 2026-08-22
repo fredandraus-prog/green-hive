@@ -1,20 +1,21 @@
 # Hosted staging preparation
 
-Status: `PREPARED_LOCALLY - SERVICE_NOT_CREATED - SECRETS_NOT_REGISTERED`.
+Status: `SERVICE_CREATED - BUILD_PASS - TLS_CA_FIX_PREPARED - HEALTHY_DEPLOY_PENDING`.
 
-This runbook prepares the Green Hive Reference App for its first exact HTTPS deployment. It does
-not authorize production use, does not create a Render resource and does not make Render a second
-database or migration authority. Supabase remains the canonical staging database and Auth
-provider; Mailtrap remains only the test SMTP destination.
+This runbook records and verifies the Green Hive Reference App's first exact HTTPS deployment. It
+does not authorize production use and does not make Render a second database or migration
+authority. Supabase remains the canonical staging database and Auth provider; Mailtrap remains
+only the test SMTP destination.
 
 ## Preserved boundary
 
 - canonical repository: the private GitHub repository `fredandraus-prog/green-hive`;
-- application host: one Render Node web service;
+- application host: the Free Render Node web service `green-hive-staging`;
 - database and Auth: the existing `green-hive-staging` Supabase project;
-- SMTP: the existing `green-hive-staging` Mailtrap sandbox, configured in Supabase Auth;
+- SMTP: the existing `green-hive-staging` Mailtrap sandbox, with hosted recovery evidence pending;
 - migrations: controlled commands under `database/migrations`, never application startup;
-- secrets: Render and Supabase dashboards only, never GitHub, logs, ZIPs or browser code.
+- secrets: provider dashboards and user-bound local protection only, never GitHub, logs, ZIPs or
+  browser code.
 
 The committed `render.yaml` contains secret variable names with `sync: false`, not their values.
 It deliberately has no `preDeployCommand`, `db:migrate` or `db:seed` action.
@@ -30,7 +31,7 @@ It deliberately has no `preDeployCommand`, `db:migrate` or `db:seed` action.
 5. the recovery redirect is exactly `<origin>/auth/recovery`;
 6. Auth and database endpoints belong to the confirmed Supabase staging project;
 7. the database uses the direct or IPv4 session pooler on port `5432` with
-   `sslmode=verify-full`;
+   `sslmode=verify-full` and the fingerprint-pinned Supabase Root 2021 CA;
 8. provider keys and the database connection exist only in the server process;
 9. cookies are `HttpOnly`, host-only, `SameSite=Lax` and `Secure`;
 10. the database ledger has exactly migrations `0001` through `0011`, the structural
@@ -39,9 +40,9 @@ It deliberately has no `preDeployCommand`, `db:migrate` or `db:seed` action.
 `GET /api/health` is a process liveness check. `GET /api/ready` is the Render health check and
 returns `503` without internal details when the database contract is unavailable.
 
-## Blueprint review before creation
+## Blueprint contract
 
-The Blueprint proposes:
+The Blueprint defines:
 
 ```text
 service:     green-hive-staging
@@ -50,20 +51,19 @@ plan:        free
 region:      Virginia
 branch:      main
 deploy:      only after GitHub checks pass
-build:       npm ci && npm run build
+build:       npm ci --include=dev && npm run build
 start:       npm run start:hosted
 health:      /api/ready
+database CA: ./config/supabase-root-2021-ca.crt through NODE_EXTRA_CA_CERTS
 ```
 
-Render does not currently offer a South America region. Virginia is an explicit east-US staging
-choice instead of the Oregon default. Region cannot be changed on an existing service, so review
-this field before creating the Blueprint. A different choice must be made in `render.yaml` before
-the first service is created.
+The existing staging service is in Virginia, the explicit east-US choice made before its creation.
+Changing region would require replacing the service and remains outside this correction.
 
-## Values entered in Render
+## Secret values in Render
 
-After this branch is reviewed, merged and green in GitHub CI, create a Blueprint from the private
-repository. Enter the following five values in the Render dashboard when prompted:
+The existing Blueprint service has the following five manually supplied values. They remain
+managed only in Render and must be reviewed against these rules without exposing their contents:
 
 | Variable | Source | Rule |
 |---|---|---|
@@ -76,9 +76,13 @@ repository. Enter the following five values in the Render dashboard when prompte
 Do not paste those values into issues, commits, screenshots, chat messages or deployment logs.
 The SMTP credentials do not belong in Render because Supabase Auth sends recovery email.
 
-The service name usually determines an `onrender.com` URL during creation. If Render assigns a
-different hostname, update both origin variables to that final hostname before accepting the
-first healthy deploy.
+`NODE_EXTRA_CA_CERTS` is not a secret and is set by the Blueprint to the committed public trust
+anchor at `config/supabase-root-2021-ca.crt`. The certificate fingerprint is pinned by unit tests.
+Do not replace this with `NODE_TLS_REJECT_UNAUTHORIZED=0`, `rejectUnauthorized: false` or a weaker
+database SSL mode.
+
+The final service origin is `https://green-hive-staging.onrender.com`; both origin variables must
+remain exact for that hostname before accepting the first healthy deploy.
 
 The Free instance can sleep while idle and is suitable only for this staging gate, not production.
 
@@ -97,7 +101,7 @@ In the `green-hive-staging` Supabase Auth settings:
 
 ## First deployment gate
 
-Before creating the service:
+Before merging any hosting change:
 
 ```text
 npm ci
@@ -117,6 +121,12 @@ Remove-Item Env:GREEN_HIVE_HOSTED_APP_ORIGIN
 The smoke command sends only unauthenticated GET requests to the public application. It checks
 liveness, database readiness, HSTS, no-store behavior and the React shell. It does not modify the
 database.
+
+The first remote build from commit `6307a0a` passed after build dependencies were explicitly
+installed. Startup then reached the Supabase session pooler but failed with
+`SELF_SIGNED_CERT_IN_CHAIN`, proving that the URL contract was correct while the Node trust store
+did not yet contain the Supabase Root 2021 CA. This source correction supplies that trust anchor;
+a new healthy Render deploy remains a required acceptance gate.
 
 The final acceptance matrix must then exercise signup, login, refresh, logout, profile,
 workspaces, projects, audit, PKCE recovery through Mailtrap, cross-user/cross-app/cross-workspace

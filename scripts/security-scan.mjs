@@ -15,6 +15,7 @@ const ignoredDirectories = new Set([
 ]);
 const textExtensions = new Set([
   '.css',
+  '.crt',
   '.csv',
   '.example',
   '.html',

@@ -17,10 +17,13 @@ semantic versioning.
 - Public, read-only hosted smoke command and a deployment/rollback runbook.
 - Unit coverage for hosted/local runtime rejection, migration readiness, Blueprint safety, HSTS,
   secure cookies and failure redaction.
+- Fingerprint-pinned public Supabase Root 2021 CA plus Blueprint-managed `NODE_EXTRA_CA_CERTS` for
+  fully verified PostgreSQL TLS from the hosted Node process.
 
 ### Status
 
-- Hosting preparation passes locally; no Render service or remote configuration was created.
+- The Free Render service exists and its build passes; the first healthy deploy is pending a
+  reviewed deployment of the Supabase CA trust-anchor correction.
 - GH-0201 and GH-0202 remain `PARTIAL` until exact HTTPS/cookie and Mailtrap recovery evidence
   passes on the deployed service.
 - Version remains `0.7.0`; `0.8.0` is reserved for the completed hosted acceptance gate.
