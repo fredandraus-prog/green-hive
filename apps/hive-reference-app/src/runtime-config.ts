@@ -25,6 +25,7 @@ type RuntimeEnvironment = Readonly<Record<string, string | undefined>>;
 
 const PROJECT_REF_PATTERN = /^[a-z]{20}$/;
 const RESERVED_RENDER_PORTS = new Set([18012, 18013, 19099]);
+const SUPABASE_ROOT_CA_PATH = './config/supabase-root-2021-ca.crt';
 
 function required(environment: RuntimeEnvironment, name: string): string {
   const value = environment[name]?.trim();
@@ -116,6 +117,9 @@ function assertHostedStaging(
 ): Pick<ReferenceAppRuntimeConfiguration, 'bindHost' | 'bindPort' | 'secureCookies'> {
   if (environment.NODE_ENV !== 'production') {
     throw new Error('HOSTED_STAGING requires NODE_ENV=production');
+  }
+  if (required(environment, 'NODE_EXTRA_CA_CERTS') !== SUPABASE_ROOT_CA_PATH) {
+    throw new Error('HOSTED_STAGING requires the canonical Supabase root CA');
   }
   const projectRef = required(environment, 'GREEN_HIVE_STAGING_PROJECT_REF');
   if (!PROJECT_REF_PATTERN.test(projectRef)) {

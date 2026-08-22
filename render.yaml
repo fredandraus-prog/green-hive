@@ -12,6 +12,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_EXTRA_CA_CERTS
+        value: ./config/supabase-root-2021-ca.crt
       - key: GREEN_HIVE_RUNTIME_MODE
         value: HOSTED_STAGING
       - key: GREEN_HIVE_HTTP_LOGS

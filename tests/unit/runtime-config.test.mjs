@@ -8,6 +8,7 @@ import {
 const projectRef = 'rabkyesatfuezmrrzllx';
 const hostedEnvironment = Object.freeze({
   NODE_ENV: 'production',
+  NODE_EXTRA_CA_CERTS: './config/supabase-root-2021-ca.crt',
   GREEN_HIVE_RUNTIME_MODE: 'HOSTED_STAGING',
   GREEN_HIVE_APP_ORIGIN: 'https://green-hive-staging.onrender.com',
   DATABASE_URL:
@@ -37,6 +38,7 @@ test('hosted runtime binds Render safely and derives no authority from client in
 test('hosted runtime rejects local endpoints, wrong projects, callbacks, TLS and ports', () => {
   const invalid = [
     [{ NODE_ENV: 'development' }, /NODE_ENV=production/],
+    [{ NODE_EXTRA_CA_CERTS: './config/other-ca.crt' }, /canonical Supabase root CA/],
     [{ GREEN_HIVE_APP_ORIGIN: 'http://127.0.0.1:3000' }, /https/],
     [{ GREEN_HIVE_AUTH_RECOVERY_REDIRECT: 'https://other.example/auth/recovery' }, /exact/],
     [{ GREEN_HIVE_SUPABASE_AUTH_URL: 'https://aaaaaaaaaaaaaaaaaaaa.supabase.co/auth/v1' }, /confirmed/],

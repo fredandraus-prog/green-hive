@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto';
-import { readFile, readdir, stat } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { canonicalReleaseContent } from './lib/release-content.mjs';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const manifestPath = path.join(repositoryRoot, 'MANIFEST-SHA256.txt');
@@ -59,10 +60,9 @@ if (JSON.stringify([...entries.keys()].sort()) !== JSON.stringify([...actualPath
 for (const [index, file] of files.entries()) {
   const relativePath = actualPaths[index];
   const expected = entries.get(relativePath);
-  const content = await readFile(file);
-  const metadata = await stat(file);
+  const content = canonicalReleaseContent(await readFile(file));
   const actualHash = createHash('sha256').update(content).digest('hex');
-  if (actualHash !== expected.expectedHash || metadata.size !== expected.expectedSize) {
+  if (actualHash !== expected.expectedHash || content.length !== expected.expectedSize) {
     throw new Error(`Release manifest drift: ${relativePath}`);
   }
 }

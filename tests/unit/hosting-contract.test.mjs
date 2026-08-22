@@ -6,11 +6,16 @@ test('Render Blueprint is a guarded web service without automatic database mutat
   const blueprint = await readFile(new URL('../../render.yaml', import.meta.url), 'utf8');
   assert.match(blueprint, /type: web/);
   assert.match(blueprint, /runtime: node/);
+  assert.match(blueprint, /plan: free/);
   assert.match(blueprint, /region: virginia/);
   assert.match(blueprint, /autoDeployTrigger: checksPass/);
   assert.match(blueprint, /buildCommand: npm ci --include=dev && npm run build/);
   assert.match(blueprint, /startCommand: npm run start:hosted/);
   assert.match(blueprint, /healthCheckPath: \/api\/ready/);
+  assert.match(
+    blueprint,
+    /key: NODE_EXTRA_CA_CERTS\n        value: \.\/config\/supabase-root-2021-ca\.crt/,
+  );
   assert.doesNotMatch(blueprint, /db:migrate|db:seed|preDeployCommand/);
 
   for (const key of [

@@ -1,6 +1,6 @@
 # Dedicated Supabase staging gate
 
-Status: `DATABASE_RLS_PROJECT_AUTH_CORE_PASS - HOSTING_PREPARED - HTTPS_SMTP_PENDING`.
+Status: `DATABASE_RLS_PROJECT_AUTH_CORE_PASS - RENDER_SERVICE_CREATED - HEALTHY_HTTPS_PENDING`.
 
 The Green Hive staging environment is an isolated hosted Supabase project. It is used only to
 validate canonical migrations, RLS, Project Service and Auth/account behavior before a public
@@ -23,8 +23,8 @@ the organization had no payment method or invoice and Spend Cap was enabled. Pla
 state can change outside this repository and must be rechecked before any future paid resource is
 created.
 
-Database SSL enforcement is enabled. Render is the prepared HTTPS host, but no service exists and
-its egress topology has not been confirmed. Network access therefore still accepts the standard
+Database SSL enforcement is enabled. The Render service exists, but a healthy deployment and its
+egress topology have not yet been confirmed. Network access therefore still accepts the standard
 Supabase public CIDRs; restrict that boundary only after the real hosting source addresses or
 supported pooler architecture are known.
 
@@ -39,14 +39,15 @@ Official references:
 ## Secret boundary
 
 No password or API key is stored in the repository, manifest or ZIP. Machine-local values are
-protected for the current Windows user under:
+protected for the current Windows user in the Engine `.secrets` directory beside the canonical
+repository.
 
-in the `.secrets` sibling directory at the GreenHive workspace root.
-
-The operation wrapper decrypts them only in process memory, clears the environment afterward and
-does not print connection strings or keys. The official CA certificate is stored in the same
-excluded directory. The server uses the new publishable/secret key format; local Supabase remains
-compatible with legacy JWT-shaped anon/service-role keys.
+The operation wrapper decrypts credentials only in process memory, clears the environment
+afterward and does not print connection strings or keys. The public Supabase Root 2021 CA is
+committed at `config/supabase-root-2021-ca.crt`, fingerprint-pinned by tests and shared by the
+guarded Windows staging wrapper and the hosted Node process through `NODE_EXTRA_CA_CERTS`. The
+server uses the new publishable/secret key format; local Supabase remains compatible with legacy
+JWT-shaped anon/service-role keys.
 
 ## Guarded commands
 
