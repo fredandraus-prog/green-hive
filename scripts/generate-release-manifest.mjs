@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
-import { readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { readFile, readdir, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { canonicalReleaseContent } from './lib/release-content.mjs';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outputPath = path.join(repositoryRoot, "MANIFEST-SHA256.txt");
@@ -41,15 +42,14 @@ async function walk(directory) {
 const files = (await walk(repositoryRoot)).sort((left, right) => left.localeCompare(right));
 const lines = [
   "# Green Hive release source manifest",
-  "# SHA-256 | bytes | relative path",
+  "# SHA-256 | canonical bytes | relative path",
 ];
 
 for (const file of files) {
-  const content = await readFile(file);
-  const metadata = await stat(file);
+  const content = canonicalReleaseContent(await readFile(file));
   const hash = createHash("sha256").update(content).digest("hex");
   const relativePath = path.relative(repositoryRoot, file).replaceAll(path.sep, "/");
-  lines.push(`${hash} | ${metadata.size} | ${relativePath}`);
+  lines.push(`${hash} | ${content.length} | ${relativePath}`);
 }
 
 await writeFile(outputPath, `${lines.join("\n")}\n`, "utf8");

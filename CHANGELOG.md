@@ -19,6 +19,8 @@ semantic versioning.
   secure cookies and failure redaction.
 - Fingerprint-pinned public Supabase Root 2021 CA plus Blueprint-managed `NODE_EXTRA_CA_CERTS` for
   fully verified PostgreSQL TLS from the hosted Node process.
+- Cross-platform release-manifest hashing that canonicalizes text line endings while preserving
+  binary bytes, preventing Windows/Linux CI drift.
 
 ### Status
 
