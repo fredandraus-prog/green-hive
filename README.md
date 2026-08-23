@@ -6,8 +6,9 @@ the canonical GH-0/GH-1 bootstrap advanced through **GH-0102 (Database Foundatio
 **GH-0201/GH-0202 (Auth, accounts and the protected HTTP boundary)**. Version `0.7.0` completed
 **GH-0203 (Audit Foundation)** after **GH-0250 (Organizations & Multi-Tenancy Foundation)**.
 Version `0.8.0` completes the deployed HTTPS/Auth/RLS acceptance gate for **GH-0201/GH-0202**;
-the current GH-0204 implementation slice adds bounded application-level rate limiting and awaits
-its exact hosted security smoke before release. Billing remains deferred until that gate passes.
+version `0.9.0` completes **GH-0204 (Security Baseline)** after bounded application-level limits,
+hardened headers and secret/bundle guards pass locally and on the exact Render HTTPS service.
+Billing remains the next checkpoint and is not implemented by this release.
 
 The checkpoint is deliberately narrow. Billing, Entitlements, Cost Guard, AI, Search, Redis,
 external webhooks, remote storage and consumer-domain functionality remain out of scope.
@@ -192,14 +193,14 @@ metadata drift and a managed schema without a ledger. Except for provisioning th
 
 ## Status
 
-GH-0102, GH-0103, GH-0104, GH-0201, GH-0202, GH-0203 and GH-0250 are `DONE`. GH-0204 is
-`PARTIAL — IMPLEMENTATION_PASS`: exact-origin protections, secure cookies, hardened headers,
-bounded rate limiting, CI, secret scanning and bundle scanning pass locally; the exact hosted
-security smoke remains the release gate. See
+GH-0102, GH-0103, GH-0104, GH-0201, GH-0202, GH-0203, GH-0204 and GH-0250 are `DONE`.
+GH-0204 passed local abuse/bundle tests, the exact hosted security smoke and the complete
+authenticated HTTPS acceptance matrix on the single-instance Render staging service. See
 [Implementation status](docs/IMPLEMENTATION_STATUS.md), [Database](docs/DATABASE.md), [Trusted app
 context](docs/TRUSTED-APP-CONTEXT.md), [Auth and accounts](docs/AUTH-ACCOUNTS.md), [Project
 Service](docs/PROJECT-SERVICE.md), [Workspace Service](docs/WORKSPACE-SERVICE.md), [Reference App
 web](docs/REFERENCE-APP-WEB.md), [Hosted staging](docs/HOSTED-STAGING.md), [Audit](docs/AUDIT.md),
 [GH-0203 checkpoint](docs/CHECKPOINT-GH-0203.md), [GH-0204 checkpoint](docs/CHECKPOINT-GH-0204.md),
+[GH-0204 release validation](docs/VALIDATION-2026-08-23-GH0204-RELEASE.md),
 [GH-0250 checkpoint](docs/CHECKPOINT-GH-0250.md), [Ideas Radar](IDEAS_RADAR.md) and
 [Reconciliation](docs/RECONCILIATION-2026-08-18.md).

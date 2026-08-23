@@ -134,8 +134,8 @@ Remove-Item Env:GREEN_HIVE_HOSTED_SECURITY_CONFIRM
 ```
 
 The gate expects ten guarded credential failures, a stable eleventh-request `429`, a separate
-account bucket, rate-limit headers and unthrottled health/readiness probes. Until this command passes
-against the deployed GH-0204 commit, the checkpoint remains `PARTIAL - IMPLEMENTATION_PASS`.
+account bucket, rate-limit headers and unthrottled health/readiness probes. It passed against Render
+deploy `dep-da56dmoae00c73b2pcog` from merge commit `67b55cf`.
 
 The authenticated gate uses only uniquely named disposable users and requires the Mailtrap recovery
 link to cross a one-shot loopback bridge into the guarded runner:
@@ -157,8 +157,9 @@ The guarded hosted acceptance matrix now passes signup, login, refresh, logout, 
 workspaces, projects, audit, PKCE recovery through Mailtrap, cross-user/cross-workspace denial,
 forged scope, CSRF, logical deletion and cleanup. The final cleanup proves zero test-owned Auth
 users, profiles, projects, memberships, organizations and Audit events. GH-0201 and GH-0202 are
-therefore `DONE`; the GH-0204 implementation is locally complete but remains partial until the
-exact hosted security smoke passes after deployment.
+therefore `DONE`. GH-0204 is also `DONE`: its exact hosted security smoke and the repeated full
+authenticated matrix pass, cleanup removes all test-owned Auth/database data, and the one recovery
+message created by the final run was deleted from Mailtrap.
 
 ## Rollback
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Platform version `0.8.0` retains the tenant-aware workspace and Audit boundaries, publishes the
+Platform version `0.9.0` retains the tenant-aware workspace and Audit boundaries, publishes the
 product-facing navigation slice and closes the deployed HTTPS/Auth/RLS acceptance gate. The
 implementation follows the canonical React + Vite direction and keeps privileged decisions in a
 Fastify server process.
@@ -177,6 +177,5 @@ viewports.
 The dedicated Supabase staging project and CI-gated Render service pass the server-side signup,
 session, cross-user, cross-workspace and owned-project flow through protected HTTPS cookies.
 Hosted PKCE recovery is completed through Supabase custom SMTP and Mailtrap. GH-0201 and GH-0202
-are `DONE`. GH-0204 has a locally validated bounded rate-limit implementation and remains
-`PARTIAL - IMPLEMENTATION_PASS` until its exact-target abuse gate passes on the deployed Render
-service.
+are `DONE`. GH-0204 is also `DONE`: the bounded limits, hardened headers, public hosted smoke and
+authenticated acceptance matrix pass against the deployed Render service.

@@ -1,10 +1,11 @@
 # GH-0204 - Security baseline
 
-Status: `PARTIAL - IMPLEMENTATION_PASS`.
+Status: `DONE` in platform `0.9.0`.
 
-GH-0204 closes only after the exact hosted security smoke proves the same behavior on the Render
-service. The local implementation and abuse tests pass; this document must not be changed to
-`DONE` before that deployed evidence exists.
+The exact hosted security smoke, ordinary public smoke and complete authenticated acceptance matrix
+passed on 2026-08-23 against Render merge commit
+`67b55cfb4268312a7ba146f40811af7b499866e5`. The final run removed its test-owned Auth/database
+fixtures and the single Mailtrap recovery message.
 
 ## Scope
 
@@ -89,10 +90,9 @@ bucket, security headers and unthrottled health probes.
 
 ## Completion rule
 
-After the implementation is merged and deployed, `HOSTED_SECURITY_SMOKE_PASS`, the ordinary hosted
-smoke and the authenticated acceptance matrix must pass. Only then may GH-0204 become `DONE` and the
-platform advance to `0.9.0`. Distributed limiting becomes a scale-out production gate, not a reason
-to reopen the single-instance baseline.
+`HOSTED_SECURITY_SMOKE_PASS`, the ordinary hosted smoke and the authenticated acceptance matrix all
+pass on the exact deployment, so GH-0204 is `DONE` and the platform advances to `0.9.0`. Distributed
+limiting remains a scale-out production gate, not a reason to reopen the single-instance baseline.
 
 Official references:
 
