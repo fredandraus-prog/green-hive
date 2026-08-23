@@ -54,6 +54,7 @@ test('guarded staging operations use the same committed public trust anchor', as
     wrapper,
     /Join-Path \$repositoryRoot 'config\\supabase-root-2021-ca\.crt'/,
   );
-  assert.match(wrapper, /\$engineRoot = Split-Path -Parent \$repositoryRoot/);
+  assert.match(wrapper, /rev-parse --path-format=absolute --git-common-dir/);
+  assert.match(wrapper, /\$engineRoot = Split-Path -Parent \$canonicalRepositoryRoot/);
   assert.doesNotMatch(wrapper, /\.secrets\\prod-ca-2021\.crt/);
 });

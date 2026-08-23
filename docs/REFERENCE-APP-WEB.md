@@ -2,8 +2,8 @@
 
 ## Purpose
 
-Platform version `0.7.0` retains the tenant-aware workspace and Audit boundaries while the current
-unreleased frontend slice reorganizes the Reference App around product-facing navigation. The
+Platform version `0.8.0` retains the tenant-aware workspace and Audit boundaries, publishes the
+product-facing navigation slice and closes the deployed HTTPS/Auth/RLS acceptance gate. The
 implementation follows the canonical React + Vite direction and keeps privileged decisions in a
 Fastify server process.
 
@@ -172,9 +172,9 @@ semantics, the creation dialog and the two-step onboarding fields. Visual browse
 signup, Dashboard, workspace projects, Profile and Organization settings at desktop and mobile
 viewports.
 
-## Remaining gate
+## Hosted completion
 
-The dedicated Supabase staging project now passes the server-side signup, session, cross-user and
-owned-project core. The Render runtime, Blueprint, CI and readiness contract pass locally, but no
-service has been created. GH-0201 and GH-0202 remain `PARTIAL` until the same flow passes through
-the deployed HTTPS/cookie boundary and hosted password recovery is completed through Mailtrap.
+The dedicated Supabase staging project and CI-gated Render service pass the server-side signup,
+session, cross-user, cross-workspace and owned-project flow through protected HTTPS cookies.
+Hosted PKCE recovery is completed through Supabase custom SMTP and Mailtrap. GH-0201 and GH-0202
+are `DONE`; GH-0204 remains partial for deployed rate limiting.

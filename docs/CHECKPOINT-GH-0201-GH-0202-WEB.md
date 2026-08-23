@@ -2,11 +2,11 @@
 
 ## Result
 
-Status: `PARTIAL - HOSTING_PREPARATION_PASS; HTTPS_SMTP_ACCEPTANCE_PENDING`.
+Status: `DONE - HOSTED_HTTPS_SMTP_ACCEPTANCE_PASS`.
 
-The local framework/HTTP/session gates and the hosted server-side Auth-to-Project-Service path now
-pass. Neither checkpoint is promoted to `DONE` because the deployed HTTPS/cookie boundary and
-hosted password-recovery email path have not yet been exercised.
+The local framework/HTTP/session gates, hosted server-side Auth-to-Project-Service path and the
+deployed HTTPS/cookie boundary all pass. Password recovery was exercised through Supabase custom
+SMTP and the dedicated Mailtrap sandbox, so GH-0201 and GH-0202 are promoted to `DONE`.
 
 The repository now also passes a local hosted-runtime gate: exact HTTPS configuration,
 `0.0.0.0:$PORT` binding, secure cookies, HSTS, database-backed readiness, Render Blueprint,
@@ -57,11 +57,17 @@ GitHub CI and secret scanning. No Render service or remote secret was created by
 - hosted smoke testing is public and read-only;
 - 54 unit/contract scenarios pass before the complete embedded database gate.
 
-## Remaining gate
+## Hosted completion evidence
 
-1. merge the prepared branch after GitHub CI passes and create the reviewed Render Blueprint;
-2. configure exact Supabase Site URL/recovery redirects and a dedicated test SMTP sender;
-3. repeat signup, login, recovery, logout, profile and owned-project scenarios through HTTPS;
-4. repeat cross-user, cross-app, forged-scope and cookie/session tests;
-5. restrict database network access after the hosting egress topology is known;
-6. promote GH-0201/GH-0202 only after all evidence passes.
+1. Render deploy for merge commit `8aa77b391c65166fb6d02836580f0a499369d528` is live;
+2. public smoke passes liveness, database readiness, HSTS, no-store and the React shell;
+3. Supabase Site URL and the sole recovery redirect match the exact Render HTTPS origin;
+4. Supabase custom SMTP points to the dedicated Mailtrap sandbox, not Render;
+5. deployed signup, protected cookies, refresh, logout, profile, workspaces, projects and Audit pass;
+6. cross-user, cross-workspace, forged-scope and CSRF attempts are rejected with stable errors;
+7. logical deletion remains owner-scoped and its bounded Audit lifecycle is retained;
+8. Mailtrap PKCE recovery changes the password, rejects the old password and rejects code reuse;
+9. cleanup proves zero disposable users, profiles, projects, memberships, organizations and events.
+
+Database egress hardening and deployed rate limiting remain GH-0204/production operations, not
+acceptance blockers for GH-0201 or GH-0202.

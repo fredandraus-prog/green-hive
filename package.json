@@ -1,9 +1,9 @@
 {
   "name": "green-hive",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "type": "module",
-  "description": "Green Hive platform monorepo - GH-0203 append-only tenant audit foundation",
+  "description": "Green Hive platform monorepo - hosted HTTPS/Auth/RLS acceptance",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -35,6 +35,7 @@
     "reference-app:start": "node scripts/reference-app-local.mjs",
     "start:hosted": "node apps/hive-reference-app/dist/http-entry.js",
     "hosted:smoke": "node scripts/hosted-smoke.mjs",
+    "hosted:acceptance": "pwsh -NoProfile -File scripts/staging-database-windows.ps1 hosted-acceptance",
     "supabase:start": "node scripts/supabase-local.mjs start",
     "supabase:status": "node scripts/supabase-local.mjs status",
     "supabase:stop": "node scripts/supabase-local.mjs stop",

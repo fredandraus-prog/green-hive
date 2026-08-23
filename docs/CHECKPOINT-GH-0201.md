@@ -2,13 +2,13 @@
 
 ## Result
 
-Status: `PARTIAL - HOSTING_PREPARATION_PASS; HTTPS_SMTP_ACCEPTANCE_PENDING`.
+Status: `DONE - HOSTED_HTTPS_SMTP_ACCEPTANCE_PASS`.
 
-The local implementation passes native Supabase Auth plus the React/Fastify browser and cookie
-boundary. The dedicated hosted Supabase project also passes the server-side Auth/account and
-owned-project core. A fail-closed Render runtime and CI contract now pass locally, but the
-checkpoint is not `DONE` until the complete path passes through deployed HTTPS cookies and
-Mailtrap-backed password recovery.
+The local implementation, dedicated Supabase staging project and deployed React/Fastify boundary
+all pass. Signup, login, refresh, logout, profile, protected HttpOnly cookies and PKCE password
+recovery were exercised through the exact Render HTTPS origin. Supabase delivered the recovery
+message through the dedicated Mailtrap custom SMTP configuration, and all disposable identities
+and tenant rows were removed after the run.
 
 ## Delivered
 
@@ -66,20 +66,25 @@ changes.
 - GitHub Actions clean-install verification and repository secret scan;
 - read-only hosted smoke command and dashboard runbook.
 
-## Not delivered
+## Hosted acceptance delivered in platform 0.8.0
 
-- deployed Render service and HTTPS/cookie acceptance evidence;
+- CI-gated deployed Render service and database-backed readiness;
+- exact HTTPS origin, HSTS, no-store and protected host-only cookies;
 - Mailtrap recovery acceptance through Supabase custom SMTP;
+- one-time PKCE code with no tokens in the callback URL or response body;
+- signup, refresh, logout, profile, project, workspace and Audit acceptance;
+- cross-user, cross-workspace, forged-scope and CSRF rejection;
+- exact cleanup of test Auth users and all related tenant/Audit rows.
+
+## Still not delivered
+
 - production SMTP;
 - social providers;
 - administrative MFA;
 - account export/deletion workflow;
-- GH-0203 Audit or GH-0204 deployed security baseline.
+- GH-0204 deployed rate limiting.
 
 ## Next gate
 
-1. merge the prepared branch only after the complete local and GitHub CI gates pass;
-2. create the reviewed Render Blueprint and register the five server-only values;
-3. configure exact Supabase HTTPS callback URLs and Mailtrap test SMTP;
-4. run signup/login/logout/recovery/owned-project and cross-user tests through Render;
-5. promote GH-0201 to `DONE` only after that evidence passes.
+GH-0201 has no remaining gate. Continue with the bounded deployed rate-limit work required to
+complete GH-0204; production SMTP, social login and MFA require separate authorization.

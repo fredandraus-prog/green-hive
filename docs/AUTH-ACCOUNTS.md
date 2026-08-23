@@ -163,10 +163,10 @@ Platform `0.6.0` additionally provisions one personal workspace during successfu
 Project calls run only after the authenticated database runner validates the selected active
 organization membership. Auth claims still contain no client-editable organization authority.
 
-## Remaining gate
+## Hosted completion
 
-The dedicated Supabase staging project now passes confirmed signup, login, refresh, logout,
-profile, owned-project and trusted-claim tests through the server-side service boundary. GH-0201
-stays `PARTIAL` even though the Render runtime/CI contract passes locally. The flow must still pass
-through the deployed HTTPS/cookie boundary, and password recovery must be delivered and completed
-through the dedicated Mailtrap test SMTP path.
+The dedicated Supabase staging project and deployed Render boundary pass confirmed signup, login,
+refresh, logout, profile, owned-project and trusted-scope tests through real HTTPS cookies. PKCE
+password recovery is delivered and completed through Supabase custom SMTP and the dedicated
+Mailtrap sandbox. GH-0201 is `DONE`; production SMTP, MFA and account export/deletion remain
+separately reviewed future work.

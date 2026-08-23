@@ -5,6 +5,10 @@ semantic versioning.
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [0.8.0] - 2026-08-22
+
 ### Added
 
 - Global Dashboard route with a future-proof `ALL_WORKSPACES` / `SELECTED_WORKSPACES` portfolio
@@ -33,19 +37,36 @@ semantic versioning.
   fully verified PostgreSQL TLS from the hosted Node process.
 - Cross-platform release-manifest hashing that canonicalizes text line endings while preserving
   binary bytes, preventing Windows/Linux CI drift.
+- Guarded hosted acceptance runner for disposable HTTPS Auth, cookie, workspace, project, Audit,
+  PKCE/Mailtrap recovery and exact cleanup evidence.
+- Worktree-safe staging wrapper that resolves machine-protected credentials from the canonical
+  Engine without copying secrets into feature worktrees.
+
+### Security
+
+- Supabase Site URL and the sole recovery redirect match the exact Render HTTPS origin.
+- Supabase custom SMTP uses the dedicated Mailtrap sandbox; its credentials remain outside Render,
+  GitHub, source files, browser bundles and logs.
+- Recovery links cross only a one-shot loopback bridge and are never printed or persisted.
+- Final hosted cleanup asserts zero test-owned users, profiles, projects, memberships,
+  organizations and Audit events.
 
 ### Status
 
-- The frontend navigation/onboarding slice is implemented on an isolated feature branch without a
-  version bump, commit, push, merge or deploy.
+- The frontend navigation/onboarding slice was merged in PR #5 and deployed by Render from merge
+  commit `8aa77b391c65166fb6d02836580f0a499369d528`.
 - Full translation remains dependent on GH-0701 because `@green-hive/i18n` is still scaffold-only;
   personal-workspace rename remains a separate reviewed authorization extension.
+- The Free Render service is live and passes liveness, readiness, HSTS, no-store and shell smoke.
+- GH-0201 and GH-0202 are `DONE` after the deployed HTTPS/cookie and Mailtrap PKCE recovery matrix.
+- GH-0204 is `PARTIAL — HOSTED_BASELINE_PASS`; bounded deployed rate limiting remains.
+- Coordinated platform packages advance to `0.8.0`; the `REFERENCE_APP` product manifest remains
+  `0.1.0`.
 
-- The Free Render service exists and its build passes; the first healthy deploy is pending a
-  reviewed deployment of the Supabase CA trust-anchor correction.
-- GH-0201 and GH-0202 remain `PARTIAL` until exact HTTPS/cookie and Mailtrap recovery evidence
-  passes on the deployed service.
-- Version remains `0.7.0`; `0.8.0` is reserved for the completed hosted acceptance gate.
+### Not included
+
+- Billing, AI, Redis, Jobs, external webhooks, remote storage, distributed rate limiting, MFA,
+  production SMTP or consumer-domain functionality.
 
 ## [0.7.0] - 2026-08-20
 
