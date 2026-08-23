@@ -1,9 +1,9 @@
 {
   "name": "green-hive",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "private": true,
   "type": "module",
-  "description": "Green Hive platform monorepo - GH-0301 Billing Foundation",
+  "description": "Green Hive platform monorepo - GH-0302 Sandbox Billing Provider",
   "workspaces": [
     "apps/*",
     "packages/*"

@@ -7,6 +7,39 @@ semantic versioning.
 
 No unreleased changes.
 
+## [0.11.0] - 2026-08-23
+
+### Added
+
+- GH-0302 provider-neutral `BillingProvider` contract and deterministic, network-free
+  `FakeBillingProvider` with server-configured success or failure behavior.
+- Trusted, idempotent PostgreSQL transitions for payment success, failure and full refund, with
+  exact-decimal refunded amounts and opaque provider references.
+- Transactional `PAYMENT_CONFIRMED`, `PAYMENT_FAILED` and `PAYMENT_REFUNDED` Audit capture with
+  bounded non-confidential metadata.
+
+### Security
+
+- Authenticated clients cannot execute provider-result/refund functions, mutate payment rows,
+  choose the sandbox outcome or read provider payment/refund references.
+- Transition functions repeat trusted user/app/workspace checks even behind the service role, use
+  fixed `search_path`, lock commercial rows and reject conflicting retries.
+- No external network, real payment provider, webhook, Billing HTTP endpoint, card data or
+  Entitlement decision was added.
+
+### Validation
+
+- 87 unit tests and 13 embedded database tests pass, including deterministic success/failure,
+  refund, idempotency, invalid provider output and no-network proofs.
+- The native local Supabase and dedicated staging GH-0302 matrices pass all 7 scenarios; migration
+  `0014` reapplies without duplication and staging retains zero disposable test fixtures.
+
+### Status
+
+- GH-0302 is `DONE`; coordinated platform packages advance to `0.11.0` while the
+  `REFERENCE_APP` product manifest remains `0.1.0`.
+- GH-0303 verified/idempotent webhooks and GH-0304 Entitlements remain not started.
+
 ## [0.10.0] - 2026-08-23
 
 ### Added

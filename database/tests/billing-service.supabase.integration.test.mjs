@@ -7,6 +7,7 @@ import pg from 'pg';
 import {
   BillingError,
   BillingService,
+  FakeBillingProvider,
   PostgresBillingRepository,
 } from '../../packages/billing/dist/index.js';
 import {
@@ -70,7 +71,7 @@ function hasCode(code) {
 }
 
 test(
-  'GH-0301 Billing Service on native Supabase',
+  'GH-0302 sandbox Billing provider on native Supabase',
   { skip: !databaseUrl || !confirmation ? 'local Supabase gate not configured' : false },
   async (testContext) => {
     if (isStaging) {
@@ -83,10 +84,12 @@ test(
 
     const client = new pg.Client({ connectionString: databaseUrl });
     await client.connect();
+    const repository = new PostgresBillingRepository({
+      query: (sql, parameters) => client.query(sql, parameters),
+    });
     const service = new BillingService(
-      new PostgresBillingRepository({
-        query: (sql, parameters) => client.query(sql, parameters),
-      }),
+      repository,
+      new FakeBillingProvider({ paymentOutcome: 'SUCCESS' }),
     );
     let purchase;
 
@@ -177,6 +180,149 @@ test(
           client.query("UPDATE hive.payments SET status = 'PAID', confirmed_at = now()"),
           /permission denied|privilege/i,
         );
+        await assert.rejects(
+          client.query(
+            `SELECT hive.apply_provider_payment_result(
+               $1::uuid,
+               'GREEN_HIVE_FAKE',
+               $2::text,
+               'PAID',
+               NULL
+             )`,
+            [purchase.id, `fake-payment:${purchase.payment.id}`],
+          ),
+          /permission denied|privilege/i,
+        );
+      });
+
+      await testContext.test('trusted backend applies success, failure and refund idempotently', async () => {
+        await client.query('RESET ROLE');
+        try {
+          await setContext(client, USER_A_ID, 'REFERENCE_APP', ORGANIZATION_A_ID);
+          const paid = await service.processPayment(contextA, purchase.id);
+          assert.equal(paid.status, 'CONFIRMED');
+          assert.equal(paid.payment.status, 'PAID');
+          assert.equal((await service.processPayment(contextA, purchase.id)).payment.status, 'PAID');
+
+          const refunded = await service.refundPayment(contextA, purchase.id);
+          assert.equal(refunded.status, 'CONFIRMED');
+          assert.equal(refunded.payment.status, 'REFUNDED');
+          assert.equal(refunded.payment.refundedAmount, refunded.payment.amount);
+          assert.equal((await service.refundPayment(contextA, purchase.id)).payment.status, 'REFUNDED');
+
+          const failureService = new BillingService(
+            repository,
+            new FakeBillingProvider({ paymentOutcome: 'FAILURE' }),
+          );
+          const failedPending = await failureService.createPurchase(contextA, {
+            projectId: PROJECT_A_SECOND_ID,
+            productCode: 'REFERENCE_APP_SANDBOX',
+            priceId: REFERENCE_PRICE_ID,
+            idempotencyKey: 'native-billing-failure-0001',
+          });
+          const failed = await failureService.processPayment(contextA, failedPending.id);
+          assert.equal(failed.status, 'CANCELED');
+          assert.equal(failed.payment.status, 'FAILED');
+          assert.equal(
+            (await failureService.processPayment(contextA, failedPending.id)).payment.status,
+            'FAILED',
+          );
+          await assert.rejects(
+            failureService.refundPayment(contextA, failedPending.id),
+            hasCode('INVALID_PAYMENT_TRANSITION'),
+          );
+          await assert.rejects(
+            client.query(
+              `SELECT hive.apply_provider_payment_result(
+                 $1::uuid,
+                 'GREEN_HIVE_FAKE',
+                 $2::text,
+                 'PAID',
+                 NULL
+               )`,
+              [failedPending.id, `fake-payment:${failedPending.payment.id}`],
+            ),
+            /INVALID_PAYMENT_TRANSITION/,
+          );
+
+          const audit = await client.query(
+            `SELECT event_code, outcome, metadata
+             FROM audit.events
+             WHERE subject_id = ANY($1::uuid[])
+             ORDER BY event_code`,
+            [[purchase.payment.id, failedPending.payment.id]],
+          );
+          assert.deepEqual(audit.rows, [
+            {
+              event_code: 'PAYMENT_CONFIRMED',
+              outcome: 'SUCCEEDED',
+              metadata: { provider_code: 'GREEN_HIVE_FAKE', status: 'PAID' },
+            },
+            {
+              event_code: 'PAYMENT_FAILED',
+              outcome: 'FAILED',
+              metadata: {
+                failure_code: 'SANDBOX_DECLINED',
+                provider_code: 'GREEN_HIVE_FAKE',
+                status: 'FAILED',
+              },
+            },
+            {
+              event_code: 'PAYMENT_REFUNDED',
+              outcome: 'SUCCEEDED',
+              metadata: { provider_code: 'GREEN_HIVE_FAKE', status: 'REFUNDED' },
+            },
+          ]);
+
+          const concurrentPending = await service.createPurchase(contextA, {
+            projectId: PROJECT_A_ID,
+            productCode: 'REFERENCE_APP_SANDBOX',
+            priceId: REFERENCE_PRICE_ID,
+            idempotencyKey: 'native-billing-concurrent-0001',
+          });
+          const peerClient = new pg.Client({ connectionString: databaseUrl });
+          await peerClient.connect();
+          try {
+            await setContext(peerClient, USER_A_ID, 'REFERENCE_APP', ORGANIZATION_A_ID);
+            const peerService = new BillingService(
+              new PostgresBillingRepository({
+                query: (sql, parameters) => peerClient.query(sql, parameters),
+              }),
+              new FakeBillingProvider({ paymentOutcome: 'SUCCESS' }),
+            );
+            const paidResults = await Promise.all([
+              service.processPayment(contextA, concurrentPending.id),
+              peerService.processPayment(contextA, concurrentPending.id),
+            ]);
+            assert.deepEqual(paidResults.map((row) => row.payment.status), ['PAID', 'PAID']);
+
+            const refundResults = await Promise.all([
+              service.refundPayment(contextA, concurrentPending.id),
+              peerService.refundPayment(contextA, concurrentPending.id),
+            ]);
+            assert.deepEqual(refundResults.map((row) => row.payment.status), [
+              'REFUNDED',
+              'REFUNDED',
+            ]);
+            const concurrentAudit = await client.query(
+              `SELECT event_code, count(*)::integer AS occurrences
+               FROM audit.events
+               WHERE subject_id = $1::uuid
+               GROUP BY event_code
+               ORDER BY event_code`,
+              [concurrentPending.payment.id],
+            );
+            assert.deepEqual(concurrentAudit.rows, [
+              { event_code: 'PAYMENT_CONFIRMED', occurrences: 1 },
+              { event_code: 'PAYMENT_REFUNDED', occurrences: 1 },
+            ]);
+          } finally {
+            await peerClient.end();
+          }
+        } finally {
+          await client.query('SET ROLE authenticated');
+          await setContext(client, USER_A_ID, 'REFERENCE_APP', ORGANIZATION_A_ID);
+        }
       });
 
       await testContext.test('purchase visibility does not cross user, workspace or app', async () => {
@@ -210,7 +356,9 @@ test(
            purchase.id,
            purchase.idempotency_key_sha256,
            payment.provider_payment_id,
-           payment.provider_event_id
+           payment.provider_event_id,
+           payment.provider_refund_id,
+           payment.refunded_amount::text AS refunded_amount
          FROM hive.purchases AS purchase
          JOIN hive.payments AS payment ON payment.purchase_id = purchase.id
          WHERE purchase.id = $1::uuid`,
@@ -219,8 +367,10 @@ test(
       assert.equal(retained.rows.length, 1);
       assert.match(retained.rows[0].idempotency_key_sha256, /^[0-9a-f]{64}$/);
       assert.notEqual(retained.rows[0].idempotency_key_sha256, 'native-billing-0001');
-      assert.equal(retained.rows[0].provider_payment_id, null);
+      assert.equal(retained.rows[0].provider_payment_id, `fake-payment:${purchase.payment.id}`);
       assert.equal(retained.rows[0].provider_event_id, null);
+      assert.equal(retained.rows[0].provider_refund_id, `fake-refund:${purchase.payment.id}`);
+      assert.equal(retained.rows[0].refunded_amount, '0.000000');
     } finally {
       await cleanupGreenHiveFixtures(client).catch(() => undefined);
       await client.end();

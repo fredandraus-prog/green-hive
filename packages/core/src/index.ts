@@ -1,7 +1,7 @@
 export * from './app-manifest.js';
 export * from './errors.js';
 
-export const GREEN_HIVE_VERSION = '0.10.0' as const;
+export const GREEN_HIVE_VERSION = '0.11.0' as const;
 
 export const PLATFORM_ROLES = ['PLATFORM_ADMIN'] as const;
 export type PlatformRole = (typeof PLATFORM_ROLES)[number];

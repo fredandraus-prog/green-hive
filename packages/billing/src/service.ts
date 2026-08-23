@@ -1,18 +1,28 @@
 import type { TrustedAppContext, TrustedOrganizationContext } from '@green-hive/core';
 import { BillingError } from './errors.js';
-import type { BillingRepository, CreatePurchaseInput, Product, Purchase } from './types.js';
+import type {
+  BillingProvider,
+  BillingRepository,
+  CreatePurchaseInput,
+  Product,
+  Purchase,
+} from './types.js';
 import {
   validateBillingId,
   validateCreatePurchaseInput,
+  validateProviderPaymentResult,
+  validateProviderRefundResult,
   validateProductCode,
   validateTrustedBillingContext,
 } from './validation.js';
 
 export class BillingService {
   readonly #repository: BillingRepository;
+  readonly #provider: BillingProvider | null;
 
-  constructor(repository: BillingRepository) {
+  constructor(repository: BillingRepository, provider?: BillingProvider) {
     this.#repository = repository;
+    this.#provider = provider ?? null;
   }
 
   async listCatalog(context: TrustedAppContext): Promise<readonly Product[]> {
@@ -57,12 +67,93 @@ export class BillingService {
     return purchase;
   }
 
+  async processPayment(context: TrustedAppContext, purchaseId: string): Promise<Purchase> {
+    const trustedContext = this.#ownerContext(context);
+    const validatedPurchaseId = validateBillingId(purchaseId);
+    const provider = this.#configuredProvider();
+    const purchase = await this.#findPurchase(trustedContext, validatedPurchaseId);
+
+    if (
+      (purchase.status === 'CONFIRMED' && purchase.payment.status === 'PAID') ||
+      (purchase.status === 'CANCELED' && purchase.payment.status === 'FAILED')
+    ) {
+      return purchase;
+    }
+    if (purchase.status !== 'PENDING' || purchase.payment.status !== 'PENDING') {
+      throw new BillingError('INVALID_PAYMENT_TRANSITION');
+    }
+
+    const providerResult = await this.#executeProvider(() =>
+      provider.processPayment({
+        purchaseId: purchase.id,
+        paymentId: purchase.payment.id,
+        productCode: purchase.productCode,
+        amount: purchase.payment.amount,
+        currency: purchase.payment.currency,
+        attemptNumber: purchase.payment.attemptNumber,
+      }),
+    );
+    const result = validateProviderPaymentResult(providerResult);
+    return this.#execute(() =>
+      this.#repository.applyPaymentResult(trustedContext, validatedPurchaseId, result),
+    );
+  }
+
+  async refundPayment(context: TrustedAppContext, purchaseId: string): Promise<Purchase> {
+    const trustedContext = this.#ownerContext(context);
+    const validatedPurchaseId = validateBillingId(purchaseId);
+    const provider = this.#configuredProvider();
+    const purchase = await this.#findPurchase(trustedContext, validatedPurchaseId);
+
+    if (purchase.status === 'CONFIRMED' && purchase.payment.status === 'REFUNDED') {
+      return purchase;
+    }
+    if (purchase.status !== 'CONFIRMED' || purchase.payment.status !== 'PAID') {
+      throw new BillingError('INVALID_PAYMENT_TRANSITION');
+    }
+
+    const providerResult = await this.#executeProvider(() =>
+      provider.refundPayment({
+        purchaseId: purchase.id,
+        paymentId: purchase.payment.id,
+        amount: purchase.payment.amount,
+        currency: purchase.payment.currency,
+      }),
+    );
+    const result = validateProviderRefundResult(providerResult);
+    return this.#execute(() =>
+      this.#repository.applyRefundResult(trustedContext, validatedPurchaseId, result),
+    );
+  }
+
   #ownerContext(context: TrustedAppContext): TrustedOrganizationContext {
     const trustedContext = validateTrustedBillingContext(context);
     if (trustedContext.platformRole === 'PLATFORM_ADMIN') {
       throw new BillingError('BILLING_ACCESS_DENIED');
     }
     return trustedContext;
+  }
+
+  #configuredProvider(): BillingProvider {
+    if (!this.#provider) throw new BillingError('BILLING_PROVIDER_NOT_CONFIGURED');
+    return this.#provider;
+  }
+
+  async #findPurchase(
+    context: TrustedOrganizationContext,
+    purchaseId: string,
+  ): Promise<Purchase> {
+    const purchase = await this.#execute(() => this.#repository.getPurchase(context, purchaseId));
+    if (!purchase) throw new BillingError('PURCHASE_NOT_FOUND');
+    return purchase;
+  }
+
+  async #executeProvider<Result>(operation: () => Promise<Result>): Promise<Result> {
+    try {
+      return await operation();
+    } catch {
+      throw new BillingError('BILLING_PROVIDER_FAILED');
+    }
   }
 
   async #execute<Result>(operation: () => Promise<Result>): Promise<Result> {

@@ -9,10 +9,12 @@ Version `0.8.0` completes the deployed HTTPS/Auth/RLS acceptance gate for **GH-0
 version `0.9.0` completes **GH-0204 (Security Baseline)** after bounded application-level limits,
 hardened headers and secret/bundle guards pass locally and on the exact Render HTTPS service.
 Version `0.10.0` completes **GH-0301 (Billing Foundation)** with an app-scoped catalog,
-versioned exact-decimal prices and tenant-isolated pending purchases/payments.
+versioned exact-decimal prices and tenant-isolated pending purchases/payments. Version `0.11.0`
+completes **GH-0302 (Sandbox Billing Provider)** with deterministic success, failure and full-refund
+transitions behind a trusted server-only boundary.
 
-The checkpoint is deliberately narrow. Payment-provider adapters, payment confirmation/failure,
-refunds, Entitlements, Cost Guard, AI, Search, Redis, external webhooks, remote storage and
+The checkpoint is deliberately narrow. Real payment-provider adapters, public checkout/webhook
+endpoints, webhook reconciliation, Entitlements, Cost Guard, AI, Search, Redis, remote storage and
 consumer-domain functionality remain out of scope.
 
 ## What this checkpoint contains
@@ -20,7 +22,7 @@ consumer-domain functionality remain out of scope.
 - the 18 canonical `@green-hive/*` packages, `hive-reference-app` and `hive-admin`;
 - canonical `AppManifestV1`, validator, App Registry and complete `REFERENCE_APP` manifest;
 - schemas `hive`, `audit` and `reference_app`;
-- thirteen immutable migrations and a SHA-256 migration ledger;
+- fourteen immutable migrations and a SHA-256 migration ledger;
 - organizations, memberships and tenant app installations around the global app registry;
 - tenant-scoped `projects` and `project_settings`;
 - production-safe structural seeds containing only `REFERENCE_APP` and its manifest-registered
@@ -39,6 +41,8 @@ consumer-domain functionality remain out of scope.
   snapshots, hashed idempotency keys and stable public errors;
 - app-scoped products, immutable-version prices, tenant purchases and limited-read payment records,
   with no authenticated direct-write grants and no payment-card storage;
+- a deterministic, network-free Billing sandbox adapter plus server-only, idempotent
+  success/failure/full-refund transitions and safe payment Audit events;
 - a responsive React/Vite Reference App with signup, login, recovery, profile and project screens;
 - a loopback-only Fastify HTTP boundary with HttpOnly cookies, exact-origin CSRF checks, PKCE
   recovery, no-store responses and baseline security headers;
@@ -89,7 +93,7 @@ safeguards.
 
 ## Hosted staging workflow
 
-A dedicated Free-plan Supabase staging project is active in São Paulo. Its thirteen-migration database
+A dedicated Free-plan Supabase staging project is active in São Paulo. Its fourteen-migration database
 baseline, cross-organization RLS matrix, Project/Workspace Service and server-side Auth core have
 passed without changing the production
 candidate or the pre-existing Green Hive project:
@@ -203,8 +207,10 @@ idempotency key. `hive.create_pending_purchase(...)` derives the user, app and w
 trusted Supabase context, validates an owned non-deleted project, resolves the active price and
 atomically creates one `PENDING` purchase plus one `PENDING` payment attempt. Raw idempotency keys
 are not retained. Authenticated users have no direct insert/update/delete grant on catalog,
-purchases or payments and cannot read provider references. Payment success, failure, refund,
-provider adapters and webhook processing remain GH-0302/GH-0303.
+purchases or payments and cannot read provider references. GH-0302 adds a deterministic
+`GREEN_HIVE_FAKE` adapter whose outcome is server configuration, never request input. Only the
+trusted backend can apply verified success, failure and full-refund results; exact retries have one
+effect. Real providers, public checkout/webhook endpoints and reconciliation remain GH-0303.
 
 ## Migration discipline
 
@@ -215,7 +221,8 @@ metadata drift and a managed schema without a ledger. Except for provisioning th
 
 ## Status
 
-GH-0102, GH-0103, GH-0104, GH-0201, GH-0202, GH-0203, GH-0204, GH-0250 and GH-0301 are `DONE`.
+GH-0102, GH-0103, GH-0104, GH-0201, GH-0202, GH-0203, GH-0204, GH-0250, GH-0301 and GH-0302 are
+`DONE`.
 GH-0204 passed local abuse/bundle tests, the exact hosted security smoke and the complete
 authenticated HTTPS acceptance matrix on the single-instance Render staging service. See
 [Implementation status](docs/IMPLEMENTATION_STATUS.md), [Database](docs/DATABASE.md), [Trusted app
@@ -226,5 +233,7 @@ web](docs/REFERENCE-APP-WEB.md), [Hosted staging](docs/HOSTED-STAGING.md), [Audi
 [GH-0204 release validation](docs/VALIDATION-2026-08-23-GH0204-RELEASE.md),
 [GH-0301 checkpoint](docs/CHECKPOINT-GH-0301.md),
 [GH-0301 release validation](docs/VALIDATION-2026-08-23-GH0301-RELEASE.md),
+[GH-0302 checkpoint](docs/CHECKPOINT-GH-0302.md),
+[GH-0302 implementation validation](docs/VALIDATION-2026-08-23-GH0302-IMPLEMENTATION.md),
 [GH-0250 checkpoint](docs/CHECKPOINT-GH-0250.md), [Ideas Radar](IDEAS_RADAR.md) and
 [Reconciliation](docs/RECONCILIATION-2026-08-18.md).

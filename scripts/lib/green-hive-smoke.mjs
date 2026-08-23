@@ -141,9 +141,12 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ,'audit.capture_project_lifecycle()'
        ,'hive.create_pending_purchase(uuid,text,uuid,text)'
        ,'audit.capture_purchase_created()'
+       ,'hive.apply_provider_payment_result(uuid,text,text,text,text)'
+       ,'hive.apply_provider_refund(uuid,text,text)'
+       ,'audit.capture_payment_transition()'
      ]) AS names(name)`,
   );
-  assert.equal(helpers.rows.length, 20);
+  assert.equal(helpers.rows.length, 23);
   assert.ok(helpers.rows.every((entry) => entry.helper));
 
   const privileges = await client.query(
@@ -184,11 +187,33 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        has_column_privilege('authenticated', 'hive.purchases', 'idempotency_key_sha256', 'SELECT') AS idempotency_select,
        has_column_privilege('authenticated', 'hive.payments', 'status', 'SELECT') AS payment_status_select,
        has_column_privilege('authenticated', 'hive.payments', 'provider_payment_id', 'SELECT') AS provider_reference_select,
+       has_column_privilege('authenticated', 'hive.payments', 'provider_refund_id', 'SELECT') AS provider_refund_select,
+       has_column_privilege('authenticated', 'hive.payments', 'refunded_amount', 'SELECT') AS refunded_amount_select,
        has_function_privilege(
          'authenticated',
          'hive.create_pending_purchase(uuid,text,uuid,text)',
          'EXECUTE'
-       ) AS can_create_pending_purchase`,
+       ) AS can_create_pending_purchase,
+       has_function_privilege(
+         'authenticated',
+         'hive.apply_provider_payment_result(uuid,text,text,text,text)',
+         'EXECUTE'
+       ) AS authenticated_can_apply_payment,
+       has_function_privilege(
+         'authenticated',
+         'hive.apply_provider_refund(uuid,text,text)',
+         'EXECUTE'
+       ) AS authenticated_can_apply_refund,
+       has_function_privilege(
+         'service_role',
+         'hive.apply_provider_payment_result(uuid,text,text,text,text)',
+         'EXECUTE'
+       ) AS service_role_can_apply_payment,
+       has_function_privilege(
+         'service_role',
+         'hive.apply_provider_refund(uuid,text,text)',
+         'EXECUTE'
+       ) AS service_role_can_apply_refund`,
   );
   assert.deepEqual(billingPrivileges.rows[0], {
     catalog_select: true,
@@ -199,7 +224,13 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     idempotency_select: false,
     payment_status_select: true,
     provider_reference_select: false,
+    provider_refund_select: false,
+    refunded_amount_select: true,
     can_create_pending_purchase: true,
+    authenticated_can_apply_payment: false,
+    authenticated_can_apply_refund: false,
+    service_role_can_apply_payment: true,
+    service_role_can_apply_refund: true,
   });
 
   const auditTriggers = await client.query(
@@ -211,11 +242,12 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        'audit_organization_apps_after_insert',
        'audit_projects_after_lifecycle'
        ,'audit_purchases_after_insert'
+       ,'audit_payments_after_transition'
      )
        AND NOT tgisinternal
      ORDER BY tgname`,
   );
-  assert.equal(auditTriggers.rows.length, 5);
+  assert.equal(auditTriggers.rows.length, 6);
 
   return Object.freeze({
     ledgerRows: ledger.rows.length,

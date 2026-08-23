@@ -6,6 +6,8 @@ export const BILLING_ERROR_CODES = [
   'PURCHASE_NOT_FOUND',
   'BILLING_IDEMPOTENCY_CONFLICT',
   'INVALID_PAYMENT_TRANSITION',
+  'BILLING_PROVIDER_NOT_CONFIGURED',
+  'BILLING_PROVIDER_FAILED',
   'BILLING_OPERATION_FAILED',
 ] as const;
 
@@ -19,6 +21,8 @@ const SAFE_MESSAGES: Readonly<Record<BillingErrorCode, string>> = Object.freeze(
   PURCHASE_NOT_FOUND: 'Purchase was not found',
   BILLING_IDEMPOTENCY_CONFLICT: 'Idempotency key was already used for another purchase request',
   INVALID_PAYMENT_TRANSITION: 'Payment lifecycle transition is not permitted',
+  BILLING_PROVIDER_NOT_CONFIGURED: 'Billing provider is not configured',
+  BILLING_PROVIDER_FAILED: 'Billing provider operation failed',
   BILLING_OPERATION_FAILED: 'Billing operation could not be completed',
 });
 
