@@ -44,7 +44,7 @@ Security implementation deepens in GH-2. This repository baseline already checks
 high-confidence secret patterns, credential files, browser/server configuration leaks, forbidden
 application-domain imports, trusted Auth context and native RLS isolation. The deployed HTTPS,
 secure-cookie, PKCE/Mailtrap recovery and cross-tenant API gates pass without placing SMTP or
-provider secrets in the browser, repository or Render logs. The bounded rate-limit implementation
-and production-bundle scan pass locally; the exact deployed abuse smoke remains the GH-0204
-completion gate. Distributed limiting, MFA administration and secret rotation remain future
-production gates.
+provider secrets in the browser, repository or Render logs. The bounded rate-limit implementation,
+production-bundle scan, exact deployed abuse smoke and complete authenticated acceptance matrix
+pass for release `0.9.0`; GH-0204 is `DONE`. Distributed limiting, MFA administration and secret
+rotation remain future scale/production gates.

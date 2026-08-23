@@ -8,7 +8,7 @@ GH-0104,"Project Service",DONE,PASS,"Typed service fake-repository unit tests an
 GH-0201,"Auth and account integration",DONE,PASS,"Deployed HTTPS signup login refresh logout protected cookies and PKCE recovery through Supabase custom SMTP and Mailtrap","None"
 GH-0202,"Full RLS authorization layer",DONE,PASS,"Deployed HTTPS API cross-user cross-workspace forged-scope CSRF logical-delete and Audit isolation matrix","None"
 GH-0203,"Audit event service",DONE,PASS,"Migration 0011 append-only tenant events transactional lifecycle capture safe metadata and local/staging SQL Service Auth HTTP tests","None"
-GH-0204,"Security baseline",PARTIAL,IMPLEMENTATION_PASS,"Local HMAC-keyed account source and global rate limits bounded buckets stable 429 hardened headers bundle secret scan and abuse tests","Pass exact hosted security smoke; distributed limits remain deferred"
+GH-0204,"Security baseline",DONE,PASS,"Local and deployed HMAC-keyed account source and global limits bounded buckets stable 429 hardened headers bundle scan public smoke and authenticated acceptance","None; distributed limits remain a future scale-out gate"
 GH-0250,"Organizations and Multi-Tenancy Foundation",DONE,PASS,"Ten immutable migrations plus local/staging SQL Service Auth and HTTP tenant gates","None"
 GH-0251,"Organizations",DONE,PASS,"hive.organizations lifecycle constraints and hosted migration 0007","None"
 GH-0252,"Organization memberships",DONE,PASS,"Roles OWNER ADMIN DEVELOPER ANALYST VIEWER and active membership RLS","None"

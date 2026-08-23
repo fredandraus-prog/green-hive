@@ -5,6 +5,10 @@ semantic versioning.
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [0.9.0] - 2026-08-23
+
 ### Added
 
 - Bounded application-level rate limits for Auth, recovery, session, ordinary API and expensive
@@ -21,8 +25,13 @@ semantic versioning.
 
 ### Status
 
-- GH-0204 is `PARTIAL — IMPLEMENTATION_PASS`; the deployed abuse smoke is still required before
-  release `0.9.0` and before Billing begins.
+- PR #7 deployed the GH-0204 implementation from merge commit
+  `67b55cfb4268312a7ba146f40811af7b499866e5`.
+- `HOSTED_SECURITY_SMOKE_PASS`, the public hosted smoke and the complete authenticated acceptance
+  matrix pass against the exact Render origin; test-owned Auth/database rows and the Mailtrap
+  recovery message were removed.
+- GH-0204 is `DONE`; coordinated platform packages advance to `0.9.0` while the `REFERENCE_APP`
+  product manifest remains `0.1.0`.
 
 ## [0.8.0] - 2026-08-22
 
