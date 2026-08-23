@@ -16,6 +16,7 @@
     "format:check": "node scripts/format-check.mjs",
     "lint": "node scripts/lint.mjs && node scripts/platform-lint.mjs",
     "security:scan": "node scripts/security-scan.mjs",
+    "security:smoke": "node scripts/security-smoke.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build:types": "tsc -b tsconfig.build.json",
     "build:web": "vite build apps/hive-reference-app --config apps/hive-reference-app/vite.config.mjs",
@@ -35,6 +36,7 @@
     "reference-app:start": "node scripts/reference-app-local.mjs",
     "start:hosted": "node apps/hive-reference-app/dist/http-entry.js",
     "hosted:smoke": "node scripts/hosted-smoke.mjs",
+    "hosted:security": "node scripts/hosted-security-smoke.mjs",
     "hosted:acceptance": "pwsh -NoProfile -File scripts/staging-database-windows.ps1 hosted-acceptance",
     "supabase:start": "node scripts/supabase-local.mjs start",
     "supabase:status": "node scripts/supabase-local.mjs status",
@@ -47,7 +49,7 @@
     "staging:apply": "node scripts/staging-apply.mjs",
     "release:manifest": "node scripts/generate-release-manifest.mjs",
     "release:verify-manifest": "node scripts/verify-release-manifest.mjs",
-    "verify": "npm run clean && npm run format:check && npm run lint && npm run security:scan && npm run typecheck && npm run test:unit && npm run db:validate && npm run db:test && npm run build"
+    "verify": "npm run clean && npm run format:check && npm run lint && npm run security:scan && npm run typecheck && npm run test:unit && npm run db:validate && npm run db:test && npm run build && npm run security:smoke"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.3.0",

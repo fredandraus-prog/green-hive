@@ -248,6 +248,10 @@ test('hosted health contract reports readiness without exposing failures', async
     const live = await application.inject({ method: 'GET', url: '/api/health' });
     assert.equal(live.statusCode, 200);
     assert.equal(live.headers['strict-transport-security'], 'max-age=31536000; includeSubDomains');
+    assert.equal(live.headers['cross-origin-resource-policy'], 'same-origin');
+    assert.equal(live.headers['x-dns-prefetch-control'], 'off');
+    assert.equal(live.headers['x-permitted-cross-domain-policies'], 'none');
+    assert.match(live.headers['content-security-policy'], /object-src 'none'/);
 
     const signedIn = await application.inject({
       method: 'POST',
@@ -271,6 +275,7 @@ test('hosted health contract reports readiness without exposing failures', async
     const available = await application.inject({ method: 'GET', url: '/api/ready' });
     assert.equal(available.statusCode, 200);
     assert.deepEqual(available.json(), { status: 'ready', app: 'REFERENCE_APP' });
+    assert.equal(available.headers['ratelimit-limit'], undefined);
   } finally {
     await application.close();
   }

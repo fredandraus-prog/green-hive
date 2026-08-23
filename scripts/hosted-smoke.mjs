@@ -44,6 +44,20 @@ if (
 if (readiness.response.headers.get('cache-control') !== 'private, no-store') {
   throw new Error('Hosted readiness response is not protected from caching');
 }
+for (const [name, expected] of [
+  ['x-content-type-options', 'nosniff'],
+  ['cross-origin-opener-policy', 'same-origin'],
+  ['cross-origin-resource-policy', 'same-origin'],
+  ['x-dns-prefetch-control', 'off'],
+  ['x-permitted-cross-domain-policies', 'none'],
+]) {
+  if (readiness.response.headers.get(name) !== expected) {
+    throw new Error(`Hosted response is missing the required ${name} policy`);
+  }
+}
+if (!readiness.response.headers.get('content-security-policy')?.includes("object-src 'none'")) {
+  throw new Error('Hosted response is missing the hardened object-src CSP policy');
+}
 
 const shell = await request('/');
 if (shell.response.status !== 200 || !shell.response.headers.get('content-type')?.includes('text/html')) {
@@ -55,5 +69,6 @@ console.log(JSON.stringify({
   liveness: 'PASS',
   readiness: 'PASS',
   httpsHeaders: 'PASS',
+  securityHeaders: 'PASS',
   referenceAppShell: 'PASS',
 }, null, 2));

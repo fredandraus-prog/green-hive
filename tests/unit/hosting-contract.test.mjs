@@ -66,3 +66,27 @@ test('hosted acceptance is exact-target, loopback-mediated and cleanup guarded',
   assert.match(wrapper, /green-hive-staging-secret-key\.dpapi/);
   assert.match(wrapper, /Remove-Item Env:GREEN_HIVE_HOSTED_TEST_CONFIRM/);
 });
+
+test('hosted security smoke is exact-target and exercises bounded Auth abuse without secrets', async () => {
+  const packageJson = JSON.parse(
+    await readFile(new URL('../../package.json', import.meta.url), 'utf8'),
+  );
+  const smoke = await readFile(
+    new URL('../../scripts/hosted-security-smoke.mjs', import.meta.url),
+    'utf8',
+  );
+  const bundleSmoke = await readFile(
+    new URL('../../scripts/security-smoke.mjs', import.meta.url),
+    'utf8',
+  );
+
+  assert.equal(packageJson.scripts['hosted:security'], 'node scripts/hosted-security-smoke.mjs');
+  assert.match(smoke, /https:\/\/green-hive-staging\.onrender\.com/);
+  assert.match(smoke, /EXERCISE_STAGING_RATE_LIMIT/);
+  assert.match(smoke, /attempt <= 10/);
+  assert.match(smoke, /HOSTED_SECURITY_SMOKE_PASS/);
+  assert.doesNotMatch(smoke, /DATABASE_URL|SERVICE_ROLE|serviceRole|admin\.deleteUser/);
+  assert.match(bundleSmoke, /SECURITY_BUNDLE_SMOKE_PASS/);
+  assert.match(bundleSmoke, /GREEN_HIVE_SUPABASE_SERVICE_ROLE_KEY/);
+  assert.match(packageJson.scripts.verify, /npm run security:smoke$/);
+});

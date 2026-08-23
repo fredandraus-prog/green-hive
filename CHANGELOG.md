@@ -5,7 +5,24 @@ semantic versioning.
 
 ## [Unreleased]
 
-No unreleased changes.
+### Added
+
+- Bounded application-level rate limits for Auth, recovery, session, ordinary API and expensive
+  read routes, with account/session, source and process-wide ceilings.
+- HMAC-only bucket identities, a hard bucket cap, lazy fixed-window expiry, stable `429` errors and
+  standard limit/retry response metadata.
+- Local production-bundle secret smoke and an exact-target hosted security smoke for `SEC_011`.
+
+### Security
+
+- `Cross-Origin-Resource-Policy`, DNS-prefetch denial, cross-domain-policy denial and an explicit
+  `object-src 'none'` CSP directive.
+- Health/readiness remain outside throttling so Render probes cannot make the service unhealthy.
+
+### Status
+
+- GH-0204 is `PARTIAL — IMPLEMENTATION_PASS`; the deployed abuse smoke is still required before
+  release `0.9.0` and before Billing begins.
 
 ## [0.8.0] - 2026-08-22
 

@@ -34,11 +34,17 @@
   ledger, structural seed and critical tenant/audit objects without exposing database details.
 - GitHub CI runs a clean install, embedded isolation gate, release-manifest verification, secret
   scan and high-severity dependency audit before an automatic Render deployment is eligible.
+- Auth, recovery, session, ordinary API and expensive-read routes use separate fixed windows. The
+  limiter stores only HMAC digests, combines principal, source and global ceilings, caps bucket
+  memory, expires buckets lazily and returns a stable `RATE_LIMITED` response with retry metadata.
+- Health and readiness probes are intentionally exempt. The current single-instance limiter is a
+  bounded staging/small-deployment baseline, not a distributed quota or authorization mechanism.
 
 Security implementation deepens in GH-2. This repository baseline already checks for
 high-confidence secret patterns, credential files, browser/server configuration leaks, forbidden
 application-domain imports, trusted Auth context and native RLS isolation. The deployed HTTPS,
 secure-cookie, PKCE/Mailtrap recovery and cross-tenant API gates pass without placing SMTP or
-provider secrets in the browser, repository or Render logs. Bounded deployed rate limiting remains
-the GH-0204 completion gate; distributed limiting, MFA administration and secret rotation remain
-future production gates.
+provider secrets in the browser, repository or Render logs. The bounded rate-limit implementation
+and production-bundle scan pass locally; the exact deployed abuse smoke remains the GH-0204
+completion gate. Distributed limiting, MFA administration and secret rotation remain future
+production gates.

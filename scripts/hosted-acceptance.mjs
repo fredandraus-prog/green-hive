@@ -334,6 +334,11 @@ async function run() {
     ready.response.headers.get('strict-transport-security'),
     'max-age=31536000; includeSubDomains',
   );
+  assert.equal(ready.response.headers.get('cross-origin-resource-policy'), 'same-origin');
+  assert.equal(ready.response.headers.get('x-dns-prefetch-control'), 'off');
+  assert.equal(ready.response.headers.get('x-permitted-cross-domain-policies'), 'none');
+  assert.match(ready.response.headers.get('content-security-policy') ?? '', /object-src 'none'/);
+  assert.equal(ready.response.headers.get('ratelimit-limit'), null);
 
   const forgedSignup = await request('/api/auth/sign-up', {
     method: 'POST',
@@ -366,6 +371,7 @@ async function run() {
       jar,
     });
     assert.equal(signup.response.status, 200);
+    assert.equal(signup.response.headers.get('ratelimit-limit'), '5');
     assertProtectedSessionCookies(signup.setCookies);
     assert.doesNotMatch(signup.bodyText, /access_token|refresh_token|service.role/i);
     fixtureUserIds.add(signup.body.user.id);
