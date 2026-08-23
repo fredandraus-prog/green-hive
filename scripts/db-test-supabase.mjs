@@ -94,5 +94,6 @@ try {
 
 if (primaryError) throw primaryError;
 runNpm('projects:test:supabase');
+runNpm('billing:test:supabase');
 run(process.execPath, ['scripts/db-smoke-supabase.mjs']);
 console.log('Green Hive local Supabase gate passed; clean migrated and seeded baseline retained.');

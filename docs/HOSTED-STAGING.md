@@ -34,8 +34,9 @@ It deliberately has no `preDeployCommand`, `db:migrate` or `db:seed` action.
    `sslmode=verify-full` and the fingerprint-pinned Supabase Root 2021 CA;
 8. provider keys and the database connection exist only in the server process;
 9. cookies are `HttpOnly`, host-only, `SameSite=Lax` and `Secure`;
-10. the database ledger has exactly migrations `0001` through `0011`, the structural
-    `REFERENCE_APP` seed exists and the critical tenant/audit helpers are present.
+10. the database ledger has exactly migrations `0001` through `0013`, the structural
+    `REFERENCE_APP` plus sandbox catalog seeds exist and the tenant/audit/Billing helpers are
+    present.
 
 `GET /api/health` is a process liveness check. `GET /api/ready` is the Render health check and
 returns `503` without internal details when the database contract is unavailable.

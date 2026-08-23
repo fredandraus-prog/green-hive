@@ -7,6 +7,45 @@ semantic versioning.
 
 No unreleased changes.
 
+## [0.10.0] - 2026-08-23
+
+### Added
+
+- GH-0301 app-scoped `products` and immutable-version `prices` with exact `numeric(20,6)` values.
+- Tenant/project/owner-scoped `purchases` and limited-read `payments` with composite foreign keys,
+  immutable commercial snapshots and no authenticated direct writes.
+- `hive.create_pending_purchase(...)` for one atomic purchase/payment pair, exact retry and
+  conflicting-idempotency rejection; only the SHA-256 idempotency hash is retained.
+- Typed `@green-hive/billing` catalog/purchase service, PostgreSQL repository, runtime validation
+  and stable public errors.
+- Deterministic, manifest-verified `REFERENCE_APP_SANDBOX` zero-value catalog seed and
+  transactionally captured `PURCHASE_CREATED` Audit events.
+
+### Security
+
+- App, workspace, project and owner scope are derived exclusively from the trusted Supabase
+  context; caller-provided commercial authority fields are rejected.
+- Billing tables use forced RLS and least-privilege column grants. Provider references are hidden
+  from authenticated clients and full card number/CVV storage is prohibited.
+- The reviewed `SECURITY DEFINER` purchase function has an empty `search_path`, schema-qualified
+  objects, explicit `PUBLIC` revocation and no payment-state mutation surface.
+
+### Validation
+
+- 83 unit tests, 13 embedded database/service tests, the native local Supabase RLS matrix and the
+  6-scenario native Billing Service matrix pass.
+- Migration/seed reapplication, ledger drift, seed identity conflict, cross-user,
+  cross-workspace, cross-app, forged amount/status and direct payment mutation are covered.
+- The dedicated staging migration/RLS/Project/Workspace/Billing gates and Render readiness/smoke
+  pass with all disposable fixture rows removed.
+
+### Status
+
+- GH-0301 is `DONE`; coordinated platform packages advance to `0.10.0` while the
+  `REFERENCE_APP` product manifest remains `0.1.0`.
+- GH-0302 fake/sandbox provider behavior, payment success/failure/refund, GH-0303 webhooks and
+  GH-0304 Entitlements remain unimplemented.
+
 ## [0.9.0] - 2026-08-23
 
 ### Added

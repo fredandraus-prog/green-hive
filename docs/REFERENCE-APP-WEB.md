@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Platform version `0.9.0` retains the tenant-aware workspace and Audit boundaries, publishes the
-product-facing navigation slice and closes the deployed HTTPS/Auth/RLS acceptance gate. The
-implementation follows the canonical React + Vite direction and keeps privileged decisions in a
-Fastify server process.
+Platform version `0.10.0` retains the tenant-aware workspace, Audit and Security boundaries and
+adds the server-side GH-0301 Billing Foundation. The implementation follows the canonical React +
+Vite direction and keeps privileged decisions in a Fastify server process.
 
-This is a platform validation shell, not the first commercial BeeGreen product. It contains no
-Billing, AI, Redis, jobs, webhooks, remote storage or consumer-domain behavior.
+This is a platform validation shell, not the first commercial BeeGreen product. It exposes no
+checkout UI or public Billing endpoint. Provider payments, AI, Redis, jobs, webhooks, remote
+storage and consumer-domain behavior remain absent.
 
 ## Runtime topology
 

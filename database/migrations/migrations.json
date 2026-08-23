@@ -100,6 +100,24 @@
       "description": "Create append-only tenant audit events and transactional core lifecycle capture.",
       "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_AUDIT_EXPORT_AND_TRIGGER_DISABLE",
       "rollbackStrategy": "Prefer a forward fix; export and verify audit events before disabling only the affected capture trigger during controlled maintenance."
+    },
+    {
+      "version": 12,
+      "file": "0012_create_billing_catalog.sql",
+      "sha256": "7eb5c186dd5b4402d3da437cf84d2c846173333d744cc49a51fcde8192d2e3bd",
+      "checkpoint": "GH-0301",
+      "description": "Create app-scoped products and immutable versioned price catalog tables.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_CATALOG_EXPORT_RESTORE",
+      "rollbackStrategy": "Prefer a forward fix; export and verify the complete product and versioned price catalog before any controlled restoration."
+    },
+    {
+      "version": 13,
+      "file": "0013_create_purchases_and_payments.sql",
+      "sha256": "010e37d1de087430b3a9c8af2b05f1d1c8e128a3a0c0d75331fe4321efddf40f",
+      "checkpoint": "GH-0301",
+      "description": "Create tenant purchase and payment records with server-authoritative pending purchase creation.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_COMMERCIAL_LEDGER_EXPORT_RESTORE",
+      "rollbackStrategy": "Prefer a forward fix; export and verify purchases, payments, audit events and immutable price snapshots before any controlled restoration."
     }
   ]
 }

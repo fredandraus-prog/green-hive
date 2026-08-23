@@ -18,12 +18,14 @@ Status date: 2026-08-23.
 | GH-0251–GH-0255 | DONE | organizations, workspace memberships, personal provisioning, app installations and app roles validated | none |
 | GH-0256–GH-0258 | DONE | trusted organization selection, tenant RLS, cross-organization matrix and shared workspace service validated | none |
 | GH-0259 | DONE | stable organization/app-installation ownership identities created without implementing Billing | none |
-| GH-0301+ | NOT_STARTED | outside this release | commercial core after GH-2 |
+| GH-0301 | DONE | app catalog, exact-decimal price versions, tenant purchase/payment snapshots, transactional pending creation, Audit and embedded/native Supabase service/RLS gates | none |
+| GH-0302+ | NOT_STARTED | provider adapter, payment-result transitions, refunds, verified webhooks and Entitlements remain outside this release | begin with fake/sandbox provider only |
 
 The local Supabase parity gate passed on PostgreSQL 17.6 with native `auth.users`, `auth.uid()` and
-`auth.jwt()`. The dedicated hosted staging project also passes the eleven-migration baseline, RLS,
-Project/Workspace Service and server-side Auth/account matrices. Hosted test users and rows are
-removed after each run, leaving eleven ledger records and the structural `REFERENCE_APP` seed.
+`auth.jwt()`. The dedicated hosted staging project also passes the thirteen-migration baseline,
+RLS, Project/Workspace/Billing Services and server-side Auth/account matrices. Hosted test users
+and rows are removed after each run, leaving thirteen ledger records and the structural
+`REFERENCE_APP` plus sandbox catalog seeds.
 
 The Reference App has a responsive React/Vite shell and a Fastify HTTP adapter. Tokens remain
 outside browser-accessible storage, PKCE recovery avoids URL tokens, and local plus deployed HTTP
@@ -34,6 +36,11 @@ bounded metadata. `PLATFORM_ADMIN` can read operational tenant/audit metadata bu
 to private profiles, projects or settings. Supabase Auth uses the exact Render origin and recovery
 callback; its custom SMTP points to the dedicated Mailtrap sandbox and does not enter Render or the
 repository.
+
+GH-0301 adds only provider-neutral commercial foundations. Owners can read the active catalog and
+request an idempotent pending purchase for an owned project; PostgreSQL derives the tenant and exact
+price snapshot. Authenticated users cannot set payment state or provider references, and Billing
+does not grant Entitlements. Fake/sandbox provider behavior begins only in GH-0302.
 
 The private GitHub repository now deploys `main` through the CI-gated Render Blueprint. The Free
 service `green-hive-staging` is live at the exact HTTPS origin, database-backed readiness and the

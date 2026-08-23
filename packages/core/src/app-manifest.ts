@@ -22,7 +22,11 @@ export type AppStatus = 'INTERNAL' | 'BETA' | 'ACTIVE' | 'DISABLED';
 
 export interface AppProductRegistration {
   readonly productCode: string;
-  readonly productType: 'ONE_TIME' | 'REANALYSIS' | 'SUBSCRIPTION' | 'ADD_ON';
+  readonly productType:
+    | 'ONE_TIME'
+    | 'REANALYSIS_OR_REPROCESS'
+    | 'SUBSCRIPTION'
+    | 'INTERNAL_GRANT';
 }
 
 export interface AppRouteRegistration {
@@ -60,7 +64,12 @@ const LOCALE = /^[a-z]{2,3}(?:-[A-Z][A-Za-z0-9]{1,7})?$/;
 const ROUTE = /^\/[A-Za-z0-9/_:.-]*$/;
 const CAPABILITIES = new Set<string>(GREEN_HIVE_CAPABILITIES);
 const STATUSES = new Set<string>(['INTERNAL', 'BETA', 'ACTIVE', 'DISABLED']);
-const PRODUCT_TYPES = new Set<string>(['ONE_TIME', 'REANALYSIS', 'SUBSCRIPTION', 'ADD_ON']);
+const PRODUCT_TYPES = new Set<string>([
+  'ONE_TIME',
+  'REANALYSIS_OR_REPROCESS',
+  'SUBSCRIPTION',
+  'INTERNAL_GRANT',
+]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);

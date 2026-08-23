@@ -150,6 +150,21 @@ export async function cleanupGreenHiveUserData(client, userIds) {
       [userIds],
     );
   }
+  const billingTables = await client.query(
+    `SELECT
+       to_regclass('hive.purchases')::text AS purchases,
+       to_regclass('hive.payments')::text AS payments`,
+  );
+  if (billingTables.rows[0]?.payments === 'hive.payments') {
+    await client.query('DELETE FROM hive.payments WHERE owner_user_id = ANY($1::uuid[])', [
+      userIds,
+    ]);
+  }
+  if (billingTables.rows[0]?.purchases === 'hive.purchases') {
+    await client.query('DELETE FROM hive.purchases WHERE owner_user_id = ANY($1::uuid[])', [
+      userIds,
+    ]);
+  }
   await client.query(
     `DELETE FROM hive.project_settings
      WHERE project_id IN (
