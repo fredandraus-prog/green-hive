@@ -1,14 +1,19 @@
 param(
-  [ValidateSet('preflight', 'apply', 'test', 'auth-test')]
+  [ValidateSet('preflight', 'apply', 'test', 'auth-test', 'hosted-acceptance')]
   [string]$Operation = 'preflight'
 )
 
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
-$engineRoot = Split-Path -Parent $repositoryRoot
+$gitCommonDirectory = (& git -C $repositoryRoot rev-parse --path-format=absolute --git-common-dir).Trim()
+if ($LASTEXITCODE -ne 0 -or -not $gitCommonDirectory) {
+  throw 'Unable to resolve the canonical Git directory for protected staging configuration'
+}
+$canonicalRepositoryRoot = Split-Path -Parent $gitCommonDirectory
+$engineRoot = Split-Path -Parent $canonicalRepositoryRoot
 $configurationPath = Join-Path $repositoryRoot 'supabase\staging-project.json'
-$poolerPath = Join-Path $repositoryRoot 'supabase\.temp\pooler-url'
-$linkedProjectPath = Join-Path $repositoryRoot 'supabase\.temp\project-ref'
+$poolerPath = Join-Path $canonicalRepositoryRoot 'supabase\.temp\pooler-url'
+$linkedProjectPath = Join-Path $canonicalRepositoryRoot 'supabase\.temp\project-ref'
 $secretPath = Join-Path $engineRoot '.secrets\green-hive-staging-db-password.dpapi'
 $publishableKeyPath = Join-Path $engineRoot '.secrets\green-hive-staging-publishable-key.dpapi'
 $serviceRoleKeyPath = Join-Path $engineRoot '.secrets\green-hive-staging-secret-key.dpapi'
@@ -70,7 +75,7 @@ try {
   $env:GREEN_HIVE_STAGING_DATABASE_URL = $databaseUrl
   $env:NODE_EXTRA_CA_CERTS = $certificatePath
 
-  if ($Operation -eq 'auth-test') {
+  if ($Operation -eq 'auth-test' -or $Operation -eq 'hosted-acceptance') {
     $publishableKey = Unprotect-DpapiText $publishableKeyPath
     $serviceRoleKey = Unprotect-DpapiText $serviceRoleKeyPath
     $env:GREEN_HIVE_TEST_DATABASE_URL = $databaseUrl
@@ -80,9 +85,20 @@ try {
     $env:GREEN_HIVE_SUPABASE_AUTH_URL = $configuration.authUrl
     $env:GREEN_HIVE_SUPABASE_PUBLISHABLE_KEY = $publishableKey
     $env:GREEN_HIVE_SUPABASE_SERVICE_ROLE_KEY = $serviceRoleKey
+    if ($Operation -eq 'hosted-acceptance') {
+      $env:GREEN_HIVE_STAGING_APP_ORIGIN = 'https://green-hive-staging.onrender.com'
+      $env:GREEN_HIVE_SUPABASE_AUTH_URL = $configuration.authUrl
+      $env:GREEN_HIVE_AUTH_RECOVERY_REDIRECT = 'https://green-hive-staging.onrender.com/auth/recovery'
+      $env:GREEN_HIVE_HOSTED_APP_ORIGIN = 'https://green-hive-staging.onrender.com'
+      $env:GREEN_HIVE_HOSTED_TEST_CONFIRM = 'CREATE_DISPOSABLE_HOSTED_FIXTURES'
+    }
     & npm run build --silent
     if ($LASTEXITCODE -eq 0) {
-      & node --test --test-reporter=spec database/tests/staging-auth.integration.test.mjs
+      if ($Operation -eq 'hosted-acceptance') {
+        & node scripts/hosted-acceptance.mjs
+      } else {
+        & node --test --test-reporter=spec database/tests/staging-auth.integration.test.mjs
+      }
     }
   } elseif ($Operation -eq 'test') {
     $env:GREEN_HIVE_TEST_DATABASE_URL = $databaseUrl
@@ -124,4 +140,8 @@ try {
   Remove-Item Env:GREEN_HIVE_SUPABASE_AUTH_URL -ErrorAction SilentlyContinue
   Remove-Item Env:GREEN_HIVE_SUPABASE_PUBLISHABLE_KEY -ErrorAction SilentlyContinue
   Remove-Item Env:GREEN_HIVE_SUPABASE_SERVICE_ROLE_KEY -ErrorAction SilentlyContinue
+  Remove-Item Env:GREEN_HIVE_STAGING_APP_ORIGIN -ErrorAction SilentlyContinue
+  Remove-Item Env:GREEN_HIVE_AUTH_RECOVERY_REDIRECT -ErrorAction SilentlyContinue
+  Remove-Item Env:GREEN_HIVE_HOSTED_APP_ORIGIN -ErrorAction SilentlyContinue
+  Remove-Item Env:GREEN_HIVE_HOSTED_TEST_CONFIRM -ErrorAction SilentlyContinue
 }

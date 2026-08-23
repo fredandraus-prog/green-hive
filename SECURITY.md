@@ -37,6 +37,8 @@
 
 Security implementation deepens in GH-2. This repository baseline already checks for
 high-confidence secret patterns, credential files, browser/server configuration leaks, forbidden
-application-domain imports, trusted Auth context and native RLS isolation. Hosted configuration is
-prepared but not yet deployed. Live HTTPS validation, distributed rate limiting, MFA
-administration and secret rotation remain future gates.
+application-domain imports, trusted Auth context and native RLS isolation. The deployed HTTPS,
+secure-cookie, PKCE/Mailtrap recovery and cross-tenant API gates pass without placing SMTP or
+provider secrets in the browser, repository or Render logs. Bounded deployed rate limiting remains
+the GH-0204 completion gate; distributed limiting, MFA administration and secret rotation remain
+future production gates.

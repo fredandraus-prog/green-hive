@@ -3,9 +3,10 @@
 Green Hive is the reusable platform foundation for BeeGreen applications. This repository contains
 the canonical GH-0/GH-1 bootstrap advanced through **GH-0102 (Database Foundation)**,
 **GH-0103 (RLS and isolation)**, **GH-0104 (Project Service)** and the local implementation of
-**GH-0201/GH-0202 (Auth, accounts and the protected HTTP boundary)**. Version `0.7.0` completes
-**GH-0203 (Audit Foundation)** after **GH-0250 (Organizations & Multi-Tenancy Foundation)** and
-before Billing.
+**GH-0201/GH-0202 (Auth, accounts and the protected HTTP boundary)**. Version `0.7.0` completed
+**GH-0203 (Audit Foundation)** after **GH-0250 (Organizations & Multi-Tenancy Foundation)**.
+Version `0.8.0` completes the deployed HTTPS/Auth/RLS acceptance gate for **GH-0201/GH-0202**;
+Billing remains deferred until the remaining GH-0204 rate-limit gate is reviewed.
 
 The checkpoint is deliberately narrow. Billing, Entitlements, Cost Guard, AI, Search, Redis,
 external webhooks, remote storage and consumer-domain functionality remain out of scope.
@@ -93,21 +94,27 @@ The Windows wrapper obtains user-bound encrypted credentials from the machine-lo
 `.secrets` directory beside this repository, uses the session pooler with official CA verification,
 and clears its process variables after each command. The apply command never resets or drops a
 remote schema; it applies only the canonical migrations and structural seed. Remote tests remove
-only their disposable users and rows. A Free Render service and its secret environment entries
-now exist. Its build passes, and this source includes the public Supabase trust anchor required
-for a fully verified database connection; a healthy redeploy and the hosted acceptance matrix
-remain pending. Recovery callback/SMTP validation and post-hosting network restriction also
-remain pending. See [Hosted staging preparation](docs/HOSTED-STAGING.md) and
+only their disposable users and rows. The Free Render service is live with fully verified database
+TLS, exact-origin secure cookies and database-backed readiness. Supabase Auth uses the exact HTTPS
+recovery callback and the dedicated Mailtrap sandbox as custom SMTP. The public smoke and complete
+disposable hosted acceptance matrix pass, including PKCE recovery and cleanup. See
+[Hosted staging](docs/HOSTED-STAGING.md) and
 [Dedicated Supabase staging](docs/STAGING-SUPABASE.md).
 
 The committed Blueprint builds only the application; startup never applies migrations or seed.
-Once the TLS correction is reviewed, merged and healthy on the existing service, its public
-read-only gate is:
+The public read-only gate is:
 
 ```powershell
-$env:GREEN_HIVE_HOSTED_APP_ORIGIN = "https://your-service.onrender.com"
+$env:GREEN_HIVE_HOSTED_APP_ORIGIN = "https://green-hive-staging.onrender.com"
 npm run hosted:smoke
 Remove-Item Env:GREEN_HIVE_HOSTED_APP_ORIGIN
+```
+
+The guarded authenticated gate is intentionally interactive only for the one-time recovery link
+inside the Mailtrap sandbox and cleans all test-owned rows and Auth users:
+
+```text
+npm run hosted:acceptance
 ```
 
 ## Working local preview
@@ -182,10 +189,10 @@ metadata drift and a managed schema without a ledger. Except for provisioning th
 
 ## Status
 
-GH-0102, GH-0103, GH-0104, GH-0203 and GH-0250 are `DONE`. GH-0201 and GH-0202 are
-`PARTIAL — HOSTING_PREPARATION_PASS`: local web/recovery and hosted server-side Auth, RLS and
-service gates pass, and the exact Render runtime/CI/readiness contract now passes locally. The
-deployed HTTPS/cookie boundary and test-SMTP recovery evidence remain pending. See
+GH-0102, GH-0103, GH-0104, GH-0201, GH-0202, GH-0203 and GH-0250 are `DONE`. GH-0204 is
+`PARTIAL — HOSTED_BASELINE_PASS`: exact-origin protections, secure cookies, HSTS, no-store,
+readiness, CI and secret scanning pass on the deployed service; bounded rate limiting remains the
+next security gate. See
 [Implementation status](docs/IMPLEMENTATION_STATUS.md), [Database](docs/DATABASE.md), [Trusted app
 context](docs/TRUSTED-APP-CONTEXT.md), [Auth and accounts](docs/AUTH-ACCOUNTS.md), [Project
 Service](docs/PROJECT-SERVICE.md), [Workspace Service](docs/WORKSPACE-SERVICE.md), [Reference App

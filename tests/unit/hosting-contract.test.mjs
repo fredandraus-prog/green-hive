@@ -36,3 +36,33 @@ test('local preview declares development mode and cannot inherit a hosted runtim
   assert.match(launcher, /GREEN_HIVE_HTTP_LOGS: 'false'/);
   assert.match(launcher, /runNpm\('build', \{ \.\.\.applicationEnvironment, NODE_ENV: 'production' \}\)/);
 });
+
+test('hosted acceptance is exact-target, loopback-mediated and cleanup guarded', async () => {
+  const packageJson = JSON.parse(
+    await readFile(new URL('../../package.json', import.meta.url), 'utf8'),
+  );
+  const acceptance = await readFile(
+    new URL('../../scripts/hosted-acceptance.mjs', import.meta.url),
+    'utf8',
+  );
+  const wrapper = await readFile(
+    new URL('../../scripts/staging-database-windows.ps1', import.meta.url),
+    'utf8',
+  );
+
+  assert.equal(
+    packageJson.scripts['hosted:acceptance'],
+    'pwsh -NoProfile -File scripts/staging-database-windows.ps1 hosted-acceptance',
+  );
+  assert.match(acceptance, /https:\/\/green-hive-staging\.onrender\.com/);
+  assert.match(acceptance, /CREATE_DISPOSABLE_HOSTED_FIXTURES/);
+  assert.match(acceptance, /server\.listen\(0, '127\.0\.0\.1'/);
+  assert.match(acceptance, /cleanupGreenHiveUserData/);
+  assert.match(acceptance, /admin\.admin\.deleteUser/);
+  assert.match(acceptance, /finally \{\n  await cleanupFixtures\(\)/);
+  assert.doesNotMatch(acceptance, /console\.log\([^\n]*(recoveryUrl|serviceRoleKey|databaseUrl)/);
+
+  assert.match(wrapper, /rev-parse --path-format=absolute --git-common-dir/);
+  assert.match(wrapper, /green-hive-staging-secret-key\.dpapi/);
+  assert.match(wrapper, /Remove-Item Env:GREEN_HIVE_HOSTED_TEST_CONFIRM/);
+});

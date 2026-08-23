@@ -1,6 +1,6 @@
 # Hosted staging preparation
 
-Status: `SERVICE_CREATED - BUILD_PASS - TLS_CA_FIX_PREPARED - HEALTHY_DEPLOY_PENDING`.
+Status: `LIVE - HTTPS_SMTP_ACCEPTANCE_PASS`.
 
 This runbook records and verifies the Green Hive Reference App's first exact HTTPS deployment. It
 does not authorize production use and does not make Render a second database or migration
@@ -12,7 +12,7 @@ only the test SMTP destination.
 - canonical repository: the private GitHub repository `fredandraus-prog/green-hive`;
 - application host: the Free Render Node web service `green-hive-staging`;
 - database and Auth: the existing `green-hive-staging` Supabase project;
-- SMTP: the existing `green-hive-staging` Mailtrap sandbox, with hosted recovery evidence pending;
+- SMTP: the existing `green-hive-staging` Mailtrap sandbox, validated through hosted PKCE recovery;
 - migrations: controlled commands under `database/migrations`, never application startup;
 - secrets: provider dashboards and user-bound local protection only, never GitHub, logs, ZIPs or
   browser code.
@@ -81,8 +81,8 @@ anchor at `config/supabase-root-2021-ca.crt`. The certificate fingerprint is pin
 Do not replace this with `NODE_TLS_REJECT_UNAUTHORIZED=0`, `rejectUnauthorized: false` or a weaker
 database SSL mode.
 
-The final service origin is `https://green-hive-staging.onrender.com`; both origin variables must
-remain exact for that hostname before accepting the first healthy deploy.
+The final service origin is `https://green-hive-staging.onrender.com`; both origin variables remain
+exact for that hostname in the accepted healthy deploy.
 
 The Free instance can sleep while idle and is suitable only for this staging gate, not production.
 
@@ -110,10 +110,10 @@ npm run release:verify-manifest
 npm audit --audit-level=high
 ```
 
-After Render reports a healthy deploy, set the public origin only in the current terminal and run:
+For every release candidate, set the public origin only in the current terminal and run:
 
 ```powershell
-$env:GREEN_HIVE_HOSTED_APP_ORIGIN = "https://your-service.onrender.com"
+$env:GREEN_HIVE_HOSTED_APP_ORIGIN = "https://green-hive-staging.onrender.com"
 npm run hosted:smoke
 Remove-Item Env:GREEN_HIVE_HOSTED_APP_ORIGIN
 ```
@@ -122,16 +122,27 @@ The smoke command sends only unauthenticated GET requests to the public applicat
 liveness, database readiness, HSTS, no-store behavior and the React shell. It does not modify the
 database.
 
-The first remote build from commit `6307a0a` passed after build dependencies were explicitly
-installed. Startup then reached the Supabase session pooler but failed with
-`SELF_SIGNED_CERT_IN_CHAIN`, proving that the URL contract was correct while the Node trust store
-did not yet contain the Supabase Root 2021 CA. This source correction supplies that trust anchor;
-a new healthy Render deploy remains a required acceptance gate.
+The authenticated gate uses only uniquely named disposable users and requires the Mailtrap recovery
+link to cross a one-shot loopback bridge into the guarded runner:
 
-The final acceptance matrix must then exercise signup, login, refresh, logout, profile,
-workspaces, projects, audit, PKCE recovery through Mailtrap, cross-user/cross-app/cross-workspace
-denial, forged scope, CSRF, logical deletion and cleanup. GH-0201 and GH-0202 remain `PARTIAL`
-until that hosted evidence passes.
+```text
+npm run hosted:acceptance
+```
+
+The runner validates the exact staging target before creating data and removes its Auth users,
+profiles, projects, memberships, organizations and Audit events in `finally` cleanup.
+
+The first remote build from commit `6307a0a` passed after build dependencies were explicitly
+installed. Its initial startup exposed a missing public Supabase trust anchor; PR #4 supplied the
+fingerprint-pinned Supabase Root 2021 CA without weakening TLS. PR #5 then deployed the current
+frontend on merge commit `8aa77b391c65166fb6d02836580f0a499369d528`. Render reports that deploy
+live, and the canonical public smoke passes liveness, readiness, HSTS, no-store and shell checks.
+
+The guarded hosted acceptance matrix now passes signup, login, refresh, logout, profile,
+workspaces, projects, audit, PKCE recovery through Mailtrap, cross-user/cross-workspace denial,
+forged scope, CSRF, logical deletion and cleanup. The final cleanup proves zero test-owned Auth
+users, profiles, projects, memberships, organizations and Audit events. GH-0201 and GH-0202 are
+therefore `DONE`; GH-0204 remains partial only for deployed rate limiting.
 
 ## Rollback
 

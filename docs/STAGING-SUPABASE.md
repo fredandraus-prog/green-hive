@@ -98,17 +98,13 @@ unrelated Auth users. The only canonical migrations remain under `database/migra
 - final database state: eleven ledger rows, one structural app, zero disposable fixture rows;
 - final Auth cleanup: zero `staging-owner-*@example.test` users.
 
-## Remaining acceptance gate
+## Hosted acceptance completion
 
-Database, RLS, Project Service and server-side Auth core are no longer pending. GH-0201/GH-0202
-still require:
+Database, RLS, Project/Workspace Service, Audit, Auth and the deployed HTTPS cookie boundary pass.
+Supabase Site URL and the sole `/auth/recovery` redirect match the Render origin, custom SMTP uses
+the dedicated Mailtrap sandbox, and the guarded runner passes signup/login/recovery/logout/profile,
+project, cross-user, cross-workspace, forged-scope, CSRF and logical-deletion scenarios. Cleanup
+asserts zero test-owned Auth and tenant/Audit rows. GH-0201 and GH-0202 are `DONE`.
 
-1. creation and validation of the prepared exact HTTPS Render host for the React/Fastify app;
-2. matching Supabase Site URL and `/auth/recovery` redirect configuration;
-3. a dedicated test SMTP sender and mailbox retrieval path;
-4. server-only injection of the database and secret values into that host;
-5. the signup/login/recovery/logout/profile/project flow through real HTTPS cookies;
-6. cross-user, cross-app, forged-scope, CSRF and logical-deletion checks through the deployed API;
-7. post-test cleanup and database network restriction once hosting egress is known.
-
-No checkpoint is promoted to `DONE` until this narrower HTTPS/Auth/SMTP evidence passes.
+Database egress hardening after a stable hosting topology and deployed rate limiting remain
+GH-0204/production operations.
