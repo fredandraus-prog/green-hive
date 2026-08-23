@@ -119,8 +119,23 @@ Remove-Item Env:GREEN_HIVE_HOSTED_APP_ORIGIN
 ```
 
 The smoke command sends only unauthenticated GET requests to the public application. It checks
-liveness, database readiness, HSTS, no-store behavior and the React shell. It does not modify the
-database.
+liveness, database readiness, HSTS, hardened security headers, no-store behavior and the React
+shell. It does not modify the database.
+
+GH-0204 adds a separate exact-target abuse gate. It uses a unique nonexistent e-mail, creates no
+account or database row and sends no recovery message:
+
+```powershell
+$env:GREEN_HIVE_HOSTED_APP_ORIGIN = "https://green-hive-staging.onrender.com"
+$env:GREEN_HIVE_HOSTED_SECURITY_CONFIRM = "EXERCISE_STAGING_RATE_LIMIT"
+npm run hosted:security
+Remove-Item Env:GREEN_HIVE_HOSTED_APP_ORIGIN
+Remove-Item Env:GREEN_HIVE_HOSTED_SECURITY_CONFIRM
+```
+
+The gate expects ten guarded credential failures, a stable eleventh-request `429`, a separate
+account bucket, rate-limit headers and unthrottled health/readiness probes. Until this command passes
+against the deployed GH-0204 commit, the checkpoint remains `PARTIAL - IMPLEMENTATION_PASS`.
 
 The authenticated gate uses only uniquely named disposable users and requires the Mailtrap recovery
 link to cross a one-shot loopback bridge into the guarded runner:
@@ -142,7 +157,8 @@ The guarded hosted acceptance matrix now passes signup, login, refresh, logout, 
 workspaces, projects, audit, PKCE recovery through Mailtrap, cross-user/cross-workspace denial,
 forged scope, CSRF, logical deletion and cleanup. The final cleanup proves zero test-owned Auth
 users, profiles, projects, memberships, organizations and Audit events. GH-0201 and GH-0202 are
-therefore `DONE`; GH-0204 remains partial only for deployed rate limiting.
+therefore `DONE`; the GH-0204 implementation is locally complete but remains partial until the
+exact hosted security smoke passes after deployment.
 
 ## Rollback
 

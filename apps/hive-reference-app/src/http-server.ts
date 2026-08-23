@@ -15,6 +15,10 @@ import {
   type Workspace,
 } from '@green-hive/projects';
 import type { ReferenceAppServer } from './server.js';
+import {
+  ReferenceAppRateLimiter,
+  type ReferenceAppRateLimitOptions,
+} from './security-rate-limit.js';
 
 export const REFERENCE_APP_COOKIE_NAMES = Object.freeze({
   access: 'green_hive_access',
@@ -81,6 +85,7 @@ export interface ReferenceAppHttpServerOptions {
   readonly readinessCheck?: () => Promise<void>;
   readonly webRoot?: string;
   readonly logger?: boolean;
+  readonly rateLimit?: ReferenceAppRateLimitOptions;
 }
 
 function exactObject(
@@ -250,6 +255,7 @@ export async function createReferenceAppHttpServer(
   options: ReferenceAppHttpServerOptions,
 ): Promise<FastifyInstance> {
   const allowedOrigin = new URL(options.allowedOrigin).origin;
+  const rateLimiter = new ReferenceAppRateLimiter(options.rateLimit);
   const application = Fastify({
     logger: options.logger ?? false,
     bodyLimit: 32 * 1024,
@@ -262,13 +268,16 @@ export async function createReferenceAppHttpServer(
     reply.header('X-Frame-Options', 'DENY');
     reply.header('Referrer-Policy', 'no-referrer');
     reply.header('Cross-Origin-Opener-Policy', 'same-origin');
+    reply.header('Cross-Origin-Resource-Policy', 'same-origin');
+    reply.header('X-DNS-Prefetch-Control', 'off');
+    reply.header('X-Permitted-Cross-Domain-Policies', 'none');
     reply.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     if (options.secureCookies) {
       reply.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     }
     reply.header(
       'Content-Security-Policy',
-      "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+      "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
     );
 
     if (request.url.startsWith('/api/') || request.url.startsWith('/auth/')) {
@@ -283,6 +292,23 @@ export async function createReferenceAppHttpServer(
         throw new AuthError('INVALID_AUTH_INPUT');
       }
     }
+  });
+
+  application.addHook('preHandler', async (request, reply) => {
+    const decision = rateLimiter.check(request);
+    if (!decision) return;
+    reply.header('RateLimit-Limit', decision.limit);
+    reply.header('RateLimit-Remaining', decision.remaining);
+    reply.header('RateLimit-Reset', decision.resetSeconds);
+    reply.header(
+      'RateLimit-Policy',
+      `${decision.limit};w=${decision.windowSeconds}`,
+    );
+    if (decision.allowed) return;
+    reply.header('Retry-After', decision.resetSeconds);
+    return reply.code(429).send({
+      error: { code: 'RATE_LIMITED', message: 'Too many requests. Retry later.' },
+    });
   });
 
   application.get('/api/health', async () => ({ status: 'ok', app: 'REFERENCE_APP' }));

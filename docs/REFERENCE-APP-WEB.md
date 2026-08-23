@@ -177,4 +177,6 @@ viewports.
 The dedicated Supabase staging project and CI-gated Render service pass the server-side signup,
 session, cross-user, cross-workspace and owned-project flow through protected HTTPS cookies.
 Hosted PKCE recovery is completed through Supabase custom SMTP and Mailtrap. GH-0201 and GH-0202
-are `DONE`; GH-0204 remains partial for deployed rate limiting.
+are `DONE`. GH-0204 has a locally validated bounded rate-limit implementation and remains
+`PARTIAL - IMPLEMENTATION_PASS` until its exact-target abuse gate passes on the deployed Render
+service.

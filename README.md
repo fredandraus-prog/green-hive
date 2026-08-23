@@ -6,7 +6,8 @@ the canonical GH-0/GH-1 bootstrap advanced through **GH-0102 (Database Foundatio
 **GH-0201/GH-0202 (Auth, accounts and the protected HTTP boundary)**. Version `0.7.0` completed
 **GH-0203 (Audit Foundation)** after **GH-0250 (Organizations & Multi-Tenancy Foundation)**.
 Version `0.8.0` completes the deployed HTTPS/Auth/RLS acceptance gate for **GH-0201/GH-0202**;
-Billing remains deferred until the remaining GH-0204 rate-limit gate is reviewed.
+the current GH-0204 implementation slice adds bounded application-level rate limiting and awaits
+its exact hosted security smoke before release. Billing remains deferred until that gate passes.
 
 The checkpoint is deliberately narrow. Billing, Entitlements, Cost Guard, AI, Search, Redis,
 external webhooks, remote storage and consumer-domain functionality remain out of scope.
@@ -33,6 +34,8 @@ external webhooks, remote storage and consumer-domain functionality remain out o
 - a responsive React/Vite Reference App with signup, login, recovery, profile and project screens;
 - a loopback-only Fastify HTTP boundary with HttpOnly cookies, exact-origin CSRF checks, PKCE
   recovery, no-store responses and baseline security headers;
+- HMAC-keyed fixed-window limits for Auth, session, API and expensive reads, with wider source and
+  global ceilings, bounded memory, lazy expiry, stable `429` responses and unthrottled health probes;
 - a fail-closed hosted staging mode, Free Render Blueprint, fingerprint-pinned Supabase CA,
   database-backed readiness endpoint, GitHub CI and repository secret scan;
 - runtime validation, explicit trusted-context authorization and stable public project errors;
@@ -190,13 +193,13 @@ metadata drift and a managed schema without a ledger. Except for provisioning th
 ## Status
 
 GH-0102, GH-0103, GH-0104, GH-0201, GH-0202, GH-0203 and GH-0250 are `DONE`. GH-0204 is
-`PARTIAL — HOSTED_BASELINE_PASS`: exact-origin protections, secure cookies, HSTS, no-store,
-readiness, CI and secret scanning pass on the deployed service; bounded rate limiting remains the
-next security gate. See
+`PARTIAL — IMPLEMENTATION_PASS`: exact-origin protections, secure cookies, hardened headers,
+bounded rate limiting, CI, secret scanning and bundle scanning pass locally; the exact hosted
+security smoke remains the release gate. See
 [Implementation status](docs/IMPLEMENTATION_STATUS.md), [Database](docs/DATABASE.md), [Trusted app
 context](docs/TRUSTED-APP-CONTEXT.md), [Auth and accounts](docs/AUTH-ACCOUNTS.md), [Project
 Service](docs/PROJECT-SERVICE.md), [Workspace Service](docs/WORKSPACE-SERVICE.md), [Reference App
 web](docs/REFERENCE-APP-WEB.md), [Hosted staging](docs/HOSTED-STAGING.md), [Audit](docs/AUDIT.md),
-[GH-0203 checkpoint](docs/CHECKPOINT-GH-0203.md),
+[GH-0203 checkpoint](docs/CHECKPOINT-GH-0203.md), [GH-0204 checkpoint](docs/CHECKPOINT-GH-0204.md),
 [GH-0250 checkpoint](docs/CHECKPOINT-GH-0250.md), [Ideas Radar](IDEAS_RADAR.md) and
 [Reconciliation](docs/RECONCILIATION-2026-08-18.md).
