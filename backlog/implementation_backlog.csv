@@ -19,4 +19,7 @@ GH-0256,"Tenant-aware RLS",DONE,PASS,"Validated transaction-local organization c
 GH-0257,"Cross-organization tests",DONE,PASS,"Embedded local Supabase hosted staging and HTTP cross-organization denial matrices","None"
 GH-0258,"Shared Workspace",DONE,PASS,"Typed shared workspace creation selection and bounded member administration","None"
 GH-0259,"Billing ownership preparation",DONE,PASS,"Stable organization and app-installation ownership identities without Billing behavior","Begin Billing only after remaining GH-2 gates or explicit reprioritization"
-GH-0301,"Billing Foundation",DONE,PASS,"Migrations 0012/0013 app catalog exact-decimal prices tenant purchase/payment snapshots hashed idempotency transactional pending creation Audit and embedded/local/staging service plus RLS matrices","GH-0302 fake/sandbox payment provider adapter"
+GH-0301,"Billing Foundation",DONE,PASS,"Migrations 0012/0013 app catalog exact-decimal prices tenant purchase/payment snapshots hashed idempotency transactional pending creation Audit and embedded/local/staging service plus RLS matrices","None"
+GH-0302,"Fake/sandbox payment provider adapter",DONE,PASS,"Migration 0014 deterministic network-free provider trusted success failure full-refund transitions safe Audit and embedded/local/staging Supabase matrices","None"
+GH-0303,"Verified idempotent webhook processing",NOT_STARTED,NOT_RUN,"Outside platform 0.11.0","Signed provider webhook verification duplicate-event single effect and reconciliation"
+GH-0304,"Entitlement schema and can service",NOT_STARTED,NOT_RUN,"Outside platform 0.11.0","Derive capabilities separately from Billing commercial truth"

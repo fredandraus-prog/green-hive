@@ -68,13 +68,13 @@ fails if a known disposable fixture remains.
 
 1. repeats the database-only preflight;
 2. runs `db:validate`;
-3. applies all canonical pending migrations, currently `0001` through `0013`, using the ledger;
+3. applies all canonical pending migrations, currently `0001` through `0014`, using the ledger;
 4. reapplies the migrator to prove no duplication;
 5. applies the structural `REFERENCE_APP` and sandbox Billing catalog seeds twice;
 6. verifies ledger, seed identities, native FKs, RLS, helpers and grants.
 
 `staging:database:test` executes the hosted RLS/database matrix, the 10-scenario Project/Workspace
-Service matrix and the 6-scenario native Billing Service matrix. `staging:auth:test` creates two
+Service matrix and the 7-scenario native Billing Service/provider matrix. `staging:auth:test` creates two
 uniquely named confirmed test accounts, executes the server-side Auth/account matrix, and deletes
 their projects, Billing rows, settings, profiles and Auth users in a final cleanup block.
 
@@ -85,18 +85,18 @@ unrelated Auth users. The only canonical migrations remain under `database/migra
 ## Passed hosted evidence
 
 - project identity and health: confirmed;
-- migrations/ledger: thirteen applied, zero pending, reapplication creates no duplicate;
+- migrations/ledger: fourteen applied, zero pending, reapplication creates no duplicate;
 - seeds: deterministic `REFERENCE_APP` and sandbox catalog, reapplied twice;
 - database/RLS: 13 passed, 0 failed;
 - Project/Workspace Service: 10 passed, 0 failed;
-- Billing Service: 6 passed, 0 failed;
+- Billing Service/provider: 7 passed, 0 failed;
 - Auth/account core: 8 passed, 0 failed;
 - confirmed signup and isolated owner profiles: passed;
 - profile and owned-project access: passed;
 - `user_metadata` privilege forgery: denied;
 - only controlled `app_metadata.app_code` changes the active app: passed;
 - refresh rotation, logout revocation and stable public errors: passed;
-- final database state: thirteen ledger rows, one structural app, one sandbox product/price and
+- final database state: fourteen ledger rows, one structural app, one sandbox product/price and
   zero disposable fixture rows;
 - final Auth cleanup: zero `staging-owner-*@example.test` users.
 

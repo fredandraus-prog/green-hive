@@ -70,8 +70,64 @@ export interface PaymentSummary {
   readonly confirmedAt: Date | null;
   readonly failedAt: Date | null;
   readonly refundedAt: Date | null;
+  /** Exact refunded amount. Null until a refund is recorded. */
+  readonly refundedAmount: string | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
+}
+
+export const SANDBOX_PAYMENT_OUTCOMES = ['SUCCESS', 'FAILURE'] as const;
+export type SandboxPaymentOutcome = (typeof SANDBOX_PAYMENT_OUTCOMES)[number];
+
+export interface ProviderPaymentRequest {
+  readonly purchaseId: string;
+  readonly paymentId: string;
+  readonly productCode: string;
+  /** Exact decimal string; providers must not convert it to a JS float. */
+  readonly amount: string;
+  readonly currency: string;
+  readonly attemptNumber: number;
+}
+
+export interface ProviderPaymentPaidResult {
+  readonly status: 'PAID';
+  readonly providerCode: string;
+  readonly providerPaymentId: string;
+}
+
+export interface ProviderPaymentFailedResult {
+  readonly status: 'FAILED';
+  readonly providerCode: string;
+  readonly providerPaymentId: string;
+  readonly failureCode: string;
+}
+
+export type ProviderPaymentResult =
+  | ProviderPaymentPaidResult
+  | ProviderPaymentFailedResult;
+
+export interface ProviderRefundRequest {
+  readonly purchaseId: string;
+  readonly paymentId: string;
+  /** Exact decimal string; providers must not convert it to a JS float. */
+  readonly amount: string;
+  readonly currency: string;
+}
+
+export interface ProviderRefundResult {
+  readonly status: 'REFUNDED';
+  readonly providerCode: string;
+  readonly providerRefundId: string;
+}
+
+export interface BillingProvider {
+  processPayment(request: ProviderPaymentRequest): Promise<ProviderPaymentResult>;
+  refundPayment(request: ProviderRefundRequest): Promise<ProviderRefundResult>;
+}
+
+export interface FakeBillingProviderOptions {
+  readonly paymentOutcome?: SandboxPaymentOutcome;
+  readonly failureCode?: string;
 }
 
 export interface Purchase {
@@ -122,6 +178,16 @@ export interface BillingRepository {
     context: TrustedOrganizationContext,
     purchaseId: string,
   ): Promise<Purchase | null>;
+  applyPaymentResult(
+    context: TrustedOrganizationContext,
+    purchaseId: string,
+    result: ProviderPaymentResult,
+  ): Promise<Purchase>;
+  applyRefundResult(
+    context: TrustedOrganizationContext,
+    purchaseId: string,
+    result: ProviderRefundResult,
+  ): Promise<Purchase>;
 }
 
 export interface BillingSqlResult<Row> {

@@ -18,6 +18,7 @@ Once real data exists, a reviewed forward correction is normally safer.
 | `0011` | forward-fix event constraints/triggers | export and verify events before disabling only the affected capture trigger |
 | `0012` | forward-fix catalog constraints/policies | export and verify every product and versioned price before restoration |
 | `0013` | forward-fix commercial ledger/function | export and verify purchases, payments, snapshots and Audit events before restoration |
+| `0014` | forward-fix provider transitions/constraints | export and verify purchases, payments and payment Audit events before restoration |
 
 If a ledger checksum, filename or rollback description differs, deployment stops. Never edit the
 ledger to hide drift. Restore the canonical migration or introduce a reviewed next-numbered

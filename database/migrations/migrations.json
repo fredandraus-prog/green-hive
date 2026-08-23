@@ -118,6 +118,15 @@
       "description": "Create tenant purchase and payment records with server-authoritative pending purchase creation.",
       "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_COMMERCIAL_LEDGER_EXPORT_RESTORE",
       "rollbackStrategy": "Prefer a forward fix; export and verify purchases, payments, audit events and immutable price snapshots before any controlled restoration."
+    },
+    {
+      "version": 14,
+      "file": "0014_create_sandbox_payment_transitions.sql",
+      "sha256": "deea84da350f95ac650b45e581d14c33ae0aed104dfdac088029c7ca18a5584b",
+      "checkpoint": "GH-0302",
+      "description": "Add provider-neutral payment and refund transitions for the deterministic sandbox adapter.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_COMMERCIAL_LEDGER_EXPORT_RESTORE",
+      "rollbackStrategy": "Prefer a forward fix; export and verify purchases, payments and payment audit events before any controlled restoration."
     }
   ]
 }

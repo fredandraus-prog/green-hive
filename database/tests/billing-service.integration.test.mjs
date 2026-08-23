@@ -8,6 +8,7 @@ import { pgcrypto } from '@electric-sql/pglite/contrib/pgcrypto';
 import {
   BillingError,
   BillingService,
+  FakeBillingProvider,
   PostgresBillingRepository,
 } from '../../packages/billing/dist/index.js';
 import { loadMigrationCatalog } from '../../scripts/lib/migration-catalog.mjs';
@@ -20,6 +21,7 @@ const ORGANIZATION_B_ID = '30000000-0000-4000-8000-000000000002';
 const REFERENCE_APP_ID = '00000000-0000-4000-8000-000000000001';
 const REFERENCE_PRICE_ID = '50000000-0000-4000-8000-000000000001';
 const PROJECT_ID = '20000000-0000-4000-8000-000000000091';
+const FAILED_PROJECT_ID = '20000000-0000-4000-8000-000000000092';
 
 const authShim = `
   CREATE SCHEMA auth;
@@ -107,8 +109,10 @@ test('Postgres Billing repository preserves trusted scope, decimal snapshots and
 
     await database.query(
       `INSERT INTO hive.projects (id, organization_id, app_id, owner_user_id, name)
-       VALUES ($1::uuid, $2::uuid, $3::uuid, $4::uuid, 'Billing Integration Project')`,
-      [PROJECT_ID, ORGANIZATION_A_ID, REFERENCE_APP_ID, USER_A_ID],
+       VALUES
+         ($1::uuid, $2::uuid, $3::uuid, $4::uuid, 'Billing Integration Project'),
+         ($5::uuid, $2::uuid, $3::uuid, $4::uuid, 'Failed Billing Integration Project')`,
+      [PROJECT_ID, ORGANIZATION_A_ID, REFERENCE_APP_ID, USER_A_ID, FAILED_PROJECT_ID],
     );
 
     const repository = new PostgresBillingRepository({
@@ -116,7 +120,10 @@ test('Postgres Billing repository preserves trusted scope, decimal snapshots and
         return database.query(sql, parameters);
       },
     });
-    const service = new BillingService(repository);
+    const service = new BillingService(
+      repository,
+      new FakeBillingProvider({ paymentOutcome: 'SUCCESS' }),
+    );
     const contextA = {
       userId: USER_A_ID,
       appCode: 'REFERENCE_APP',
@@ -142,6 +149,106 @@ test('Postgres Billing repository preserves trusted scope, decimal snapshots and
     assert.equal(purchase.status, 'PENDING');
     assert.equal(purchase.payment.status, 'PENDING');
     assert.deepEqual((await service.listPurchases(contextA, PROJECT_ID)).map((row) => row.id), [purchase.id]);
+
+    await assert.rejects(
+      database.query(
+        `SELECT hive.apply_provider_payment_result(
+           $1::uuid,
+           'GREEN_HIVE_FAKE',
+           $2::text,
+           'PAID',
+           NULL
+         )`,
+        [purchase.id, `fake-payment:${purchase.payment.id}`],
+      ),
+      /permission denied|privilege/i,
+    );
+
+    await database.exec('RESET ROLE;');
+    const paid = await service.processPayment(contextA, purchase.id);
+    assert.equal(paid.status, 'CONFIRMED');
+    assert.equal(paid.payment.status, 'PAID');
+    assert.equal((await service.processPayment(contextA, purchase.id)).payment.status, 'PAID');
+
+    const refunded = await service.refundPayment(contextA, purchase.id);
+    assert.equal(refunded.status, 'CONFIRMED');
+    assert.equal(refunded.payment.status, 'REFUNDED');
+    assert.equal(refunded.payment.refundedAmount, refunded.payment.amount);
+    assert.equal((await service.refundPayment(contextA, purchase.id)).payment.status, 'REFUNDED');
+
+    const audit = await database.query(
+      `SELECT event_code, outcome, metadata
+       FROM audit.events
+       WHERE subject_id = $1::uuid
+       ORDER BY occurred_at, event_code`,
+      [purchase.payment.id],
+    );
+    assert.deepEqual(audit.rows, [
+      {
+        event_code: 'PAYMENT_CONFIRMED',
+        outcome: 'SUCCEEDED',
+        metadata: { provider_code: 'GREEN_HIVE_FAKE', status: 'PAID' },
+      },
+      {
+        event_code: 'PAYMENT_REFUNDED',
+        outcome: 'SUCCEEDED',
+        metadata: { provider_code: 'GREEN_HIVE_FAKE', status: 'REFUNDED' },
+      },
+    ]);
+
+    const failureService = new BillingService(
+      repository,
+      new FakeBillingProvider({ paymentOutcome: 'FAILURE' }),
+    );
+    const failurePurchase = await failureService.createPurchase(contextA, {
+      projectId: FAILED_PROJECT_ID,
+      productCode: 'REFERENCE_APP_SANDBOX',
+      priceId: REFERENCE_PRICE_ID,
+      idempotencyKey: 'billing-integration-failure-0001',
+    });
+    const failed = await failureService.processPayment(contextA, failurePurchase.id);
+    assert.equal(failed.status, 'CANCELED');
+    assert.equal(failed.payment.status, 'FAILED');
+    assert.equal(
+      (await failureService.processPayment(contextA, failurePurchase.id)).payment.status,
+      'FAILED',
+    );
+    await assert.rejects(
+      failureService.refundPayment(contextA, failurePurchase.id),
+      hasCode('INVALID_PAYMENT_TRANSITION'),
+    );
+    await assert.rejects(
+      database.query(
+        `SELECT hive.apply_provider_payment_result(
+           $1::uuid,
+           'GREEN_HIVE_FAKE',
+           $2::text,
+           'PAID',
+           NULL
+         )`,
+        [failurePurchase.id, `fake-payment:${failurePurchase.payment.id}`],
+      ),
+      /INVALID_PAYMENT_TRANSITION/,
+    );
+    const failureAudit = await database.query(
+      `SELECT event_code, outcome, metadata
+       FROM audit.events
+       WHERE subject_id = $1::uuid`,
+      [failurePurchase.payment.id],
+    );
+    assert.deepEqual(failureAudit.rows, [
+      {
+        event_code: 'PAYMENT_FAILED',
+        outcome: 'FAILED',
+        metadata: {
+          failure_code: 'SANDBOX_DECLINED',
+          provider_code: 'GREEN_HIVE_FAKE',
+          status: 'FAILED',
+        },
+      },
+    ]);
+
+    await database.exec('SET ROLE authenticated;');
 
     await setContext(database, USER_B_ID, 'REFERENCE_APP', ORGANIZATION_B_ID);
     const contextB = {

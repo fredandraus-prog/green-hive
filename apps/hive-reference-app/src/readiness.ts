@@ -1,4 +1,4 @@
-export const REFERENCE_APP_EXPECTED_MIGRATION_VERSION = 13;
+export const REFERENCE_APP_EXPECTED_MIGRATION_VERSION = 14;
 
 interface ReadinessRow extends Record<string, unknown> {
   readonly migration_count: number;
@@ -11,6 +11,7 @@ interface ReadinessRow extends Record<string, unknown> {
   readonly billing_catalog_ready: boolean;
   readonly billing_purchase_ready: boolean;
   readonly billing_function_ready: boolean;
+  readonly billing_provider_ready: boolean;
   readonly app_helper_ready: boolean;
   readonly organization_helper_ready: boolean;
 }
@@ -56,6 +57,10 @@ export function createReferenceAppReadinessCheck(database: ReadinessDatabase): (
            AND to_regclass('hive.payments') IS NOT NULL AS billing_purchase_ready,
          to_regprocedure('hive.create_pending_purchase(uuid,text,uuid,text)') IS NOT NULL
            AS billing_function_ready,
+         to_regprocedure('hive.apply_provider_payment_result(uuid,text,text,text,text)') IS NOT NULL
+           AND to_regprocedure('hive.apply_provider_refund(uuid,text,text)') IS NOT NULL
+           AND to_regprocedure('audit.capture_payment_transition()') IS NOT NULL
+           AS billing_provider_ready,
          to_regprocedure('hive.current_app_code()') IS NOT NULL AS app_helper_ready,
          to_regprocedure('hive.current_organization_id()') IS NOT NULL AS organization_helper_ready`,
       [
@@ -77,6 +82,7 @@ export function createReferenceAppReadinessCheck(database: ReadinessDatabase): (
       !state.billing_catalog_ready ||
       !state.billing_purchase_ready ||
       !state.billing_function_ready ||
+      !state.billing_provider_ready ||
       !state.app_helper_ready ||
       !state.organization_helper_ready
     ) {

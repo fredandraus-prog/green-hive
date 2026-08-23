@@ -14,6 +14,8 @@ database transaction.
 | `hive.organization_app_members` | read selected app membership; role-limited administration | read safe operational metadata | denied |
 | `hive.projects` | owner-only read/create/update in selected organization and app | denied private project content | denied |
 | `hive.project_settings` | owner-only read/create/update through an authorized project | denied private settings content | denied |
+| `hive.products` / `hive.prices` | current-app catalog read only | read safe catalog metadata | denied |
+| `hive.purchases` / `hive.payments` | owner/project/workspace read only; pending purchase function only | denied private commercial rows | denied |
 | `audit.events` | read selected organization/app events; no direct writes | read safe operational audit metadata; no writes | denied |
 
 Project deletion is logical and uses `hive.soft_delete_project(uuid)`. The function validates
@@ -25,3 +27,6 @@ implicit path to private project content.
 Audit records are appended only by narrowly scoped database trigger functions in the same
 transaction as the protected lifecycle change. The `authenticated` role has no `INSERT`, `UPDATE`
 or `DELETE` grant or policy on `audit.events`.
+
+Authenticated users cannot execute the GH-0302 payment-result/refund functions. Those functions
+are server-only and repeat user/app/workspace checks before applying an idempotent transition.

@@ -27,7 +27,8 @@ No app-domain concepts belong in `hive`.
 - `hive.products`: app-scoped generic catalog using only canonical App Manifest product types.
 - `hive.prices`: immutable-version exact-decimal prices with currency, locale and validity window.
 - `hive.purchases`: owner/project/app/workspace-scoped commercial snapshots and hashed idempotency.
-- `hive.payments`: server-authoritative payment attempts; authenticated reads exclude provider refs.
+- `hive.payments`: server-authoritative payment attempts and exact refund amount; authenticated
+  reads exclude provider payment/refund references and failure internals.
 - `audit.events`: immutable actor/tenant/app/project event metadata with request and correlation
   identifiers, protected by tenant-aware read RLS and no authenticated write grant.
 
@@ -61,7 +62,9 @@ production retention mechanism. See `docs/AUDIT.md`.
 
 Authenticated roles receive read-only catalog and owner-scoped commercial history. They receive no
 direct write grant on `products`, `prices`, `purchases` or `payments`. Pending purchase creation is
-the single reviewed `SECURITY DEFINER` entrypoint; it has an empty `search_path`, schema-qualified
-objects, explicit `PUBLIC` revocation and derives all authority from `auth.uid()` plus trusted app
-and workspace helpers. Amount, currency, product snapshot, owner and tenant scope are resolved in
-the transaction rather than accepted from the caller.
+the only authenticated Billing write entrypoint. The trusted backend uses separately revoked
+provider-result/refund functions; those functions are not executable by `authenticated`, repeat
+explicit user/app/workspace authorization, lock the purchase/payment rows and make exact retries
+idempotent. All three functions have empty `search_path`, schema-qualified objects and explicit
+`PUBLIC` revocation. Amount, currency, commercial scope and sandbox outcome are never accepted
+from a browser payload.

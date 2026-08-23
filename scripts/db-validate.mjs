@@ -312,6 +312,11 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'hive.create_pending_purchase',
     'audit.capture_purchase_created',
     'audit_purchases_after_insert',
+    'hive.apply_provider_payment_result',
+    'hive.apply_provider_refund',
+    'audit.capture_payment_transition',
+    'audit_payments_after_transition',
+    'PAYMENT_FAILED',
   ];
   for (const marker of requiredContextMarkers) {
     if (!allSql.includes(marker)) errors.push(`trusted app context is missing marker: ${marker}`);
@@ -347,8 +352,22 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'SECURITY DEFINER',
     "SET search_path = ''",
     'REVOKE ALL ON FUNCTION hive.create_pending_purchase(uuid, text, uuid, text) FROM PUBLIC',
+    'provider_refund_id text',
+    'refunded_amount numeric(20, 6)',
   ]) {
     if (!allSql.includes(billingMarker)) errors.push(`billing contract is missing marker: ${billingMarker}`);
+  }
+  for (const protectedFunction of [
+    'hive.apply_provider_payment_result\\(uuid, text, text, text, text\\)',
+    'hive.apply_provider_refund\\(uuid, text, text\\)',
+  ]) {
+    const revokePattern = new RegExp(
+      `REVOKE\\s+ALL\\s+ON\\s+FUNCTION\\s+${protectedFunction}\\s+FROM\\s+(PUBLIC|authenticated)`,
+      'i',
+    );
+    if (!revokePattern.test(allSql)) {
+      errors.push(`trusted payment function is not protected: ${protectedFunction}`);
+    }
   }
   if (/\b(card_number|cardholder|cvv|cvc|full_card)\b\s+(text|varchar|character|jsonb?|bytea)\b/i.test(allSql)) {
     errors.push('payment-card data leaked into Green Hive migrations');

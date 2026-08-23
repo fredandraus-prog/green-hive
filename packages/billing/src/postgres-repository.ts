@@ -10,6 +10,8 @@ import type {
   ProductType,
   Purchase,
   PurchaseStatus,
+  ProviderPaymentResult,
+  ProviderRefundResult,
   ValidatedCreatePurchaseInput,
 } from './types.js';
 
@@ -70,6 +72,7 @@ interface PurchaseRow extends Record<string, unknown> {
   readonly payment_confirmed_at: Date | string | null;
   readonly payment_failed_at: Date | string | null;
   readonly payment_refunded_at: Date | string | null;
+  readonly payment_refunded_amount: string | null;
   readonly payment_created_at: Date | string;
   readonly payment_updated_at: Date | string;
 }
@@ -121,6 +124,7 @@ const PURCHASE_COLUMNS = `
   payment.confirmed_at AS payment_confirmed_at,
   payment.failed_at AS payment_failed_at,
   payment.refunded_at AS payment_refunded_at,
+  payment.refunded_amount::text AS payment_refunded_amount,
   payment.created_at AS payment_created_at,
   payment.updated_at AS payment_updated_at`;
 
@@ -213,6 +217,7 @@ function mapPurchase(row: PurchaseRow): Purchase {
       confirmedAt: asOptionalDate(row.payment_confirmed_at, 'payment_confirmed_at'),
       failedAt: asOptionalDate(row.payment_failed_at, 'payment_failed_at'),
       refundedAt: asOptionalDate(row.payment_refunded_at, 'payment_refunded_at'),
+      refundedAmount: row.payment_refunded_amount,
       createdAt: asDate(row.payment_created_at, 'payment_created_at'),
       updatedAt: asDate(row.payment_updated_at, 'payment_updated_at'),
     },
@@ -227,6 +232,7 @@ function mapKnownDatabaseError(error: unknown): never {
     'PRICE_NOT_FOUND',
     'PURCHASE_NOT_FOUND',
     'BILLING_IDEMPOTENCY_CONFLICT',
+    'INVALID_PAYMENT_TRANSITION',
   ] as const) {
     if (message.includes(code)) throw new BillingError(code);
   }
@@ -354,6 +360,66 @@ export class PostgresBillingRepository implements BillingRepository {
       [purchaseId, context.userId, authority.app_id, authority.organization_id],
     );
     return result.rows[0] ? mapPurchase(result.rows[0]) : null;
+  }
+
+  async applyPaymentResult(
+    context: TrustedOrganizationContext,
+    purchaseId: string,
+    result: ProviderPaymentResult,
+  ): Promise<Purchase> {
+    await this.#assertAuthority(context);
+    try {
+      const applied = await this.#database.query<{ purchase_id: string }>(
+        `SELECT hive.apply_provider_payment_result(
+           $1::uuid,
+           $2::text,
+           $3::text,
+           $4::text,
+           $5::text
+         )::text AS purchase_id`,
+        [
+          purchaseId,
+          result.providerCode,
+          result.providerPaymentId,
+          result.status,
+          result.status === 'FAILED' ? result.failureCode : null,
+        ],
+      );
+      if (applied.rows[0]?.purchase_id !== purchaseId) {
+        throw new Error('Payment transition returned an unexpected purchase id');
+      }
+      const purchase = await this.getPurchase(context, purchaseId);
+      if (!purchase) throw new BillingError('PURCHASE_NOT_FOUND');
+      return purchase;
+    } catch (error) {
+      mapKnownDatabaseError(error);
+    }
+  }
+
+  async applyRefundResult(
+    context: TrustedOrganizationContext,
+    purchaseId: string,
+    result: ProviderRefundResult,
+  ): Promise<Purchase> {
+    await this.#assertAuthority(context);
+    try {
+      const applied = await this.#database.query<{ purchase_id: string }>(
+        `SELECT hive.apply_provider_refund(
+           $1::uuid,
+           $2::text,
+           $3::text
+         )::text AS purchase_id`,
+        [purchaseId, result.providerCode, result.providerRefundId],
+      );
+      if (applied.rows[0]?.purchase_id !== purchaseId) {
+        throw new Error('Refund transition returned an unexpected purchase id');
+      }
+      const purchase = await this.getPurchase(context, purchaseId);
+      if (!purchase) throw new BillingError('PURCHASE_NOT_FOUND');
+      return purchase;
+    } catch (error) {
+      mapKnownDatabaseError(error);
+    }
   }
 
   async #assertAuthority(context: TrustedOrganizationContext): Promise<AuthorityRow> {
