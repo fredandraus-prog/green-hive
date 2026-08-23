@@ -185,9 +185,11 @@ test(
       await testContext.test('REFERENCE_APP seed rejects a conflicting UUID', async () => {
         await client.query('BEGIN');
         try {
-          await client.query("DELETE FROM hive.prices WHERE app_id = '00000000-0000-4000-8000-000000000001'");
-          await client.query("DELETE FROM hive.products WHERE app_id = '00000000-0000-4000-8000-000000000001'");
-          await client.query("DELETE FROM hive.apps WHERE app_code = 'REFERENCE_APP'");
+          await client.query(
+            `UPDATE hive.apps
+             SET app_code = 'REFERENCE_APP_CANONICAL_HOLD'
+             WHERE id = '00000000-0000-4000-8000-000000000001'`,
+          );
           await client.query(
             `INSERT INTO hive.apps
               (id, app_code, name, app_version, status, schema_namespace)
@@ -200,20 +202,15 @@ test(
         }
       });
 
-      await testContext.test('REFERENCE_APP billing seed rejects a conflicting product UUID', async () => {
+      await testContext.test(
+        'REFERENCE_APP billing seed rejects a conflicting immutable product identity',
+        async () => {
         await client.query('BEGIN');
         try {
-          await client.query("DELETE FROM hive.prices WHERE product_id = '40000000-0000-4000-8000-000000000001'");
-          await client.query("DELETE FROM hive.products WHERE product_code = 'REFERENCE_APP_SANDBOX'");
           await client.query(
-            `INSERT INTO hive.products (id, app_id, product_code, product_type, name)
-             VALUES (
-               '40000000-0000-4000-8000-000000000099',
-               '00000000-0000-4000-8000-000000000001',
-               'REFERENCE_APP_SANDBOX',
-               'ONE_TIME',
-               'Conflict'
-             )`,
+            `UPDATE hive.products
+             SET product_code = 'REFERENCE_APP_SANDBOX_CANONICAL_HOLD'
+             WHERE id = '40000000-0000-4000-8000-000000000001'`,
           );
           await assert.rejects(
             () => client.query(billingSeed),
@@ -222,7 +219,8 @@ test(
         } finally {
           await client.query('ROLLBACK');
         }
-      });
+        },
+      );
 
       await client.query(fixture);
       await client.query('SET ROLE authenticated');

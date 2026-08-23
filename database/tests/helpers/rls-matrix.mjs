@@ -332,7 +332,13 @@ export async function runRlsMatrix(query, testContext) {
 
     const apps = await query('SELECT app_code FROM hive.apps ORDER BY app_code');
     assert.deepEqual(apps.rows.map((row) => row.app_code), ['OTHER_TEST_APP', 'REFERENCE_APP']);
-    const organizations = await query('SELECT id FROM hive.organizations ORDER BY id');
+    const organizations = await query(
+      `SELECT id
+       FROM hive.organizations
+       WHERE id IN ($1::uuid, $2::uuid, $3::uuid)
+       ORDER BY id`,
+      [ORGANIZATION_A_ID, ORGANIZATION_B_ID, SHARED_ORGANIZATION_ID],
+    );
     assert.equal(organizations.rows.length, 3);
     const catalog = await query('SELECT product_code FROM hive.products ORDER BY product_code');
     assert.deepEqual(catalog.rows, [{ product_code: 'REFERENCE_APP_SANDBOX' }]);

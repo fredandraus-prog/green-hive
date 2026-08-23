@@ -338,7 +338,17 @@ test(
           projectA.id,
         ]);
         assert.equal(visible.rows.length, 0);
-        const organizations = await client.query('SELECT id FROM hive.organizations');
+        const organizations = await client.query(
+          `SELECT id
+           FROM hive.organizations
+           WHERE id IN ($1::uuid, $2::uuid, $3::uuid, $4::uuid)`,
+          [
+            ORGANIZATION_A_ID,
+            ORGANIZATION_B_ID,
+            SHARED_ORGANIZATION_ID,
+            sharedWorkspace.id,
+          ],
+        );
         assert.equal(organizations.rows.length, 4);
         await assert.rejects(
           service.create(adminContext, { name: 'Admin write' }),

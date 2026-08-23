@@ -60,9 +60,9 @@ d4968d57736be8498c78233fdd3c39c68762a54234fa28a30831267fa1828e4d | 6387 | databa
 c08eb6fc87911674573294d20f8fe5d074d3b12ea129099b55690eac59964ae7 | 9160 | database/tests/billing-service.supabase.integration.test.mjs
 7cb1898e071d6b425f75b2dbf2f82d0efd57ca3dabddc67fd704cda8c50f63c1 | 5972 | database/tests/embedded-rls.integration.test.mjs
 7885883193ac7c5ea28b300bf3c03f6c0ee4397f5d49207d8d493d07c62ad814 | 2946 | database/tests/fixtures/0001_rls_identities.sql
-851a3551b0490bf8fab277f3eb7949f6a83643d531d3b43a74882a66f9f88142 | 17703 | database/tests/helpers/rls-matrix.mjs
-968e95829fbaf25153c41ac6a873d31cefd5e8b3ea26c51b3aed78de550e0b40 | 9110 | database/tests/postgres-rls.integration.test.mjs
-f16fff250a68ddba4f39f1ab782a509cb118fe97f7a84d03b598f5cc94d62592 | 14483 | database/tests/project-service.integration.test.mjs
+c40194f7eac377400f4e16a4a94307b6cb6e966f6b3373cc04012f4540e60f9f | 17850 | database/tests/helpers/rls-matrix.mjs
+146d8a0b7365137567758e6181a37da51888cde12478c36aeb342303d892dffa | 8659 | database/tests/postgres-rls.integration.test.mjs
+eb9498e37015bfaf77483299e31df3f268dd4e8b107b654e597df5cd17e401c9 | 14734 | database/tests/project-service.integration.test.mjs
 f289efd2f2cda5a15edee76337240d09991116887e32df96c8a3f80940bd0cf7 | 2199 | database/tests/README.md
 a732b97b05de681500ad9c1317ec40c2c02e22f4edfd3b9e814c0ecb6e87257a | 11813 | database/tests/reference-app-http.integration.test.mjs
 a1bddb96e7cbf8504ef0aee6e4bb65186f2f1abdf929131597651333eb459ef3 | 8733 | database/tests/staging-auth.integration.test.mjs
