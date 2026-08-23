@@ -83,11 +83,16 @@ test('local runtime remains restricted to the canonical loopback preview', () =>
 
 test('readiness requires the full migration, seed and helper contract', async () => {
   const readyState = {
-    migration_count: 11,
-    migration_version: 11,
+    migration_count: 13,
+    migration_version: 13,
     reference_app_count: 1,
+    reference_product_count: 1,
+    reference_price_count: 1,
     projects_ready: true,
     audit_ready: true,
+    billing_catalog_ready: true,
+    billing_purchase_ready: true,
+    billing_function_ready: true,
     app_helper_ready: true,
     organization_helper_ready: true,
   };
@@ -100,11 +105,15 @@ test('readiness requires the full migration, seed and helper contract', async ()
   });
   await ready();
   assert.equal(calls.length, 1);
-  assert.deepEqual(calls[0][1], ['00000000-0000-4000-8000-000000000001']);
+  assert.deepEqual(calls[0][1], [
+    '00000000-0000-4000-8000-000000000001',
+    '40000000-0000-4000-8000-000000000001',
+    '50000000-0000-4000-8000-000000000001',
+  ]);
 
   const notReady = createReferenceAppReadinessCheck({
     async query() {
-      return { rows: [{ ...readyState, migration_count: 10 }] };
+      return { rows: [{ ...readyState, billing_function_ready: false }] };
     },
   });
   await assert.rejects(notReady, /database baseline is not ready/);

@@ -42,6 +42,27 @@ test('application-owned codes must be namespaced', () => {
   assert.ok(result.errors.some((error) => error.includes('namespaced')));
 });
 
+test('App Manifest accepts only the canonical Green Hive product types', () => {
+  for (const productType of [
+    'ONE_TIME',
+    'REANALYSIS_OR_REPROCESS',
+    'SUBSCRIPTION',
+    'INTERNAL_GRANT',
+  ]) {
+    const result = validateAppManifest({
+      ...referenceAppManifest,
+      products: [{ productCode: 'REFERENCE_APP_CANONICAL', productType }],
+    });
+    assert.equal(result.valid, true, `${productType}: ${result.errors.join('\n')}`);
+  }
+  const legacyAlias = validateAppManifest({
+    ...referenceAppManifest,
+    products: [{ productCode: 'REFERENCE_APP_LEGACY', productType: 'ADD_ON' }],
+  });
+  assert.equal(legacyAlias.valid, false);
+  assert.ok(legacyAlias.errors.some((error) => error.includes('invalid productType')));
+});
+
 test('registry rejects duplicate app registration', () => {
   const registry = new AppRegistry();
   registry.register(referenceAppManifest);

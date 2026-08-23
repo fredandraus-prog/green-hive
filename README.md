@@ -8,20 +8,23 @@ the canonical GH-0/GH-1 bootstrap advanced through **GH-0102 (Database Foundatio
 Version `0.8.0` completes the deployed HTTPS/Auth/RLS acceptance gate for **GH-0201/GH-0202**;
 version `0.9.0` completes **GH-0204 (Security Baseline)** after bounded application-level limits,
 hardened headers and secret/bundle guards pass locally and on the exact Render HTTPS service.
-Billing remains the next checkpoint and is not implemented by this release.
+Version `0.10.0` completes **GH-0301 (Billing Foundation)** with an app-scoped catalog,
+versioned exact-decimal prices and tenant-isolated pending purchases/payments.
 
-The checkpoint is deliberately narrow. Billing, Entitlements, Cost Guard, AI, Search, Redis,
-external webhooks, remote storage and consumer-domain functionality remain out of scope.
+The checkpoint is deliberately narrow. Payment-provider adapters, payment confirmation/failure,
+refunds, Entitlements, Cost Guard, AI, Search, Redis, external webhooks, remote storage and
+consumer-domain functionality remain out of scope.
 
 ## What this checkpoint contains
 
 - the 18 canonical `@green-hive/*` packages, `hive-reference-app` and `hive-admin`;
 - canonical `AppManifestV1`, validator, App Registry and complete `REFERENCE_APP` manifest;
 - schemas `hive`, `audit` and `reference_app`;
-- eleven immutable migrations and a SHA-256 migration ledger;
+- thirteen immutable migrations and a SHA-256 migration ledger;
 - organizations, memberships and tenant app installations around the global app registry;
 - tenant-scoped `projects` and `project_settings`;
-- a production-safe structural seed containing only `REFERENCE_APP`;
+- production-safe structural seeds containing only `REFERENCE_APP` and its manifest-registered
+  zero-value sandbox catalog item;
 - Supabase-native trusted context through `auth.uid()` and `auth.jwt()`;
 - owner/workspace/app isolation, operational-only platform administration and logical deletion;
 - typed `@green-hive/projects` service with create/list/get/archive/soft-delete operations;
@@ -32,6 +35,10 @@ external webhooks, remote storage and consumer-domain functionality remain out o
 - automatic personal workspaces, shared-workspace creation and bounded member roles;
 - append-only `audit.events`, transactionally captured lifecycle events and correlation IDs;
 - typed tenant audit reader plus a payload-minimized Reference App activity view;
+- typed `@green-hive/billing` catalog/purchase service with runtime validation, exact decimal
+  snapshots, hashed idempotency keys and stable public errors;
+- app-scoped products, immutable-version prices, tenant purchases and limited-read payment records,
+  with no authenticated direct-write grants and no payment-card storage;
 - a responsive React/Vite Reference App with signup, login, recovery, profile and project screens;
 - a loopback-only Fastify HTTP boundary with HttpOnly cookies, exact-origin CSRF checks, PKCE
   recovery, no-store responses and baseline security headers;
@@ -82,7 +89,7 @@ safeguards.
 
 ## Hosted staging workflow
 
-A dedicated Free-plan Supabase staging project is active in São Paulo. Its eleven-migration database
+A dedicated Free-plan Supabase staging project is active in São Paulo. Its thirteen-migration database
 baseline, cross-organization RLS matrix, Project/Workspace Service and server-side Auth core have
 passed without changing the production
 candidate or the pre-existing Green Hive project:
@@ -184,6 +191,21 @@ members can read only events for the selected organization and app. Platform adm
 read the same safe operational event shape but do not gain access to private profile, project or
 settings content.
 
+## Billing model
+
+Billing records commercial truth and never grants product capabilities. `hive.products` and
+`hive.prices` form an app-scoped catalog; every price is versioned and its `numeric(20,6)` value is
+returned to TypeScript as an exact decimal string. `hive.purchases` snapshots product code, price
+version, amount and currency so later catalog changes cannot rewrite historical commercial state.
+
+An authenticated owner can request only `projectId`, `productCode`, `priceId` and a bounded
+idempotency key. `hive.create_pending_purchase(...)` derives the user, app and workspace from
+trusted Supabase context, validates an owned non-deleted project, resolves the active price and
+atomically creates one `PENDING` purchase plus one `PENDING` payment attempt. Raw idempotency keys
+are not retained. Authenticated users have no direct insert/update/delete grant on catalog,
+purchases or payments and cannot read provider references. Payment success, failure, refund,
+provider adapters and webhook processing remain GH-0302/GH-0303.
+
 ## Migration discipline
 
 Applied migrations are immutable. The ledger records sequence, filename, checksum and rollback
@@ -193,7 +215,7 @@ metadata drift and a managed schema without a ledger. Except for provisioning th
 
 ## Status
 
-GH-0102, GH-0103, GH-0104, GH-0201, GH-0202, GH-0203, GH-0204 and GH-0250 are `DONE`.
+GH-0102, GH-0103, GH-0104, GH-0201, GH-0202, GH-0203, GH-0204, GH-0250 and GH-0301 are `DONE`.
 GH-0204 passed local abuse/bundle tests, the exact hosted security smoke and the complete
 authenticated HTTPS acceptance matrix on the single-instance Render staging service. See
 [Implementation status](docs/IMPLEMENTATION_STATUS.md), [Database](docs/DATABASE.md), [Trusted app
@@ -202,5 +224,6 @@ Service](docs/PROJECT-SERVICE.md), [Workspace Service](docs/WORKSPACE-SERVICE.md
 web](docs/REFERENCE-APP-WEB.md), [Hosted staging](docs/HOSTED-STAGING.md), [Audit](docs/AUDIT.md),
 [GH-0203 checkpoint](docs/CHECKPOINT-GH-0203.md), [GH-0204 checkpoint](docs/CHECKPOINT-GH-0204.md),
 [GH-0204 release validation](docs/VALIDATION-2026-08-23-GH0204-RELEASE.md),
+[GH-0301 checkpoint](docs/CHECKPOINT-GH-0301.md),
 [GH-0250 checkpoint](docs/CHECKPOINT-GH-0250.md), [Ideas Radar](IDEAS_RADAR.md) and
 [Reconciliation](docs/RECONCILIATION-2026-08-18.md).

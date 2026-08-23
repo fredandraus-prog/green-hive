@@ -42,6 +42,7 @@ The database captures the first safe event for each material lifecycle change:
 | project inserted | `PROJECT_CREATED` |
 | project first enters `ARCHIVED` | `PROJECT_ARCHIVED` |
 | project first enters `DELETED` | `PROJECT_DELETION_REQUESTED` |
+| pending purchase inserted | `PURCHASE_CREATED` |
 
 Capture runs after the domain row change inside the same database transaction. A capture failure
 rolls the operation back. An idempotent retry that does not create a row or change lifecycle state
@@ -89,6 +90,7 @@ The exact production retention duration remains `TO_DEFINE`, matching the platfo
 registry. Purging must be a separately authorized, audited operational workflow with verified
 retention/legal requirements; it is not part of GH-0203.
 
-Login failure/success, Billing, Entitlements, Jobs, Files, feature flags, provider health, external
-webhooks and break-glass events remain cataloged contracts or future integration points. GH-0203
-does not implement those subsystems.
+GH-0301 now captures only `PURCHASE_CREATED` with product code, price version and pending status.
+Payment confirmation/refund, login failure/success, Entitlements, Jobs, Files, feature flags,
+provider health, external webhooks and break-glass events remain cataloged contracts or future
+integration points.

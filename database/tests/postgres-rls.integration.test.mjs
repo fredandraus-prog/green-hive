@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import test from 'node:test';
@@ -98,10 +98,14 @@ test(
         await cleanupGreenHiveFixtures(client);
       }
 
-      const seed = await readFile(
-        path.join(repositoryRoot, 'database', 'seeds', '0001_reference_app.sql'),
-        'utf8',
+      const seedsDirectory = path.join(repositoryRoot, 'database', 'seeds');
+      const seedFiles = (await readdir(seedsDirectory)).filter((name) => name.endsWith('.sql')).sort();
+      const seeds = await Promise.all(
+        seedFiles.map((seedFile) => readFile(path.join(seedsDirectory, seedFile), 'utf8')),
       );
+      const appSeed = seeds[0];
+      const billingSeed = seeds[1];
+      assert.ok(appSeed && billingSeed, 'canonical app and billing seeds are required');
       const fixture = await readFile(
         path.join(repositoryRoot, 'database', 'tests', 'fixtures', '0001_rls_identities.sql'),
         'utf8',
@@ -110,8 +114,8 @@ test(
       const ledger = await readLedger(client);
       assert.equal(ledger.length, catalog.migrations.length);
       assert.equal(planPendingMigrations(catalog.migrations, ledger).length, 0);
-      await client.query(seed);
-      await client.query(seed);
+      for (const seed of seeds) await client.query(seed);
+      for (const seed of seeds) await client.query(seed);
       const referenceApp = await client.query(
         `SELECT id, app_code, app_version, schema_namespace
          FROM hive.apps
@@ -151,7 +155,9 @@ test(
         await assertLedgerDriftRejected(
           client,
           catalog,
-          'UPDATE hive.schema_migrations SET version = 12 WHERE version = 11',
+          `UPDATE hive.schema_migrations
+           SET version = ${catalog.migrations.length + 1}
+           WHERE version = ${catalog.migrations.length}`,
           /sequence has a gap/,
         );
         await assertLedgerDriftRejected(
@@ -165,26 +171,56 @@ test(
           catalog,
           `INSERT INTO hive.schema_migrations
             (version, name, checksum_sha256, rollback_strategy, execution_ms)
-           VALUES (12, '0012_unknown.sql', repeat('7', 64), 'Unknown migration', 0)`,
-          /unknown migration version 12/,
+           VALUES (
+             ${catalog.migrations.length + 1},
+             '${String(catalog.migrations.length + 1).padStart(4, '0')}_unknown.sql',
+             repeat('7', 64),
+             'Unknown migration',
+             0
+           )`,
+          new RegExp(`unknown migration version ${catalog.migrations.length + 1}`),
         );
       });
 
       await testContext.test('REFERENCE_APP seed rejects a conflicting UUID', async () => {
         await client.query('BEGIN');
         try {
-          await client.query("DELETE FROM hive.apps WHERE app_code = 'REFERENCE_APP'");
+          await client.query(
+            `UPDATE hive.apps
+             SET app_code = 'REFERENCE_APP_CANONICAL_HOLD'
+             WHERE id = '00000000-0000-4000-8000-000000000001'`,
+          );
           await client.query(
             `INSERT INTO hive.apps
               (id, app_code, name, app_version, status, schema_namespace)
              VALUES
               ('00000000-0000-4000-8000-000000000099', 'REFERENCE_APP', 'Conflict', '0.1.0', 'INTERNAL', 'conflict_app')`,
           );
-          await assert.rejects(() => client.query(seed), /REFERENCE_APP seed conflicts/i);
+          await assert.rejects(() => client.query(appSeed), /REFERENCE_APP seed conflicts/i);
         } finally {
           await client.query('ROLLBACK');
         }
       });
+
+      await testContext.test(
+        'REFERENCE_APP billing seed rejects a conflicting immutable product identity',
+        async () => {
+        await client.query('BEGIN');
+        try {
+          await client.query(
+            `UPDATE hive.products
+             SET product_code = 'REFERENCE_APP_SANDBOX_CANONICAL_HOLD'
+             WHERE id = '40000000-0000-4000-8000-000000000001'`,
+          );
+          await assert.rejects(
+            () => client.query(billingSeed),
+            /billing product seed conflicts with an immutable identity/i,
+          );
+        } finally {
+          await client.query('ROLLBACK');
+        }
+        },
+      );
 
       await client.query(fixture);
       await client.query('SET ROLE authenticated');

@@ -27,6 +27,32 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     },
   ]);
 
+  const billingSeed = await client.query(
+    `SELECT
+       product.id AS product_id,
+       product.product_code,
+       product.product_type,
+       price.id AS price_id,
+       price.version,
+       price.amount::text AS amount,
+       price.currency
+     FROM hive.products AS product
+     JOIN hive.prices AS price ON price.product_id = product.id AND price.app_id = product.app_id
+     WHERE product.app_id = $1::uuid AND product.product_code = 'REFERENCE_APP_SANDBOX'`,
+    ['00000000-0000-4000-8000-000000000001'],
+  );
+  assert.deepEqual(billingSeed.rows, [
+    {
+      product_id: '40000000-0000-4000-8000-000000000001',
+      product_code: 'REFERENCE_APP_SANDBOX',
+      product_type: 'ONE_TIME',
+      price_id: '50000000-0000-4000-8000-000000000001',
+      version: 1,
+      amount: '0.000000',
+      currency: 'BRL',
+    },
+  ]);
+
   const foreignKeys = await client.query(
     `SELECT conname, confrelid::regclass::text AS target
      FROM pg_constraint
@@ -40,6 +66,12 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        'projects_organization_membership_fk',
        'projects_organization_app_fk',
        'project_settings_project_app_organization_fk'
+       ,'products_app_fk'
+       ,'prices_product_app_fk'
+       ,'purchases_project_scope_fk'
+       ,'purchases_product_app_fk'
+       ,'purchases_price_product_app_fk'
+       ,'payments_purchase_scope_fk'
      )
      ORDER BY conname`,
   );
@@ -49,10 +81,16 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     { conname: 'audit_events_project_scope_fk', target: 'hive.projects' },
     { conname: 'organization_apps_installer_membership_fk', target: 'hive.organization_members' },
     { conname: 'organization_members_user_fk', target: 'auth.users' },
+    { conname: 'payments_purchase_scope_fk', target: 'hive.purchases' },
+    { conname: 'prices_product_app_fk', target: 'hive.products' },
+    { conname: 'products_app_fk', target: 'hive.apps' },
     { conname: 'project_settings_project_app_organization_fk', target: 'hive.projects' },
     { conname: 'projects_organization_app_fk', target: 'hive.organization_apps' },
     { conname: 'projects_organization_membership_fk', target: 'hive.organization_members' },
     { conname: 'projects_owner_fk', target: 'auth.users' },
+    { conname: 'purchases_price_product_app_fk', target: 'hive.prices' },
+    { conname: 'purchases_product_app_fk', target: 'hive.products' },
+    { conname: 'purchases_project_scope_fk', target: 'hive.projects' },
   ]);
 
   const rls = await client.query(
@@ -68,12 +106,16 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
          'organization_apps',
          'organization_app_members',
          'projects',
-         'project_settings'
+         'project_settings',
+         'products',
+         'prices',
+         'purchases',
+         'payments'
        ))
        OR (pg_namespace.nspname = 'audit' AND relname = 'events')
      ORDER BY schema_name, relname`,
   );
-  assert.equal(rls.rows.length, 9);
+  assert.equal(rls.rows.length, 13);
   assert.ok(rls.rows.every((entry) => entry.relrowsecurity));
 
   const helpers = await client.query(
@@ -97,9 +139,11 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ,'audit.capture_organization_member_change()'
        ,'audit.capture_organization_app_installed()'
        ,'audit.capture_project_lifecycle()'
+       ,'hive.create_pending_purchase(uuid,text,uuid,text)'
+       ,'audit.capture_purchase_created()'
      ]) AS names(name)`,
   );
-  assert.equal(helpers.rows.length, 18);
+  assert.equal(helpers.rows.length, 20);
   assert.ok(helpers.rows.every((entry) => entry.helper));
 
   const privileges = await client.query(
@@ -130,6 +174,34 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     can_delete: false,
   });
 
+  const billingPrivileges = await client.query(
+    `SELECT
+       has_table_privilege('authenticated', 'hive.products', 'SELECT') AS catalog_select,
+       has_table_privilege('authenticated', 'hive.products', 'INSERT') AS catalog_insert,
+       has_table_privilege('authenticated', 'hive.purchases', 'INSERT') AS purchase_insert,
+       has_table_privilege('authenticated', 'hive.payments', 'UPDATE') AS payment_update,
+       has_column_privilege('authenticated', 'hive.purchases', 'amount', 'SELECT') AS purchase_amount_select,
+       has_column_privilege('authenticated', 'hive.purchases', 'idempotency_key_sha256', 'SELECT') AS idempotency_select,
+       has_column_privilege('authenticated', 'hive.payments', 'status', 'SELECT') AS payment_status_select,
+       has_column_privilege('authenticated', 'hive.payments', 'provider_payment_id', 'SELECT') AS provider_reference_select,
+       has_function_privilege(
+         'authenticated',
+         'hive.create_pending_purchase(uuid,text,uuid,text)',
+         'EXECUTE'
+       ) AS can_create_pending_purchase`,
+  );
+  assert.deepEqual(billingPrivileges.rows[0], {
+    catalog_select: true,
+    catalog_insert: false,
+    purchase_insert: false,
+    payment_update: false,
+    purchase_amount_select: true,
+    idempotency_select: false,
+    payment_status_select: true,
+    provider_reference_select: false,
+    can_create_pending_purchase: true,
+  });
+
   const auditTriggers = await client.query(
     `SELECT tgname
      FROM pg_trigger
@@ -138,11 +210,16 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        'audit_organization_members_after_change',
        'audit_organization_apps_after_insert',
        'audit_projects_after_lifecycle'
+       ,'audit_purchases_after_insert'
      )
        AND NOT tgisinternal
      ORDER BY tgname`,
   );
-  assert.equal(auditTriggers.rows.length, 4);
+  assert.equal(auditTriggers.rows.length, 5);
 
-  return Object.freeze({ ledgerRows: ledger.rows.length, referenceApps: seed.rows.length });
+  return Object.freeze({
+    ledgerRows: ledger.rows.length,
+    referenceApps: seed.rows.length,
+    referenceProducts: billingSeed.rows.length,
+  });
 }

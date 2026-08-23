@@ -17,6 +17,10 @@ const requiredHiveTables = [
   'organization_app_members',
   'projects',
   'project_settings',
+  'products',
+  'prices',
+  'purchases',
+  'payments',
 ];
 const requiredAuditTables = ['events'];
 const forceRlsTables = [
@@ -27,6 +31,10 @@ const forceRlsTables = [
   'organization_app_members',
   'projects',
   'project_settings',
+  'products',
+  'prices',
+  'purchases',
+  'payments',
 ];
 const expectedPolicies = new Map([
   ['apps', ['apps_admin_select']],
@@ -82,6 +90,10 @@ const expectedPolicies = new Map([
       'project_settings_tenant_owner_update',
     ],
   ],
+  ['products', ['products_catalog_select']],
+  ['prices', ['prices_catalog_select']],
+  ['purchases', ['purchases_owner_select']],
+  ['payments', ['payments_owner_limited_select']],
 ]);
 const forbiddenHiveDomainTerms = [
   'break_even',
@@ -297,6 +309,9 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'audit.capture_organization_member_change',
     'audit.capture_organization_app_installed',
     'audit.capture_project_lifecycle',
+    'hive.create_pending_purchase',
+    'audit.capture_purchase_created',
+    'audit_purchases_after_insert',
   ];
   for (const marker of requiredContextMarkers) {
     if (!allSql.includes(marker)) errors.push(`trusted app context is missing marker: ${marker}`);
@@ -318,6 +333,25 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
   }
   if (/GRANT\s+[\s\S]{0,100}\bDELETE\b[\s\S]{0,100}\bTO\s+authenticated\b/i.test(allSql)) {
     errors.push('authenticated must not receive physical DELETE privileges');
+  }
+  for (const billingTable of ['products', 'prices', 'purchases', 'payments']) {
+    if (new RegExp(`GRANT\\s+[\\s\\S]{0,120}\\b(INSERT|UPDATE|DELETE)\\b[\\s\\S]{0,120}ON\\s+hive\\.${billingTable}\\b[\\s\\S]{0,80}TO\\s+authenticated\\b`, 'i').test(allSql)) {
+      errors.push(`authenticated must not receive direct write privileges on hive.${billingTable}`);
+    }
+  }
+  for (const billingMarker of [
+    "product_type IN ('ONE_TIME', 'REANALYSIS_OR_REPROCESS', 'SUBSCRIPTION', 'INTERNAL_GRANT')",
+    'amount numeric(20, 6)',
+    'idempotency_key_sha256 text',
+    "status IN ('PENDING', 'PAID', 'FAILED', 'REFUNDED', 'PARTIALLY_REFUNDED', 'DISPUTED')",
+    'SECURITY DEFINER',
+    "SET search_path = ''",
+    'REVOKE ALL ON FUNCTION hive.create_pending_purchase(uuid, text, uuid, text) FROM PUBLIC',
+  ]) {
+    if (!allSql.includes(billingMarker)) errors.push(`billing contract is missing marker: ${billingMarker}`);
+  }
+  if (/\b(card_number|cardholder|cvv|cvc|full_card)\b\s+(text|varchar|character|jsonb?|bytea)\b/i.test(allSql)) {
+    errors.push('payment-card data leaked into Green Hive migrations');
   }
   for (const requiredMarker of [
     'app_code text',
@@ -364,11 +398,40 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     const seedFiles = (await readdir(path.join(repositoryRoot, 'database', 'seeds')))
       .filter((name) => name.endsWith('.sql'))
       .sort();
-    if (JSON.stringify(seedFiles) !== JSON.stringify(['0001_reference_app.sql'])) {
-      errors.push('operational seeds must contain only 0001_reference_app.sql at this checkpoint');
+    if (
+      JSON.stringify(seedFiles) !==
+      JSON.stringify(['0001_reference_app.sql', '0002_reference_app_billing_catalog.sql'])
+    ) {
+      errors.push('operational seeds must contain only the canonical REFERENCE_APP app and billing catalog');
     }
     if (/auth\.users|OTHER_TEST_APP|10000000-0000-4000-8000/i.test(seed)) {
       errors.push('test identities leaked into the operational seed');
+    }
+
+    const billingSeed = await readFile(
+      path.join(repositoryRoot, 'database', 'seeds', '0002_reference_app_billing_catalog.sql'),
+      'utf8',
+    );
+    const manifestProduct = manifest.products.find(
+      (product) => product.productCode === 'REFERENCE_APP_SANDBOX',
+    );
+    if (!manifestProduct || manifestProduct.productType !== 'ONE_TIME') {
+      errors.push('REFERENCE_APP manifest lacks the canonical sandbox billing product');
+    }
+    for (const marker of [
+      "'40000000-0000-4000-8000-000000000001'::uuid",
+      "'50000000-0000-4000-8000-000000000001'::uuid",
+      "'REFERENCE_APP_SANDBOX'",
+      "'ONE_TIME'",
+      "'BRL'",
+      '0.000000',
+    ]) {
+      if (!billingSeed.includes(marker)) {
+        errors.push(`REFERENCE_APP billing seed is missing canonical marker ${marker}`);
+      }
+    }
+    if (/auth\.users|OTHER_TEST_APP|10000000-0000-4000-8000/i.test(billingSeed)) {
+      errors.push('test identities leaked into the operational billing seed');
     }
 
     const fixture = await readFile(

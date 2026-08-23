@@ -9,6 +9,9 @@ export const ORGANIZATION_A_ID = '30000000-0000-4000-8000-000000000001';
 export const ORGANIZATION_B_ID = '30000000-0000-4000-8000-000000000002';
 export const SHARED_ORGANIZATION_ID = '30000000-0000-4000-8000-000000000003';
 export const PROJECT_ID = '20000000-0000-4000-8000-000000000001';
+export const SECOND_PROJECT_ID = '20000000-0000-4000-8000-000000000002';
+export const REFERENCE_PRODUCT_ID = '40000000-0000-4000-8000-000000000001';
+export const REFERENCE_PRICE_ID = '50000000-0000-4000-8000-000000000001';
 
 function claims(subject, appCode, platformRole = 'USER', additions = {}) {
   return JSON.stringify({
@@ -157,6 +160,156 @@ export async function runRlsMatrix(query, testContext) {
     );
   });
 
+  await testContext.test('catalog and pending purchase creation are trusted, atomic and idempotent', async () => {
+    await setContext(query, USER_A_ID, 'REFERENCE_APP', ORGANIZATION_A_ID);
+    const catalog = await query(
+      `SELECT
+         product.product_code,
+         product.product_type,
+         price.amount::text AS amount,
+         price.currency,
+         price.version
+       FROM hive.products AS product
+       JOIN hive.prices AS price ON price.product_id = product.id
+       ORDER BY product.product_code, price.version`,
+    );
+    assert.deepEqual(catalog.rows, [
+      {
+        product_code: 'REFERENCE_APP_SANDBOX',
+        product_type: 'ONE_TIME',
+        amount: '0.000000',
+        currency: 'BRL',
+        version: 1,
+      },
+    ]);
+
+    const created = await query(
+      `SELECT hive.create_pending_purchase($1::uuid, $2, $3::uuid, $4)::text AS id`,
+      [PROJECT_ID, 'REFERENCE_APP_SANDBOX', REFERENCE_PRICE_ID, 'rls-purchase-0001'],
+    );
+    const repeated = await query(
+      `SELECT hive.create_pending_purchase($1::uuid, $2, $3::uuid, $4)::text AS id`,
+      [PROJECT_ID, 'REFERENCE_APP_SANDBOX', REFERENCE_PRICE_ID, 'rls-purchase-0001'],
+    );
+    assert.equal(repeated.rows[0].id, created.rows[0].id);
+
+    const purchases = await query(
+      `SELECT
+         id::text AS id,
+         product_code,
+         price_version,
+         amount::text AS amount,
+         currency,
+         status
+       FROM hive.purchases
+       WHERE project_id = $1::uuid`,
+      [PROJECT_ID],
+    );
+    assert.deepEqual(purchases.rows, [
+      {
+        id: created.rows[0].id,
+        product_code: 'REFERENCE_APP_SANDBOX',
+        price_version: 1,
+        amount: '0.000000',
+        currency: 'BRL',
+        status: 'PENDING',
+      },
+    ]);
+    const payments = await query(
+      `SELECT purchase_id::text AS purchase_id, attempt_number, amount::text AS amount, currency, status
+       FROM hive.payments
+       WHERE purchase_id = $1::uuid`,
+      [created.rows[0].id],
+    );
+    assert.deepEqual(payments.rows, [
+      {
+        purchase_id: created.rows[0].id,
+        attempt_number: 1,
+        amount: '0.000000',
+        currency: 'BRL',
+        status: 'PENDING',
+      },
+    ]);
+    const billingAudit = await query(
+      `SELECT event_code, metadata
+       FROM audit.events
+       WHERE subject_type = 'PURCHASE' AND subject_id = $1::uuid`,
+      [created.rows[0].id],
+    );
+    assert.deepEqual(billingAudit.rows, [
+      {
+        event_code: 'PURCHASE_CREATED',
+        metadata: {
+          product_code: 'REFERENCE_APP_SANDBOX',
+          price_version: 1,
+          status: 'PENDING',
+        },
+      },
+    ]);
+    assert.doesNotMatch(JSON.stringify(billingAudit.rows), /idempotency|token|secret|provider/i);
+
+    await assert.rejects(
+      () => query(
+        `INSERT INTO hive.purchases (
+           organization_id, app_id, project_id, owner_user_id,
+           product_id, price_id, product_code, price_version,
+           amount, currency, idempotency_key_sha256
+         ) VALUES (
+           $1::uuid, $2::uuid, $3::uuid, $4::uuid,
+           $5::uuid, $6::uuid, 'REFERENCE_APP_SANDBOX', 1,
+           999999.00, 'USD', repeat('0', 64)
+         )`,
+        [ORGANIZATION_A_ID, REFERENCE_APP_ID, PROJECT_ID, USER_A_ID, REFERENCE_PRODUCT_ID, REFERENCE_PRICE_ID],
+      ),
+      /permission denied|privilege/i,
+    );
+    await assert.rejects(
+      () => query('SELECT idempotency_key_sha256 FROM hive.purchases'),
+      /permission denied|privilege/i,
+    );
+    await assert.rejects(
+      () => query('SELECT provider_payment_id FROM hive.payments'),
+      /permission denied|privilege/i,
+    );
+
+    const secondProject = await query(
+      `INSERT INTO hive.projects (id, organization_id, app_id, owner_user_id, name)
+       VALUES ($1::uuid, $2::uuid, $3::uuid, $4::uuid, 'Second Project A')
+       RETURNING id`,
+      [SECOND_PROJECT_ID, ORGANIZATION_A_ID, REFERENCE_APP_ID, USER_A_ID],
+    );
+    assert.equal(secondProject.rows.length, 1);
+    await assert.rejects(
+      () => query(
+        `SELECT hive.create_pending_purchase($1::uuid, $2, $3::uuid, $4)`,
+        [SECOND_PROJECT_ID, 'REFERENCE_APP_SANDBOX', REFERENCE_PRICE_ID, 'rls-purchase-0001'],
+      ),
+      /BILLING_IDEMPOTENCY_CONFLICT/i,
+    );
+  });
+
+  await testContext.test('billing rows do not cross user, organization or app boundaries', async () => {
+    await setContext(query, USER_B_ID, 'REFERENCE_APP', ORGANIZATION_B_ID);
+    assert.equal((await query('SELECT id FROM hive.purchases')).rows.length, 0);
+    assert.equal((await query('SELECT id FROM hive.payments')).rows.length, 0);
+    await assert.rejects(
+      () => query(
+        `SELECT hive.create_pending_purchase($1::uuid, $2, $3::uuid, $4)`,
+        [PROJECT_ID, 'REFERENCE_APP_SANDBOX', REFERENCE_PRICE_ID, 'rls-purchase-cross-user'],
+      ),
+      /BILLING_ACCESS_DENIED/i,
+    );
+
+    await setContext(query, USER_A_ID, 'REFERENCE_APP', SHARED_ORGANIZATION_ID);
+    assert.equal((await query('SELECT id FROM hive.purchases')).rows.length, 0);
+    assert.equal((await query('SELECT id FROM hive.payments')).rows.length, 0);
+
+    await setContext(query, USER_A_ID, 'OTHER_TEST_APP', ORGANIZATION_A_ID);
+    assert.equal((await query('SELECT id FROM hive.products')).rows.length, 0);
+    assert.equal((await query('SELECT id FROM hive.purchases')).rows.length, 0);
+    assert.equal((await query('SELECT id FROM hive.payments')).rows.length, 0);
+  });
+
   await testContext.test('user_metadata cannot grant platform administration', async () => {
     await setContext(query, USER_B_ID, 'REFERENCE_APP', ORGANIZATION_B_ID, 'USER', {
       user_metadata: { platform_role: 'PLATFORM_ADMIN', app_code: 'REFERENCE_APP' },
@@ -179,14 +332,39 @@ export async function runRlsMatrix(query, testContext) {
 
     const apps = await query('SELECT app_code FROM hive.apps ORDER BY app_code');
     assert.deepEqual(apps.rows.map((row) => row.app_code), ['OTHER_TEST_APP', 'REFERENCE_APP']);
-    const organizations = await query('SELECT id FROM hive.organizations ORDER BY id');
+    const organizations = await query(
+      `SELECT id
+       FROM hive.organizations
+       WHERE id IN ($1::uuid, $2::uuid, $3::uuid)
+       ORDER BY id`,
+      [ORGANIZATION_A_ID, ORGANIZATION_B_ID, SHARED_ORGANIZATION_ID],
+    );
     assert.equal(organizations.rows.length, 3);
+    const catalog = await query('SELECT product_code FROM hive.products ORDER BY product_code');
+    assert.deepEqual(catalog.rows, [{ product_code: 'REFERENCE_APP_SANDBOX' }]);
+    assert.equal((await query('SELECT id FROM hive.purchases')).rows.length, 0);
+    assert.equal((await query('SELECT id FROM hive.payments')).rows.length, 0);
+    await assert.rejects(
+      () => query(
+        `SELECT hive.create_pending_purchase($1::uuid, $2, $3::uuid, $4)`,
+        [PROJECT_ID, 'REFERENCE_APP_SANDBOX', REFERENCE_PRICE_ID, 'rls-purchase-admin'],
+      ),
+      /BILLING_ACCESS_DENIED/i,
+    );
     const auditEvents = await query(
       'SELECT event_code, metadata FROM audit.events WHERE project_id = $1::uuid ORDER BY occurred_at, id',
       [PROJECT_ID],
     );
     assert.deepEqual(auditEvents.rows, [
       { event_code: 'PROJECT_CREATED', metadata: { status: 'DRAFT' } },
+      {
+        event_code: 'PURCHASE_CREATED',
+        metadata: {
+          product_code: 'REFERENCE_APP_SANDBOX',
+          price_version: 1,
+          status: 'PENDING',
+        },
+      },
     ]);
     assert.doesNotMatch(JSON.stringify(auditEvents.rows), /Project A|updated|password|token|secret/i);
     const updated = await query("UPDATE hive.organizations SET name = 'Forbidden admin write' RETURNING id");
@@ -208,6 +386,7 @@ export async function runRlsMatrix(query, testContext) {
     );
     assert.deepEqual(retainedAudit.rows.map((row) => row.event_code), [
       'PROJECT_CREATED',
+      'PURCHASE_CREATED',
       'PROJECT_DELETION_REQUESTED',
     ]);
     await assert.rejects(

@@ -1,6 +1,6 @@
 # Dedicated Supabase staging gate
 
-Status: `DATABASE_RLS_PROJECT_AUTH_CORE_PASS - RENDER_SERVICE_CREATED - HEALTHY_HTTPS_PENDING`.
+Status: `DATABASE_RLS_PROJECT_AUTH_BILLING_PASS - RENDER_HEALTHY_HTTPS`.
 
 The Green Hive staging environment is an isolated hosted Supabase project. It is used only to
 validate canonical migrations, RLS, Project Service and Auth/account behavior before a public
@@ -68,15 +68,15 @@ fails if a known disposable fixture remains.
 
 1. repeats the database-only preflight;
 2. runs `db:validate`;
-3. applies all canonical pending migrations, currently `0001` through `0011`, using the ledger;
+3. applies all canonical pending migrations, currently `0001` through `0013`, using the ledger;
 4. reapplies the migrator to prove no duplication;
-5. applies the structural `REFERENCE_APP` seed twice;
-6. verifies ledger, seed identity, native FKs, RLS, helpers and grants.
+5. applies the structural `REFERENCE_APP` and sandbox Billing catalog seeds twice;
+6. verifies ledger, seed identities, native FKs, RLS, helpers and grants.
 
-`staging:database:test` executes the hosted 10-scenario RLS/database matrix and the 10-scenario
-Project/Workspace Service matrix. `staging:auth:test` creates two uniquely named confirmed test accounts,
-executes the server-side Auth/account matrix, and deletes their projects, settings, profiles and
-Auth users in a final cleanup block.
+`staging:database:test` executes the hosted RLS/database matrix, the 10-scenario Project/Workspace
+Service matrix and the 6-scenario native Billing Service matrix. `staging:auth:test` creates two
+uniquely named confirmed test accounts, executes the server-side Auth/account matrix, and deletes
+their projects, Billing rows, settings, profiles and Auth users in a final cleanup block.
 
 These commands never run `supabase db reset --linked`, never drop a remote schema and never clear
 unrelated Auth users. The only canonical migrations remain under `database/migrations`;
@@ -85,17 +85,19 @@ unrelated Auth users. The only canonical migrations remain under `database/migra
 ## Passed hosted evidence
 
 - project identity and health: confirmed;
-- migrations/ledger: eleven applied, zero pending, reapplication creates no duplicate;
-- seed: deterministic `REFERENCE_APP`, reapplied twice;
-- database/RLS: 10 passed, 0 failed;
+- migrations/ledger: thirteen applied, zero pending, reapplication creates no duplicate;
+- seeds: deterministic `REFERENCE_APP` and sandbox catalog, reapplied twice;
+- database/RLS: 13 passed, 0 failed;
 - Project/Workspace Service: 10 passed, 0 failed;
+- Billing Service: 6 passed, 0 failed;
 - Auth/account core: 8 passed, 0 failed;
 - confirmed signup and isolated owner profiles: passed;
 - profile and owned-project access: passed;
 - `user_metadata` privilege forgery: denied;
 - only controlled `app_metadata.app_code` changes the active app: passed;
 - refresh rotation, logout revocation and stable public errors: passed;
-- final database state: eleven ledger rows, one structural app, zero disposable fixture rows;
+- final database state: thirteen ledger rows, one structural app, one sandbox product/price and
+  zero disposable fixture rows;
 - final Auth cleanup: zero `staging-owner-*@example.test` users.
 
 ## Hosted acceptance completion

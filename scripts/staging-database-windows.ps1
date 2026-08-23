@@ -112,6 +112,9 @@ try {
     if ($LASTEXITCODE -eq 0) {
       & node --test --test-reporter=spec database/tests/project-service.integration.test.mjs
     }
+    if ($LASTEXITCODE -eq 0) {
+      & node --test --test-reporter=spec database/tests/billing-service.supabase.integration.test.mjs
+    }
   } elseif ($Operation -eq 'apply') {
     & node (Join-Path $repositoryRoot 'scripts\staging-apply.mjs')
   } else {

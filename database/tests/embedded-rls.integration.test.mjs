@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import test from 'node:test';
@@ -82,16 +82,20 @@ test('fresh migrations, immutable ledger, seed and GH-0203 RLS/Audit matrix', as
     assert.equal(ledger.rows.length, catalog.migrations.length);
     assert.equal(planPendingMigrations(catalog.migrations, ledger.rows).length, 0);
 
-    const seed = await readFile(
-      path.join(repositoryRoot, 'database', 'seeds', '0001_reference_app.sql'),
-      'utf8',
-    );
+    const seedsDirectory = path.join(repositoryRoot, 'database', 'seeds');
+    const seedFiles = (await readdir(seedsDirectory)).filter((name) => name.endsWith('.sql')).sort();
     const fixture = await readFile(
       path.join(repositoryRoot, 'database', 'tests', 'fixtures', '0001_rls_identities.sql'),
       'utf8',
     );
-    await database.exec(`BEGIN;\n${seed}\nCOMMIT;`);
-    await database.exec(`BEGIN;\n${seed}\nCOMMIT;`);
+    for (const seedFile of seedFiles) {
+      const seed = await readFile(path.join(seedsDirectory, seedFile), 'utf8');
+      await database.exec(`BEGIN;\n${seed}\nCOMMIT;`);
+    }
+    for (const seedFile of seedFiles) {
+      const seed = await readFile(path.join(seedsDirectory, seedFile), 'utf8');
+      await database.exec(`BEGIN;\n${seed}\nCOMMIT;`);
+    }
     const referenceApps = await database.query(
       "SELECT count(*)::integer AS count FROM hive.apps WHERE app_code = 'REFERENCE_APP'",
     );
@@ -125,6 +129,42 @@ test('REFERENCE_APP seed rejects a conflicting immutable identity', async () => 
     await assert.rejects(
       () => database.exec(`BEGIN;\n${seed}\nCOMMIT;`),
       /REFERENCE_APP seed conflicts/i,
+    );
+  } finally {
+    await database.close();
+  }
+});
+
+test('REFERENCE_APP billing seed rejects a conflicting immutable product identity', async () => {
+  const database = createDatabase();
+  await database.waitReady;
+  try {
+    await database.exec(authShim);
+    const catalog = await loadMigrationCatalog(repositoryRoot);
+    await applyMigrations(database, catalog);
+    const appSeed = await readFile(
+      path.join(repositoryRoot, 'database', 'seeds', '0001_reference_app.sql'),
+      'utf8',
+    );
+    await database.exec(`BEGIN;\n${appSeed}\nCOMMIT;`);
+    await database.exec(`
+      INSERT INTO hive.products (
+        id, app_id, product_code, product_type, name
+      ) VALUES (
+        '40000000-0000-4000-8000-000000000099',
+        '00000000-0000-4000-8000-000000000001',
+        'REFERENCE_APP_SANDBOX',
+        'ONE_TIME',
+        'Conflicting product'
+      );
+    `);
+    const billingSeed = await readFile(
+      path.join(repositoryRoot, 'database', 'seeds', '0002_reference_app_billing_catalog.sql'),
+      'utf8',
+    );
+    await assert.rejects(
+      () => database.exec(`BEGIN;\n${billingSeed}\nCOMMIT;`),
+      /billing product seed conflicts with an immutable identity/i,
     );
   } finally {
     await database.close();
