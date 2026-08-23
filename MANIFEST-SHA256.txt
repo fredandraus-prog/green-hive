@@ -2,7 +2,6 @@
 # SHA-256 | canonical bytes | relative path
 a6b98ea7cb6d61ed8d430dd0dffa46c87012b5cf859d4ce7207898954951fdcd | 188 | .editorconfig
 fbea1ce9f84b90a086a0b5551998cd5e08769e56a1bb44409ad145ca955178c6 | 1873 | .env.example
-8d958a316dea67e68f72dabdcd1440a158b08029b600717740b36587139dcde8 | 143 | .git
 1a1dbe176bc233b499d35a57db7513f2941c99ab9759f177830c9149be99005b | 66 | .gitattributes
 f7865dc5e2972c82e378265218bcc9a026bd5b35db355eb0cea5fe7e9f5d0d44 | 843 | .github/workflows/ci.yml
 f79c640b1d715fa1ef68029aae31d530795c98c4f04c3dc9446ccc67ba75d561 | 110 | .gitignore
@@ -187,7 +186,7 @@ dfbe814bff432c8085e2cb7ba5b4b29ebcfb8db4a1ea3d9adfd6454ed25c9f91 | 3574 | script
 c6fb3cbfc3f19ea32ac041d621d088b5f63410cfcdbefbe528dc30573666f928 | 3080 | scripts/db-test-supabase.mjs
 455300d55a2e1fa890fa204ac33ee639ba591b376b8537b7f736f722baa91adf | 15146 | scripts/db-validate.mjs
 1d9eebe98ee8819204cc7333cbef62d504d4a69857ce08a9feb078728066c5cb | 1749 | scripts/format-check.mjs
-a2f6647d00db2bf69cdb31fa1679b1c1b72e13f3e7b6a079dd55cd911aa77657 | 1948 | scripts/generate-release-manifest.mjs
+479c71ff397b95776f8022ab2357e07b97af57fe1e7627b8ca58de9aab1b8cc2 | 1956 | scripts/generate-release-manifest.mjs
 276790055f9f2f99674f2a94865f0064d1f48ab1838889ce253db75593e7d6bf | 1913 | scripts/hosted-smoke.mjs
 f6d4a7cd128f5dd8dd99e3ab4daf5f2bc9b5f3e45086dcacd083905aabe97cf4 | 5646 | scripts/lib/green-hive-smoke.mjs
 d48cefb4c71c0bdddb7eef16242902b8c56c170da2aaa3bf9ea1b17370d835cf | 7387 | scripts/lib/local-supabase-guard.mjs
@@ -204,7 +203,7 @@ c807e42b5d0d4f7e76dedec57880d741097c3352252644bdb5906dc596437a22 | 1772 | script
 a0aa9ec855824dc3904789f68404dacb1f1ba52a4c3d34605a92058b7077af2b | 6144 | scripts/staging-database-windows.ps1
 428bdd1cf819ed7f4280b1111b59bcec182ab98a39efc52e46e676a8678d9b0b | 5510 | scripts/staging-preflight.mjs
 55a03b918ce7b78463df35c1f049ed4aa7fce5d86177f093eecffd3e544107dd | 10258 | scripts/supabase-local.mjs
-fe513397f26bc409ca081cef38f8c1d41a937b26238801f265253e68a542c053 | 2893 | scripts/verify-release-manifest.mjs
+9b3d35253ed6e4526ff1e3b302c5f5534bc2379e45d3f0ed5c049388bb16ddca | 2901 | scripts/verify-release-manifest.mjs
 c7b6977daff7b4e9c5d8e82b14ef280a7555b08cb036ef9803eeda7bf2052f94 | 3241 | scripts/web-test-supabase.mjs
 9bb15788f7f75daf737e4fa67e9ae0f72cf98595a87cad1a31d60a54d3499b49 | 3042 | SECURITY.md
 0133c8448da082d7b012c8ac1fbfca199061f6b48d21ee0f26e0df4b9f78b5ae | 15657 | supabase/config.toml
