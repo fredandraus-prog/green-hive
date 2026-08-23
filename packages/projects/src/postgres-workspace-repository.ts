@@ -105,10 +105,11 @@ export class PostgresWorkspaceRepository implements WorkspaceRepository {
     this.#database = database;
   }
 
-  async ensurePersonal(context: TrustedAppContext): Promise<Workspace> {
+  async ensurePersonal(context: TrustedAppContext, name: string): Promise<Workspace> {
     await this.#assertBaseAuthority(context);
     const ensured = await this.#database.query<IdRow>(
-      "SELECT hive.ensure_personal_organization('Personal Workspace')::text AS id",
+      'SELECT hive.ensure_personal_organization($1)::text AS id',
+      [name],
     );
     const organizationId = ensured.rows[0]?.id;
     if (!organizationId) throw new Error('Personal workspace provisioning returned no row');
@@ -134,6 +135,20 @@ export class PostgresWorkspaceRepository implements WorkspaceRepository {
     const organizationId = created.rows[0]?.id;
     if (!organizationId) throw new Error('Shared workspace creation returned no row');
     return this.#getVisibleWorkspace(context, organizationId);
+  }
+
+  async rename(context: TrustedOrganizationContext, name: string): Promise<Workspace> {
+    await this.#assertOrganizationAuthority(context, true);
+    const updated = await this.#database.query<IdRow>(
+      `UPDATE hive.organizations
+       SET name = $2, updated_at = now()
+       WHERE id = $1::uuid
+         AND kind = 'SHARED'
+       RETURNING id::text AS id`,
+      [context.organizationId, name],
+    );
+    if (!updated.rows[0]?.id) throw new WorkspaceError('WORKSPACE_ACCESS_DENIED');
+    return this.#getVisibleWorkspace(context, context.organizationId);
   }
 
   async listMembers(

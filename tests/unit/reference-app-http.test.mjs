@@ -98,9 +98,11 @@ class FakeFacade {
   }
   async completePasswordRecovery(input) { this.calls.push(['completePasswordRecovery', input]); }
   async getMe(token) { this.calls.push(['getMe', token]); return profile(); }
+  async getAccount(token) { this.calls.push(['getAccount', token]); return { email: session().user.email, profile: profile() }; }
   async updateMe(token, input) { this.calls.push(['updateMe', token, input]); return { ...profile(), ...input }; }
   async listWorkspaces(token) { this.calls.push(['listWorkspaces', token]); return [workspace()]; }
   async createSharedWorkspace(token, input) { this.calls.push(['createSharedWorkspace', token, input]); return { ...workspace(), kind: 'SHARED', name: input.name }; }
+  async renameWorkspace(token, organizationId, input) { this.calls.push(['renameWorkspace', token, organizationId, input]); return { ...workspace(), id: organizationId, kind: 'SHARED', name: input.name }; }
   async listWorkspaceMembers(token, organizationId) { this.calls.push(['listWorkspaceMembers', token, organizationId]); return []; }
   async addWorkspaceMember(token, organizationId, input) { this.calls.push(['addWorkspaceMember', token, organizationId, input]); return { organizationId, ...input, status: 'ACTIVE', joinedAt: new Date(), updatedAt: new Date() }; }
   async listAuditEvents(token, organizationId) { this.calls.push(['listAuditEvents', token, organizationId]); return [auditEvent()]; }
@@ -168,9 +170,16 @@ test('HTTP boundary keeps sessions in HttpOnly same-site cookies', async () => {
     secureCookies: false,
   });
   try {
-    const response = await application.inject(
-      postOptions('/api/auth/sign-up', { email: 'web@example.test', password: 'StrongPass123' }),
-    );
+    const onboarding = {
+      displayName: 'Web Owner',
+      email: 'web@example.test',
+      password: 'StrongPass123',
+      preferredLanguage: 'pt',
+      preferredLocale: 'pt-BR',
+      timezone: 'America/Sao_Paulo',
+      organizationName: 'Minha Empresa',
+    };
+    const response = await application.inject(postOptions('/api/auth/sign-up', onboarding));
     assert.equal(response.statusCode, 200);
     const setCookies = response.headers['set-cookie'];
     assert.ok(Array.isArray(setCookies));
@@ -180,6 +189,7 @@ test('HTTP boundary keeps sessions in HttpOnly same-site cookies', async () => {
     assert.ok(setCookies.some((value) => value.startsWith(`${REFERENCE_APP_COOKIE_NAMES.workspace}=`)));
     assert.ok(setCookies.every((value) => /HttpOnly/i.test(value) && /SameSite=Lax/i.test(value)));
     assert.doesNotMatch(response.body, /access-token|refresh-token|service.role/i);
+    assert.deepEqual(facade.calls[0], ['signUp', onboarding]);
 
     const me = await application.inject({
       method: 'GET',
@@ -188,7 +198,37 @@ test('HTTP boundary keeps sessions in HttpOnly same-site cookies', async () => {
     });
     assert.equal(me.statusCode, 200);
     assert.equal(me.json().profile.userId, USER_ID);
+    assert.equal(me.json().email, 'web@example.test');
     assert.equal(me.headers['cache-control'], 'private, no-store');
+  } finally {
+    await application.close();
+  }
+});
+
+test('current workspace rename uses the server-validated workspace cookie', async () => {
+  const facade = new FakeFacade();
+  const application = await createReferenceAppHttpServer({ facade, allowedOrigin: ORIGIN, secureCookies: false });
+  try {
+    const signedIn = await application.inject(
+      postOptions('/api/auth/sign-in', { email: 'web@example.test', password: 'StrongPass123' }),
+    );
+    const renamed = await application.inject({
+      method: 'PATCH',
+      url: '/api/workspaces/current',
+      headers: {
+        origin: ORIGIN,
+        'content-type': 'application/json',
+        cookie: cookieHeader(signedIn),
+      },
+      payload: { name: 'Equipe Green' },
+    });
+    assert.equal(renamed.statusCode, 200);
+    assert.deepEqual(facade.calls.at(-1), [
+      'renameWorkspace',
+      session().accessToken,
+      ORGANIZATION_ID,
+      { name: 'Equipe Green' },
+    ]);
   } finally {
     await application.close();
   }

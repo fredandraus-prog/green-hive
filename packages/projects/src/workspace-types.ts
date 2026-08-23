@@ -38,15 +38,20 @@ export interface CreateSharedWorkspaceInput {
   readonly name: string;
 }
 
+export interface RenameWorkspaceInput {
+  readonly name: string;
+}
+
 export interface AddWorkspaceMemberInput {
   readonly userId: string;
   readonly role: AssignableWorkspaceRole;
 }
 
 export interface WorkspaceRepository {
-  ensurePersonal(context: TrustedAppContext): Promise<Workspace>;
+  ensurePersonal(context: TrustedAppContext, name: string): Promise<Workspace>;
   list(context: TrustedAppContext): Promise<readonly Workspace[]>;
   createShared(context: TrustedAppContext, name: string): Promise<Workspace>;
+  rename(context: TrustedOrganizationContext, name: string): Promise<Workspace>;
   listMembers(context: TrustedOrganizationContext): Promise<readonly WorkspaceMember[]>;
   addMember(
     context: TrustedOrganizationContext,

@@ -7,9 +7,10 @@ implement Billing, portfolio analytics or consumer-domain collaboration.
 ## Public surface
 
 ```text
-ensurePersonal(context) -> Workspace
+ensurePersonal(context, initialName?) -> Workspace
 list(context) -> Workspace[]
 createShared(context, input) -> Workspace
+rename(organizationContext, input) -> Workspace
 listMembers(organizationContext) -> WorkspaceMember[]
 addMember(organizationContext, input) -> WorkspaceMember
 ```
@@ -29,6 +30,13 @@ workspace UUID is accepted by project/member commands only after
 `PLATFORM_ADMIN` does not enter member commands. It can inspect organization and installation
 metadata directly through read-only operational RLS policies, without project/profile/settings
 content.
+
+The optional `initialName` is used only when the personal organization is first provisioned. The
+existing immutable SQL helper intentionally does not rename an already provisioned personal
+workspace. `rename` therefore supports only a selected `SHARED` workspace whose verified member is
+`OWNER` or `ADMIN`, using the existing organization update policy. Enabling later personal-workspace
+renaming requires a separate, reviewed database command/policy and is not included in the frontend
+navigation slice.
 
 ## Validation
 

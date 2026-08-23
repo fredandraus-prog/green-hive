@@ -4,6 +4,7 @@ import type {
   AddWorkspaceMemberInput,
   AssignableWorkspaceRole,
   CreateSharedWorkspaceInput,
+  RenameWorkspaceInput,
 } from './workspace-types.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -70,6 +71,19 @@ export function validateCreateSharedWorkspaceInput(value: unknown): string {
   return name;
 }
 
+export function validatePersonalWorkspaceName(value: unknown): string {
+  if (typeof value !== 'string') throw new WorkspaceError('INVALID_WORKSPACE_INPUT');
+  const name = value.trim();
+  if (name.length < 1 || name.length > 160) {
+    throw new WorkspaceError('INVALID_WORKSPACE_INPUT');
+  }
+  return name;
+}
+
+export function validateRenameWorkspaceInput(value: unknown): string {
+  return validateCreateSharedWorkspaceInput(value);
+}
+
 export function validateAddWorkspaceMemberInput(value: unknown): AddWorkspaceMemberInput {
   if (!isRecord(value) || Object.keys(value).some((key) => !MEMBER_KEYS.has(key))) {
     throw new WorkspaceError('INVALID_WORKSPACE_INPUT');
@@ -87,5 +101,9 @@ export function validateAddWorkspaceMemberInput(value: unknown): AddWorkspaceMem
 }
 
 export function createSharedWorkspaceInput(name: string): CreateSharedWorkspaceInput {
+  return { name };
+}
+
+export function renameWorkspaceInput(name: string): RenameWorkspaceInput {
   return { name };
 }

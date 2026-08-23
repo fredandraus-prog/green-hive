@@ -7,6 +7,18 @@ semantic versioning.
 
 ### Added
 
+- Global Dashboard route with a future-proof `ALL_WORKSPACES` / `SELECTED_WORKSPACES` portfolio
+  scope and an honest no-metrics empty state.
+- Accessible sidebar workspace switcher with keyboard navigation and a validated creation dialog.
+- Explicit Settings navigation button with Profile and Organization kept as internal settings tabs.
+- Project-name search with a magnifying-glass control, live result count and accent-insensitive matching.
+- Real Settings pages for Profile and Organization, including persisted locale/timezone preferences
+  and shared-organization display-name updates.
+- Two-step signup onboarding for name, credentials, language, IANA timezone and the initial personal
+  organization name, with editable browser-derived defaults.
+- Frontend contract tests covering navigation, onboarding, workspace selection/creation semantics
+  and removal of profile/infrastructure status from the normal Dashboard.
+
 - Fail-closed `HOSTED_STAGING` runtime contract for exact HTTPS origin, Render port binding,
   Supabase project identity, verified database TLS, secure cookies and bounded pooling.
 - Render Blueprint with GitHub-check-gated deploys, secret placeholders and a database-backed
@@ -23,6 +35,11 @@ semantic versioning.
   binary bytes, preventing Windows/Linux CI drift.
 
 ### Status
+
+- The frontend navigation/onboarding slice is implemented on an isolated feature branch without a
+  version bump, commit, push, merge or deploy.
+- Full translation remains dependent on GH-0701 because `@green-hive/i18n` is still scaffold-only;
+  personal-workspace rename remains a separate reviewed authorization extension.
 
 - The Free Render service exists and its build passes; the first healthy deploy is pending a
   reviewed deployment of the Supabase CA trust-anchor correction.
