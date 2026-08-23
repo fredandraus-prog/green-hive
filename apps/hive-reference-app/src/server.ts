@@ -8,6 +8,7 @@ import {
   type AccountProfileInput,
   type AuthSession,
   type PasswordRecoveryChallenge,
+  type VerifiedAuthIdentity,
 } from '@green-hive/auth';
 import {
   AuditService,
@@ -23,6 +24,7 @@ import {
   type CreateProjectInput,
   type CreateSharedWorkspaceInput,
   type Project,
+  type RenameWorkspaceInput,
   type Workspace,
   type WorkspaceMember,
 } from '@green-hive/projects';
@@ -32,6 +34,19 @@ import { referenceAppManifest } from './manifest.js';
 export interface ReferenceAppCredentialsInput {
   readonly email: string;
   readonly password: string;
+}
+
+export interface ReferenceAppSignUpInput extends ReferenceAppCredentialsInput {
+  readonly displayName?: string;
+  readonly preferredLanguage?: string;
+  readonly preferredLocale?: string;
+  readonly timezone?: string;
+  readonly organizationName?: string;
+}
+
+export interface ReferenceAppAccountView {
+  readonly email: string;
+  readonly profile: AccountProfile;
 }
 
 export interface ReferenceAppRefreshInput {
@@ -87,8 +102,16 @@ export class ReferenceAppServer {
     this.#recoveryRedirectUrl = new URL(options.recoveryRedirectUrl).toString();
   }
 
-  async signUp(input: ReferenceAppCredentialsInput): Promise<AuthSession> {
-    const credentials = assertOnlyKeys(input, new Set(['email', 'password']));
+  async signUp(input: ReferenceAppSignUpInput): Promise<AuthSession> {
+    const credentials = assertOnlyKeys(input, new Set([
+      'email',
+      'password',
+      'displayName',
+      'preferredLanguage',
+      'preferredLocale',
+      'timezone',
+      'organizationName',
+    ]));
     const session = await this.#authService.signUp({
       email: credentials.email as string,
       password: credentials.password as string,
@@ -99,8 +122,26 @@ export class ReferenceAppServer {
       workspaceService,
       trustedContext,
     }) => {
-      await accountService.ensure(trustedContext);
-      await workspaceService.ensurePersonal(trustedContext);
+      await accountService.ensure(trustedContext, {
+        ...(credentials.displayName === undefined
+          ? {}
+          : { displayName: credentials.displayName as string }),
+        ...(credentials.preferredLanguage === undefined
+          ? {}
+          : { preferredLanguage: credentials.preferredLanguage as string }),
+        ...(credentials.preferredLocale === undefined
+          ? {}
+          : { preferredLocale: credentials.preferredLocale as string }),
+        ...(credentials.timezone === undefined
+          ? {}
+          : { timezone: credentials.timezone as string }),
+      });
+      await workspaceService.ensurePersonal(
+        trustedContext,
+        credentials.organizationName === undefined
+          ? 'Personal Workspace'
+          : credentials.organizationName as string,
+      );
     });
     return session;
   }
@@ -176,6 +217,16 @@ export class ReferenceAppServer {
     );
   }
 
+  async getAccount(accessToken: string): Promise<ReferenceAppAccountView> {
+    return this.#runWithoutWorkspace(
+      accessToken,
+      async ({ accountService, identity, trustedContext }) => ({
+        email: identity.email,
+        profile: await accountService.get(trustedContext),
+      }),
+    );
+  }
+
   async updateMe(accessToken: string, input: AccountProfileInput): Promise<AccountProfile> {
     return this.#runWithoutWorkspace(accessToken, ({ accountService, trustedContext }) =>
       accountService.update(trustedContext, input),
@@ -194,6 +245,18 @@ export class ReferenceAppServer {
   ): Promise<Workspace> {
     return this.#runWithoutWorkspace(accessToken, ({ workspaceService, trustedContext }) =>
       workspaceService.createShared(trustedContext, input),
+    );
+  }
+
+  async renameWorkspace(
+    accessToken: string,
+    organizationId: string,
+    input: RenameWorkspaceInput,
+  ): Promise<Workspace> {
+    return this.#runInWorkspace(
+      accessToken,
+      organizationId,
+      ({ workspaceService, trustedContext }) => workspaceService.rename(trustedContext, input),
     );
   }
 
@@ -280,6 +343,7 @@ export class ReferenceAppServer {
   async #runWithoutWorkspace<Result>(
     accessToken: string,
     operation: (services: {
+      readonly identity: VerifiedAuthIdentity;
       readonly trustedContext: TrustedAppContext;
       readonly accountService: AccountService;
       readonly workspaceService: WorkspaceService;
@@ -288,6 +352,7 @@ export class ReferenceAppServer {
     const verified = await this.#trustedContext(accessToken);
     return this.#sessionRunner.run(verified.identity, ({ trustedContext, database }) =>
       operation({
+        identity: verified.identity,
         trustedContext,
         accountService: new AccountService(new PostgresAccountRepository(database)),
         workspaceService: new WorkspaceService(new PostgresWorkspaceRepository(database)),

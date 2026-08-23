@@ -25,6 +25,15 @@ export const REFERENCE_APP_COOKIE_NAMES = Object.freeze({
 
 const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const AUTH_BODY_KEYS = new Set(['email', 'password']);
+const SIGN_UP_BODY_KEYS = new Set([
+  'email',
+  'password',
+  'displayName',
+  'preferredLanguage',
+  'preferredLocale',
+  'timezone',
+  'organizationName',
+]);
 const RECOVERY_BODY_KEYS = new Set(['email']);
 const RECOVERY_EXCHANGE_BODY_KEYS = new Set(['code', 'flowId']);
 const RECOVERY_COMPLETION_BODY_KEYS = new Set(['newPassword']);
@@ -50,9 +59,11 @@ export type ReferenceAppHttpFacade = Pick<
   | 'exchangePasswordRecoveryCode'
   | 'completePasswordRecovery'
   | 'getMe'
+  | 'getAccount'
   | 'updateMe'
   | 'listWorkspaces'
   | 'createSharedWorkspace'
+  | 'renameWorkspace'
   | 'listWorkspaceMembers'
   | 'addWorkspaceMember'
   | 'listAuditEvents'
@@ -285,10 +296,21 @@ export async function createReferenceAppHttpServer(
   });
 
   application.post('/api/auth/sign-up', async (request, reply) => {
-    const body = exactObject(request.body, AUTH_BODY_KEYS, new AuthError('INVALID_AUTH_INPUT'));
+    const body = exactObject(request.body, SIGN_UP_BODY_KEYS, new AuthError('INVALID_AUTH_INPUT'));
     const session = await options.facade.signUp({
       email: body.email as string,
       password: body.password as string,
+      ...(body.displayName === undefined ? {} : { displayName: body.displayName as string }),
+      ...(body.preferredLanguage === undefined
+        ? {}
+        : { preferredLanguage: body.preferredLanguage as string }),
+      ...(body.preferredLocale === undefined
+        ? {}
+        : { preferredLocale: body.preferredLocale as string }),
+      ...(body.timezone === undefined ? {} : { timezone: body.timezone as string }),
+      ...(body.organizationName === undefined
+        ? {}
+        : { organizationName: body.organizationName as string }),
     });
     setSessionCookies(reply, session, options.secureCookies);
     const workspace = preferredWorkspace(await options.facade.listWorkspaces(session.accessToken));
@@ -378,15 +400,13 @@ export async function createReferenceAppHttpServer(
     return { updated: true };
   });
 
-  application.get('/api/me', async (request, reply) => ({
-    profile: await withSession(
+  application.get('/api/me', async (request, reply) => withSession(
       request,
       reply,
       options.facade,
       options.secureCookies,
-      (token) => options.facade.getMe(token),
-    ),
-  }));
+      (token) => options.facade.getAccount(token),
+    ));
 
   application.patch('/api/me', async (request, reply) => {
     const body = exactObject(
@@ -437,6 +457,31 @@ export async function createReferenceAppHttpServer(
     );
     setWorkspaceCookie(reply, workspace.id, options.secureCookies);
     return reply.code(201).send({ workspace });
+  });
+
+  application.patch('/api/workspaces/current', async (request, reply) => {
+    const body = exactObject(
+      request.body,
+      WORKSPACE_BODY_KEYS,
+      new WorkspaceError('INVALID_WORKSPACE_INPUT'),
+    );
+    const workspace = await withSession(
+      request,
+      reply,
+      options.facade,
+      options.secureCookies,
+      async (token) => {
+        const selected = await resolveWorkspace(
+          token,
+          request,
+          reply,
+          options.facade,
+          options.secureCookies,
+        );
+        return options.facade.renameWorkspace(token, selected.id, { name: body.name as string });
+      },
+    );
+    return { workspace };
   });
 
   application.post('/api/workspaces/select', async (request, reply) => {

@@ -38,7 +38,10 @@ class FakeWorkspaceRepository {
     }],
   ]);
 
-  async ensurePersonal() {
+  async ensurePersonal(_context, name) {
+    if (this.workspaces[0].name === 'Personal Workspace') {
+      this.workspaces[0] = { ...this.workspaces[0], name };
+    }
     return this.workspaces[0];
   }
 
@@ -58,6 +61,14 @@ class FakeWorkspaceRepository {
       updatedAt: NOW,
     });
     return created;
+  }
+
+  async rename(context, name) {
+    const current = this.workspaces.find((entry) => entry.id === context.organizationId);
+    if (!current || current.kind !== 'SHARED') throw new WorkspaceError('WORKSPACE_ACCESS_DENIED');
+    const renamed = { ...current, name };
+    this.workspaces = this.workspaces.map((entry) => entry.id === current.id ? renamed : entry);
+    return renamed;
   }
 
   async listMembers(context) {
@@ -100,6 +111,15 @@ test('personal workspace is idempotent and shared workspace is separately listed
   assert.deepEqual((await service.list(baseContext)).map((entry) => entry.id), [PERSONAL_ID, SHARED_ID]);
 });
 
+test('personal workspace accepts its initial organization name and shared workspace can be renamed', async () => {
+  const service = new WorkspaceService(new FakeWorkspaceRepository());
+  const personal = await service.ensurePersonal(baseContext, '  Minha Empresa  ');
+  assert.equal(personal.name, 'Minha Empresa');
+  await service.createShared(baseContext, { name: 'Equipe antiga' });
+  const renamed = await service.rename(sharedContext, { name: '  Equipe Green  ' });
+  assert.equal(renamed.name, 'Equipe Green');
+});
+
 test('workspace membership accepts only bounded non-owner roles in selected context', async () => {
   const service = new WorkspaceService(new FakeWorkspaceRepository());
   await service.createShared(baseContext, { name: 'Team' });
@@ -133,6 +153,7 @@ test('workspace storage failures are converted to stable safe errors', async () 
     async ensurePersonal() { throw new Error('SQL secret'); },
     async list() { return []; },
     async createShared() { throw new Error('SQL secret'); },
+    async rename() { throw new Error('SQL secret'); },
     async listMembers() { return []; },
     async addMember() { throw new Error('SQL secret'); },
   });

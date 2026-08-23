@@ -169,6 +169,13 @@ test(
         );
         assert.equal(sharedWorkspace.kind, 'SHARED');
         assert.equal(sharedWorkspace.role, 'OWNER');
+        await setContext(client, USER_A_ID, 'REFERENCE_APP', sharedWorkspace.id);
+        sharedWorkspace = await workspaceService.rename(
+          { userId: USER_A_ID, appCode: 'REFERENCE_APP', organizationId: sharedWorkspace.id },
+          { name: 'Native Shared Workspace Renamed' },
+        );
+        assert.equal(sharedWorkspace.name, 'Native Shared Workspace Renamed');
+        await setContext(client, USER_A_ID, 'REFERENCE_APP', ORGANIZATION_A_ID);
         assert.deepEqual(
           (await workspaceService.list({ userId: USER_A_ID, appCode: 'REFERENCE_APP' }))
             .map((workspace) => workspace.id)

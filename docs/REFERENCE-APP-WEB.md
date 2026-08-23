@@ -2,9 +2,10 @@
 
 ## Purpose
 
-Platform version `0.7.0` extends the Reference App with tenant-aware workspace and Audit boundaries
-while retaining the real local web application. The implementation follows the canonical React +
-Vite direction and keeps privileged decisions in a Fastify server process.
+Platform version `0.7.0` retains the tenant-aware workspace and Audit boundaries while the current
+unreleased frontend slice reorganizes the Reference App around product-facing navigation. The
+implementation follows the canonical React + Vite direction and keeps privileged decisions in a
+Fastify server process.
 
 This is a platform validation shell, not the first commercial BeeGreen product. It contains no
 Billing, AI, Redis, jobs, webhooks, remote storage or consumer-domain behavior.
@@ -38,13 +39,19 @@ Browser routes:
 - `/auth/sign-up` — account creation;
 - `/auth/sign-in` — login;
 - `/auth/recovery` — recovery request, PKCE callback and password replacement;
-- `/app` — authenticated profile and project shell.
+- `/app` — backwards-compatible entry to the global Dashboard;
+- `/app/dashboard` — global account/portfolio foundation, independent from the active workspace;
+- `/app/workspace/projects` — projects in the server-validated active workspace;
+- `/app/workspace/activity` — activity in the server-validated active workspace;
+- `/app/settings/profile` — profile, e-mail display, language and timezone;
+- `/app/settings/organization` — current organization display name and supported rename action.
 
 HTTP routes:
 
 - `GET /api/health` — process liveness only;
 - `GET /api/ready` — migration, seed and critical database readiness;
-- `POST /api/auth/sign-up`;
+- `POST /api/auth/sign-up` — credentials plus optional validated onboarding profile/organization
+  fields;
 - `POST /api/auth/sign-in`;
 - `POST /api/auth/refresh`;
 - `POST /api/auth/sign-out`;
@@ -53,6 +60,8 @@ HTTP routes:
 - `POST /api/auth/recovery/complete`;
 - `GET/PATCH /api/me`;
 - `GET/POST /api/workspaces`;
+- `PATCH /api/workspaces/current` — rename a selected shared organization for a verified owner or
+  administrator;
 - `POST /api/workspaces/select`;
 - `GET/POST /api/workspaces/members`;
 - `GET/POST /api/projects`;
@@ -65,6 +74,43 @@ The browser cannot send `appCode`, `app_id`, `owner_user_id`, a platform role or
 fields through accepted project payloads. Its HttpOnly workspace cookie is validated against
 active membership on every Project/Audit Service transaction. Project, Workspace, Audit and
 account services still repeat explicit authorization and PostgreSQL still applies RLS.
+
+## Frontend information architecture
+
+The authenticated shell now separates two scopes:
+
+- `Dashboard` is the global account/portfolio page. Its frontend contract defaults to
+  `ALL_WORKSPACES` and already supports a future `SELECTED_WORKSPACES` mode with
+  `selectedWorkspaceIds[]`. Changing the active workspace does not redefine this Dashboard scope.
+- workspace pages are operational and derive their projects/activity exclusively from the
+  server-validated active-workspace cookie.
+
+The sidebar owns workspace selection and secondary creation. Its accessible menu lists only
+workspaces returned by `GET /api/workspaces`; selecting one still calls the protected selection
+endpoint. Creation happens in a modal, validates the name, prevents repeat submission, remains open
+on failure and uses the existing response/cookie behavior to select the new workspace. Profile
+content no longer appears on the Dashboard and infrastructure/security status is not promoted in
+the normal product UI.
+
+Settings currently contains Profile and Organization. Profile persists `displayName`,
+`preferredLanguage`, `preferredLocale` and the IANA timezone through the existing account contract.
+The e-mail comes from the verified session and remains read-only. Organization shows product-facing
+name/type/role without exposing UUIDs or tenant identifiers.
+
+## Signup and current i18n boundary
+
+Signup is a small two-step flow: Account (`displayName`, e-mail and password), then Setup (language,
+IANA timezone and initial organization name). Browser locale/timezone detection supplies editable
+defaults and falls back safely. The server accepts those bounded fields, validates the profile with
+`AccountService`, and passes the initial name to the existing
+`hive.ensure_personal_organization(text)` helper. Owner/app/organization IDs and administrative
+roles remain server-derived.
+
+`@green-hive/i18n` is still `SCAFFOLD_ONLY`; this slice does not introduce a competing translation
+runtime. It persists the user's language/locale preference for the future GH-0701 implementation,
+while current interface copy remains Portuguese. Renaming an already-created personal organization
+also remains a documented dependency: the immutable helper does not change the name on conflict and
+the current organization update policy intentionally covers shared workspaces only.
 
 ## Session and request security
 
@@ -120,8 +166,11 @@ selection denial, exact-origin rejection, tenant-safe Audit reads, confidential-
 archive, logical deletion and logout. Cleanup removes only the exact users, workspaces, projects
 and Audit events created by that run.
 
-The UI shell was also opened and visually inspected at `/` and `/auth/recovery`, with no browser
-console warnings or errors.
+The UX slice adds unit contracts for global/workspace routes, portfolio scope, smart signup
+defaults, omission of profile/infrastructure status from Dashboard, accessible workspace-menu
+semantics, the creation dialog and the two-step onboarding fields. Visual browser inspection covers
+signup, Dashboard, workspace projects, Profile and Organization settings at desktop and mobile
+viewports.
 
 ## Remaining gate
 

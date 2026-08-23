@@ -123,17 +123,40 @@ test(
       await assertNativeSupabaseContract(maintenance);
 
       await testContext.test('signup creates confirmed Auth users and owner profiles', async () => {
-        sessionA = await server.signUp({ email: emailA, password: passwordA });
+        sessionA = await server.signUp({
+          email: emailA,
+          password: passwordA,
+          displayName: 'Owner Onboarding',
+          preferredLanguage: 'pt',
+          preferredLocale: 'pt-BR',
+          timezone: 'America/Sao_Paulo',
+          organizationName: 'Minha Empresa',
+        });
         sessionB = await server.signUp({ email: emailB, password: passwordB });
         createdUserIds.push(sessionA.user.id, sessionB.user.id);
         [workspaceA] = await server.listWorkspaces(sessionA.accessToken);
         [workspaceB] = await server.listWorkspaces(sessionB.accessToken);
         assert.equal(workspaceA.kind, 'PERSONAL');
+        assert.equal(workspaceA.name, 'Minha Empresa');
         assert.equal(workspaceB.kind, 'PERSONAL');
         assert.notEqual(workspaceA.id, workspaceB.id);
         assert.equal(sessionA.user.appCode, 'REFERENCE_APP');
         assert.equal(sessionA.user.platformRole, undefined);
         assert.equal((await server.getMe(sessionA.accessToken)).userId, sessionA.user.id);
+        assert.deepEqual(
+          {
+            displayName: (await server.getMe(sessionA.accessToken)).displayName,
+            preferredLanguage: (await server.getMe(sessionA.accessToken)).preferredLanguage,
+            preferredLocale: (await server.getMe(sessionA.accessToken)).preferredLocale,
+            timezone: (await server.getMe(sessionA.accessToken)).timezone,
+          },
+          {
+            displayName: 'Owner Onboarding',
+            preferredLanguage: 'pt',
+            preferredLocale: 'pt-BR',
+            timezone: 'America/Sao_Paulo',
+          },
+        );
         assert.equal((await server.getMe(sessionB.accessToken)).userId, sessionB.user.id);
 
         const native = await maintenance.query(

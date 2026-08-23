@@ -16,7 +16,7 @@ const ignoredDirectories = new Set([
   '.temp',
   '.branches',
 ]);
-const ignoredFiles = new Set(['MANIFEST-SHA256.txt', '.env']);
+const ignoredFiles = new Set(['MANIFEST-SHA256.txt', '.env', '.git']);
 const ignoredExtensions = new Set(['.log', '.tmp', '.zip']);
 
 function isIgnoredFile(name) {
