@@ -85,8 +85,8 @@ test('local runtime remains restricted to the canonical loopback preview', () =>
 
 test('readiness requires the full migration, seed and helper contract', async () => {
   const readyState = {
-    migration_count: 15,
-    migration_version: 15,
+    migration_count: 16,
+    migration_version: 16,
     reference_app_count: 1,
     reference_product_count: 1,
     reference_price_count: 1,
@@ -97,6 +97,8 @@ test('readiness requires the full migration, seed and helper contract', async ()
     billing_function_ready: true,
     billing_provider_ready: true,
     billing_webhook_ready: true,
+    entitlement_mapping_count: 2,
+    entitlements_ready: true,
     app_helper_ready: true,
     organization_helper_ready: true,
   };

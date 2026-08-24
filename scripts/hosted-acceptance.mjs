@@ -184,7 +184,8 @@ async function assertWebhookEvidence(purchaseId, providerEventId) {
          payment.status AS payment_status,
          provider_event.delivery_count,
          provider_event.effect,
-         count(audit_event.id)::integer AS audit_count
+         count(DISTINCT audit_event.id)::integer AS audit_count,
+         count(DISTINCT entitlement.id)::integer AS entitlement_count
        FROM hive.purchases AS purchase
        JOIN hive.payments AS payment ON payment.purchase_id = purchase.id
        JOIN hive.payment_provider_events AS provider_event
@@ -193,6 +194,9 @@ async function assertWebhookEvidence(purchaseId, providerEventId) {
        LEFT JOIN audit.events AS audit_event
          ON audit_event.subject_id = payment.id
         AND audit_event.event_code = 'PAYMENT_CONFIRMED'
+       LEFT JOIN hive.project_entitlements AS entitlement
+         ON entitlement.purchase_id = purchase.id
+        AND entitlement.status = 'ACTIVE'
        WHERE purchase.id = $1::uuid
        GROUP BY
          purchase.status,
@@ -207,6 +211,7 @@ async function assertWebhookEvidence(purchaseId, providerEventId) {
       delivery_count: 2,
       effect: 'PAYMENT_CONFIRMED',
       audit_count: 1,
+      entitlement_count: 2,
     }]);
   } finally {
     await client.end();
@@ -423,7 +428,10 @@ async function cleanupFixtures() {
             WHERE actor_user_id = ANY($2::uuid[])) AS audit_events,
          (SELECT count(*)::integer
             FROM hive.payment_provider_events
-           WHERE provider_event_id = ANY($3::text[])) AS provider_events`,
+           WHERE provider_event_id = ANY($3::text[])) AS provider_events,
+         (SELECT count(*)::integer
+            FROM hive.project_entitlements
+           WHERE owner_user_id = ANY($2::uuid[])) AS entitlements`,
       [fixtureEmails, userIds, [...fixtureProviderEventIds]],
     );
     assert.ok(
@@ -554,6 +562,19 @@ async function run() {
   assert.deepEqual(duplicateWebhook.body, { status: 'accepted', duplicate: true });
   await assertWebhookEvidence(purchaseId, providerEventId);
 
+  const entitled = await request(
+    `/api/projects/${projectId}/capabilities/REFERENCE_APP_RUN_JOB`,
+    { jar: jarA },
+  );
+  assert.equal(entitled.response.status, 200);
+  assert.deepEqual(entitled.body, { allowed: true });
+  const unavailableCapability = await request(
+    `/api/projects/${projectId}/capabilities/REFERENCE_APP_UNKNOWN`,
+    { jar: jarA },
+  );
+  assert.equal(unavailableCapability.response.status, 200);
+  assert.deepEqual(unavailableCapability.body, { allowed: false });
+
   const forgedProject = await request('/api/projects', {
     method: 'POST',
     payload: {
@@ -569,6 +590,8 @@ async function run() {
   assert.equal(ownerAudit.response.status, 200);
   const projectEvents = ownerAudit.body.events.filter((event) => event.projectId === projectId);
   assert.deepEqual(projectEvents.map((event) => event.eventCode).sort(), [
+    'ENTITLEMENT_GRANTED',
+    'ENTITLEMENT_GRANTED',
     'PAYMENT_CONFIRMED',
     'PROJECT_CREATED',
     'PURCHASE_CREATED',
@@ -583,6 +606,12 @@ async function run() {
   assert.deepEqual(listB.body.projects, []);
   const getB = await request(`/api/projects/${projectId}`, { jar: jarB });
   assertSafeError(getB, 404, 'PROJECT_NOT_FOUND');
+  const crossUserCapability = await request(
+    `/api/projects/${projectId}/capabilities/REFERENCE_APP_RUN_JOB`,
+    { jar: jarB },
+  );
+  assert.equal(crossUserCapability.response.status, 200);
+  assert.deepEqual(crossUserCapability.body, { allowed: false });
 
   const sharedJarA = jarA.clone();
   const createdWorkspace = await request('/api/workspaces', {
@@ -632,6 +661,12 @@ async function run() {
   });
   assert.equal(archived.response.status, 200);
   assert.equal(archived.body.project.status, 'ARCHIVED');
+  const archivedCapability = await request(
+    `/api/projects/${projectId}/capabilities/REFERENCE_APP_RUN_JOB`,
+    { jar: jarA },
+  );
+  assert.equal(archivedCapability.response.status, 200);
+  assert.deepEqual(archivedCapability.body, { allowed: false });
 
   const deleted = await request(`/api/projects/${projectId}/delete`, {
     method: 'POST',
@@ -656,6 +691,8 @@ async function run() {
       .map((event) => event.eventCode)
       .sort(),
     [
+      'ENTITLEMENT_GRANTED',
+      'ENTITLEMENT_GRANTED',
       'PAYMENT_CONFIRMED',
       'PROJECT_ARCHIVED',
       'PROJECT_CREATED',
@@ -690,6 +727,7 @@ async function run() {
       signupAndProtectedCookies: 'PASS',
       refreshAndProfile: 'PASS',
       projectsWorkspacesAndAudit: 'PASS',
+      entitlementDecisionAfterVerifiedPayment: 'PASS',
       crossUserAndCrossWorkspace: 'PASS',
       forgedScopeAndCsrf: 'PASS',
       logicalDeletion: 'PASS',

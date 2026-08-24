@@ -29,6 +29,9 @@ No app-domain concepts belong in `hive`.
 - `hive.purchases`: owner/project/app/workspace-scoped commercial snapshots and hashed idempotency.
 - `hive.payments`: server-authoritative payment attempts and exact refund amount; authenticated
   reads exclude provider payment/refund references and failure internals.
+- `hive.product_entitlement_capabilities`: reviewed product-to-App-Manifest capability mapping.
+- `hive.project_entitlements`: immutable purchase/capability grant snapshots with explicit active
+  or revoked lifecycle.
 - `audit.events`: immutable actor/tenant/app/project event metadata with request and correlation
   identifiers, protected by tenant-aware read RLS and no authenticated write grant.
 
@@ -39,6 +42,7 @@ The global app registry is deliberately not duplicated per organization. The ten
 
 ```text
 USER -> ORGANIZATION / WORKSPACE -> ORGANIZATION_APP -> PROJECT -> PURCHASE -> PAYMENT
+                                                                    -> ENTITLEMENT SNAPSHOTS
 ```
 
 ## Deployment workflow
@@ -68,3 +72,13 @@ explicit user/app/workspace authorization, lock the purchase/payment rows and ma
 idempotent. All three functions have empty `search_path`, schema-qualified objects and explicit
 `PUBLIC` revocation. Amount, currency, commercial scope and sandbox outcome are never accepted
 from a browser payload.
+
+## Entitlement authority
+
+Authenticated roles can read only current-app capability mappings and owner-scoped grant snapshots.
+They receive no direct grant-table write privilege and cannot execute
+`hive.apply_entitlement_state_for_purchase(uuid)`. Paid/refunded Billing transitions invoke the
+internal synchronizer in the same database transaction. `hive.can_project_capability(uuid,text)` is
+the only authenticated SQL decision entrypoint and repeats verified user, app, organization,
+project-status, mapping and manifest checks. Multiple purchases remain independent: revoking one
+does not negate another active grant for the same project/capability.

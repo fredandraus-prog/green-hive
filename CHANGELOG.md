@@ -7,6 +7,42 @@ semantic versioning.
 
 No unreleased changes.
 
+## [0.13.0] - 2026-08-23
+
+### Added
+
+- GH-0304 `@green-hive/entitlements` contracts, PostgreSQL repository, runtime validation and stable
+  public errors for server-side project capability decisions.
+- Immutable migration `0016` with reviewed product-capability mappings, purchase-derived project
+  grant snapshots, transactional Billing synchronization and `hive.can_project_capability(...)`.
+- Manifest-verified `REFERENCE_APP` mappings for `REFERENCE_APP_RUN_JOB` and
+  `REFERENCE_APP_GENERATE_FILE`, plus the protected HTTP capability-decision route.
+- Bounded `ENTITLEMENT_GRANTED` and `ENTITLEMENT_CHANGED` Audit capture.
+
+### Security
+
+- Grant scope comes only from verified user/app/workspace context, owned project state, immutable
+  Billing snapshots, active product mappings and the canonical stored App Manifest.
+- Authenticated users can execute `can()` but cannot insert/update/delete grants or execute the
+  internal synchronizer; platform administration remains read-only operational inspection.
+- Independent purchases keep independent grants, so one refund cannot remove access supplied by a
+  second paid purchase. Malformed and cross-scope decisions fail without SQL or existence leakage.
+
+### Validation
+
+- 97 unit tests and 15 embedded database tests pass, including Billing/Webhook regressions,
+  grant/revoke idempotency, multiple purchases and cross-user/app/workspace denial.
+- The native local Supabase gate applies/reapplies 16 migrations and three seeds, passes the new
+  six-scenario Entitlements matrix and restores a clean baseline.
+- Dedicated staging, CI, deployed readiness and HTTPS authenticated acceptance are recorded in the
+  GH-0304 release validation evidence.
+
+### Status
+
+- GH-0304 is `DONE`; coordinated platform packages advance to `0.13.0` while the `REFERENCE_APP`
+  product manifest remains `0.1.0`.
+- GH-0401 Usage/Cost Foundation and later checkpoints remain not started.
+
 ## [0.12.0] - 2026-08-23
 
 ### Added

@@ -154,8 +154,15 @@ export async function cleanupGreenHiveUserData(client, userIds) {
     `SELECT
        to_regclass('hive.purchases')::text AS purchases,
        to_regclass('hive.payments')::text AS payments,
-       to_regclass('hive.payment_provider_events')::text AS provider_events`,
+       to_regclass('hive.payment_provider_events')::text AS provider_events,
+       to_regclass('hive.project_entitlements')::text AS entitlements`,
   );
+  if (billingTables.rows[0]?.entitlements === 'hive.project_entitlements') {
+    await client.query(
+      'DELETE FROM hive.project_entitlements WHERE owner_user_id = ANY($1::uuid[])',
+      [userIds],
+    );
+  }
   if (billingTables.rows[0]?.provider_events === 'hive.payment_provider_events') {
     await client.query(
       `DELETE FROM hive.payment_provider_events

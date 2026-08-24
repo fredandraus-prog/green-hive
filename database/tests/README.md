@@ -6,7 +6,8 @@ migrations and executes policies as the non-superuser `authenticated` role.
 
 The matrix covers owner access, cross-user denial, cross-app denial, forged owner/app identifiers,
 untrusted `user_metadata`, read-only administration, logical deletion, retained settings,
-reapplicable seed behavior and conflicting seed identity.
+reapplicable seed behavior, conflicting seed identity, paid capability grants, refund revocation,
+independent-purchase retention and server-authoritative `can()` decisions.
 
 `npm run db:test:supabase` is the supported local external gate. It requires host
 `127.0.0.1|localhost`, port `54322`, database `postgres`,
@@ -17,7 +18,12 @@ remains supported by `db:test:external`.
 
 `projects:test:supabase` exercises the compiled `@green-hive/projects` service against the same
 native RLS boundary. It inserts only the existing fixed fixtures, removes them in `finally` and
-leaves the six-migration plus `REFERENCE_APP` baseline intact.
+leaves the sixteen-migration plus structural seed baseline intact.
+
+`entitlements:test:supabase` exercises the compiled `@green-hive/entitlements` service against
+native RLS. It proves no grant while pending, two manifest-derived grants after payment, independent
+revocation across two purchases, cross-user/workspace/app denial, read-only admin inspection and
+cleanup ordering.
 
 `auth:test:supabase` exercises real Supabase Auth against the loopback-only Auth service. It covers
 signup, login, profile bootstrap/update, Project Service access, cross-user denial, signed app

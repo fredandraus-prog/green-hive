@@ -53,6 +53,18 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     },
   ]);
 
+  const entitlementSeed = await client.query(
+    `SELECT capability_code, active
+     FROM hive.product_entitlement_capabilities
+     WHERE product_id = $1::uuid
+     ORDER BY capability_code`,
+    ['40000000-0000-4000-8000-000000000001'],
+  );
+  assert.deepEqual(entitlementSeed.rows, [
+    { capability_code: 'REFERENCE_APP_GENERATE_FILE', active: true },
+    { capability_code: 'REFERENCE_APP_RUN_JOB', active: true },
+  ]);
+
   const foreignKeys = await client.query(
     `SELECT conname, confrelid::regclass::text AS target
      FROM pg_constraint
@@ -74,6 +86,11 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ,'payments_purchase_scope_fk'
        ,'payment_provider_events_purchase_fk'
        ,'payment_provider_events_payment_purchase_fk'
+       ,'product_entitlement_capabilities_product_app_fk'
+       ,'project_entitlements_project_scope_fk'
+       ,'project_entitlements_purchase_source_fk'
+       ,'project_entitlements_payment_purchase_fk'
+       ,'project_entitlements_product_capability_fk'
      )
      ORDER BY conname`,
   );
@@ -87,7 +104,12 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     { conname: 'payment_provider_events_purchase_fk', target: 'hive.purchases' },
     { conname: 'payments_purchase_scope_fk', target: 'hive.purchases' },
     { conname: 'prices_product_app_fk', target: 'hive.products' },
+    { conname: 'product_entitlement_capabilities_product_app_fk', target: 'hive.products' },
     { conname: 'products_app_fk', target: 'hive.apps' },
+    { conname: 'project_entitlements_payment_purchase_fk', target: 'hive.payments' },
+    { conname: 'project_entitlements_product_capability_fk', target: 'hive.product_entitlement_capabilities' },
+    { conname: 'project_entitlements_project_scope_fk', target: 'hive.projects' },
+    { conname: 'project_entitlements_purchase_source_fk', target: 'hive.purchases' },
     { conname: 'project_settings_project_app_organization_fk', target: 'hive.projects' },
     { conname: 'projects_organization_app_fk', target: 'hive.organization_apps' },
     { conname: 'projects_organization_membership_fk', target: 'hive.organization_members' },
@@ -116,11 +138,13 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
          'purchases',
          'payments'
          ,'payment_provider_events'
+         ,'product_entitlement_capabilities'
+         ,'project_entitlements'
        ))
        OR (pg_namespace.nspname = 'audit' AND relname = 'events')
      ORDER BY schema_name, relname`,
   );
-  assert.equal(rls.rows.length, 14);
+  assert.equal(rls.rows.length, 16);
   assert.ok(rls.rows.every((entry) => entry.relrowsecurity));
 
   const helpers = await client.query(
@@ -150,9 +174,13 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ,'hive.apply_provider_refund(uuid,text,text)'
        ,'audit.capture_payment_transition()'
        ,'hive.apply_verified_payment_webhook(text,text,text,uuid,text,text,text,text)'
+       ,'hive.apply_entitlement_state_for_purchase(uuid)'
+       ,'hive.sync_entitlements_after_billing_transition()'
+       ,'hive.can_project_capability(uuid,text)'
+       ,'audit.capture_entitlement_transition()'
      ]) AS names(name)`,
   );
-  assert.equal(helpers.rows.length, 24);
+  assert.equal(helpers.rows.length, 28);
   assert.ok(helpers.rows.every((entry) => entry.helper));
 
   const privileges = await client.query(
@@ -257,6 +285,66 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     service_role_can_apply_webhook: true,
   });
 
+  const entitlementPrivileges = await client.query(
+    `SELECT
+       has_table_privilege(
+         'authenticated',
+         'hive.product_entitlement_capabilities',
+         'SELECT'
+       ) AS mapping_select,
+       has_table_privilege(
+         'authenticated',
+         'hive.project_entitlements',
+         'SELECT'
+       ) AS entitlement_select,
+       has_any_column_privilege(
+         'authenticated',
+         'hive.project_entitlements',
+         'SELECT'
+       ) AS entitlement_column_select,
+       has_table_privilege(
+         'authenticated',
+         'hive.project_entitlements',
+         'INSERT'
+       ) AS entitlement_insert,
+       has_table_privilege(
+         'authenticated',
+         'hive.project_entitlements',
+         'UPDATE'
+       ) AS entitlement_update,
+       has_table_privilege(
+         'authenticated',
+         'hive.project_entitlements',
+         'DELETE'
+       ) AS entitlement_delete,
+       has_function_privilege(
+         'authenticated',
+         'hive.can_project_capability(uuid,text)',
+         'EXECUTE'
+       ) AS authenticated_can_decide,
+       has_function_privilege(
+         'authenticated',
+         'hive.apply_entitlement_state_for_purchase(uuid)',
+         'EXECUTE'
+       ) AS authenticated_can_apply,
+       has_function_privilege(
+         'service_role',
+         'hive.apply_entitlement_state_for_purchase(uuid)',
+         'EXECUTE'
+       ) AS service_role_can_apply`,
+  );
+  assert.deepEqual(entitlementPrivileges.rows[0], {
+    mapping_select: true,
+    entitlement_select: false,
+    entitlement_column_select: true,
+    entitlement_insert: false,
+    entitlement_update: false,
+    entitlement_delete: false,
+    authenticated_can_decide: true,
+    authenticated_can_apply: false,
+    service_role_can_apply: true,
+  });
+
   const auditTriggers = await client.query(
     `SELECT tgname
      FROM pg_trigger
@@ -267,15 +355,19 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        'audit_projects_after_lifecycle'
        ,'audit_purchases_after_insert'
        ,'audit_payments_after_transition'
+       ,'entitlements_purchases_after_transition'
+       ,'entitlements_payments_after_transition'
+       ,'audit_project_entitlements_after_transition'
      )
        AND NOT tgisinternal
      ORDER BY tgname`,
   );
-  assert.equal(auditTriggers.rows.length, 6);
+  assert.equal(auditTriggers.rows.length, 9);
 
   return Object.freeze({
     ledgerRows: ledger.rows.length,
     referenceApps: seed.rows.length,
     referenceProducts: billingSeed.rows.length,
+    referenceEntitlementCapabilities: entitlementSeed.rows.length,
   });
 }

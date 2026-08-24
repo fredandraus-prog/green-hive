@@ -63,6 +63,7 @@ test('hosted acceptance is exact-target, loopback-mediated and cleanup guarded',
   assert.match(acceptance, /X-Green-Hive-Signature|x-green-hive-signature/);
   assert.match(acceptance, /BILLING_WEBHOOK_SIGNATURE_INVALID/);
   assert.match(acceptance, /verifiedWebhookSingleEffect: 'PASS'/);
+  assert.match(acceptance, /entitlementDecisionAfterVerifiedPayment: 'PASS'/);
   assert.match(acceptance, /finally \{\n  await cleanupFixtures\(\)/);
   assert.doesNotMatch(acceptance, /console\.log\([^\n]*(recoveryUrl|serviceRoleKey|databaseUrl)/);
 

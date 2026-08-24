@@ -1,4 +1,4 @@
-export const REFERENCE_APP_EXPECTED_MIGRATION_VERSION = 15;
+export const REFERENCE_APP_EXPECTED_MIGRATION_VERSION = 16;
 
 interface ReadinessRow extends Record<string, unknown> {
   readonly migration_count: number;
@@ -13,6 +13,8 @@ interface ReadinessRow extends Record<string, unknown> {
   readonly billing_function_ready: boolean;
   readonly billing_provider_ready: boolean;
   readonly billing_webhook_ready: boolean;
+  readonly entitlement_mapping_count: number;
+  readonly entitlements_ready: boolean;
   readonly app_helper_ready: boolean;
   readonly organization_helper_ready: boolean;
 }
@@ -66,6 +68,19 @@ export function createReferenceAppReadinessCheck(database: ReadinessDatabase): (
            AND to_regprocedure(
              'hive.apply_verified_payment_webhook(text,text,text,uuid,text,text,text,text)'
            ) IS NOT NULL AS billing_webhook_ready,
+         (SELECT count(*)::integer
+            FROM hive.product_entitlement_capabilities
+           WHERE product_id = $2::uuid
+             AND app_id = $1::uuid
+             AND capability_code IN (
+               'REFERENCE_APP_RUN_JOB',
+               'REFERENCE_APP_GENERATE_FILE'
+             )
+             AND active) AS entitlement_mapping_count,
+         to_regclass('hive.project_entitlements') IS NOT NULL
+           AND to_regprocedure('hive.apply_entitlement_state_for_purchase(uuid)') IS NOT NULL
+           AND to_regprocedure('hive.can_project_capability(uuid,text)') IS NOT NULL
+           AS entitlements_ready,
          to_regprocedure('hive.current_app_code()') IS NOT NULL AS app_helper_ready,
          to_regprocedure('hive.current_organization_id()') IS NOT NULL AS organization_helper_ready`,
       [
@@ -89,6 +104,8 @@ export function createReferenceAppReadinessCheck(database: ReadinessDatabase): (
       !state.billing_function_ready ||
       !state.billing_provider_ready ||
       !state.billing_webhook_ready ||
+      state.entitlement_mapping_count !== 2 ||
+      !state.entitlements_ready ||
       !state.app_helper_ready ||
       !state.organization_helper_ready
     ) {

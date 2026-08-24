@@ -21,13 +21,14 @@ Status date: 2026-08-23.
 | GH-0301 | DONE | app catalog, exact-decimal price versions, tenant purchase/payment snapshots, transactional pending creation, Audit and embedded/native Supabase service/RLS gates | none |
 | GH-0302 | DONE | deterministic network-free provider, server-only success/failure/full-refund transitions, safe Audit and embedded/local/staging Supabase gates | none |
 | GH-0303 | DONE | exact-body HMAC verification, replay rejection, provider-event uniqueness, concurrent duplicate single effect, reconciliation and embedded/local/staging gates | none |
-| GH-0304+ | NOT_STARTED | Entitlements and later checkpoints remain outside this release | implement the reviewed Entitlement boundary next |
+| GH-0304 | DONE | manifest-reviewed product mappings, payment-derived grant/revocation snapshots, server-authoritative `can()`, Audit and embedded/local/staging/HTTPS gates | none |
+| GH-0401+ | NOT_STARTED | usage accounting, Cost Guard and later checkpoints remain outside this release | implement Usage/Cost Foundation next |
 
 The local Supabase parity gate passed on PostgreSQL 17.6 with native `auth.users`, `auth.uid()` and
-`auth.jwt()`. The dedicated hosted staging project also passes the fifteen-migration baseline,
+`auth.jwt()`. The dedicated hosted staging project also passes the sixteen-migration baseline,
 RLS, Project/Workspace/Billing Services and server-side Auth/account matrices. Hosted test users
-and rows are removed after each run, leaving fifteen ledger records and the structural
-`REFERENCE_APP` plus sandbox catalog seeds.
+and rows are removed after each run, leaving sixteen ledger records and the structural
+`REFERENCE_APP`, sandbox catalog and entitlement-mapping seeds.
 
 The Reference App has a responsive React/Vite shell and a Fastify HTTP adapter. Tokens remain
 outside browser-accessible storage, PKCE recovery avoids URL tokens, and local plus deployed HTTP
@@ -44,7 +45,9 @@ adapter. Owners can request an idempotent pending purchase; the trusted backend 
 configured success/failure result and a full refund. Authenticated users cannot select that result,
 execute the transition functions or read provider references. GH-0303 verifies exact webhook bytes,
 deduplicates provider events under lock and provides authoritative provider reconciliation without
-storing raw payloads or signatures. Billing still grants no Entitlement.
+storing raw payloads or signatures. GH-0304 derives independent project capability snapshots only
+from those authoritative transitions. Its server-side `can()` decision repeats
+user/app/workspace/project scope and accepts no commercial or grant authority from browser input.
 
 The private GitHub repository now deploys `main` through the CI-gated Render Blueprint. The Free
 service `green-hive-staging` is live at the exact HTTPS origin, database-backed readiness and the

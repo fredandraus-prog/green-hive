@@ -34,12 +34,16 @@ const packageDependencies = (name) => {
       '@supabase/supabase-js': '2.112.3',
     };
   }
-  if (name === 'projects') return { '@green-hive/core': platformVersion };
+  if (name === 'projects' || name === 'billing' || name === 'entitlements') {
+    return { '@green-hive/core': platformVersion };
+  }
   return undefined;
 };
 
 const packageReferences = (name) =>
-  name === 'auth' || name === 'projects' ? [{ path: '../core' }] : [];
+  name === 'auth' || name === 'projects' || name === 'billing' || name === 'entitlements'
+    ? [{ path: '../core' }]
+    : [];
 
 const packageManifest = (name) => ({
   name: `@green-hive/${name}`,
@@ -96,7 +100,10 @@ const apps = [
       '@fastify/cookie': '11.1.2',
       '@fastify/static': '10.1.3',
       '@green-hive/auth': platformVersion,
+      '@green-hive/audit': platformVersion,
+      '@green-hive/billing': platformVersion,
       '@green-hive/core': platformVersion,
+      '@green-hive/entitlements': platformVersion,
       '@green-hive/projects': platformVersion,
       fastify: '5.12.1',
       pg: '8.23.0',
@@ -107,6 +114,9 @@ const apps = [
     references: [
       { path: '../../packages/core' },
       { path: '../../packages/auth' },
+      { path: '../../packages/audit' },
+      { path: '../../packages/billing' },
+      { path: '../../packages/entitlements' },
       { path: '../../packages/projects' },
     ],
   },

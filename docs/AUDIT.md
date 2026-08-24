@@ -46,6 +46,8 @@ The database captures the first safe event for each material lifecycle change:
 | pending payment becomes paid | `PAYMENT_CONFIRMED` |
 | pending payment fails | `PAYMENT_FAILED` |
 | paid payment is fully refunded | `PAYMENT_REFUNDED` |
+| purchase capability becomes active | `ENTITLEMENT_GRANTED` |
+| purchase capability lifecycle changes | `ENTITLEMENT_CHANGED` |
 
 Capture runs after the domain row change inside the same database transaction. A capture failure
 rolls the operation back. An idempotent retry that does not create a row or change lifecycle state
@@ -97,6 +99,7 @@ GH-0302/GH-0303 capture payment success, failure and refund from trusted server 
 verified provider webhooks. Exact duplicate delivery changes only the private delivery counter and
 does not append another Audit event. Metadata is
 limited to provider code, resulting state and an optional bounded failure code; provider reference
-IDs, amounts, credentials, raw bodies and signatures are excluded. Login failure/success,
-Entitlements, Jobs, Files, feature flags, provider health, real external-provider adapters and break-glass events remain future
-integration points.
+IDs, amounts, credentials, raw bodies and signatures are excluded. GH-0304 records Entitlement
+grant and lifecycle changes with only capability code, product code, price version, source and
+status. Login failure/success, Jobs, Files, feature flags, provider health, real external-provider
+adapters and break-glass events remain future integration points.

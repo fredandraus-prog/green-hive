@@ -5,8 +5,10 @@
 Billing answers what was selected, purchased and paid. It does not decide what a project may use;
 that remains the Entitlements boundary. GH-0301 adds provider-neutral commercial state; GH-0302
 adds a deterministic sandbox adapter and trusted success/failure/full-refund transitions; GH-0303
-adds verified, replay-bounded and idempotent webhook ingestion plus provider reconciliation. It does
-not connect a real payment provider, expose checkout UI or grant an Entitlement.
+adds verified, replay-bounded and idempotent webhook ingestion plus provider reconciliation.
+GH-0304 consumes only authoritative paid/refunded transitions to synchronize the separate
+Entitlements ledger. Billing still does not decide capabilities. No real provider or checkout UI is
+connected.
 
 ## Public TypeScript surface
 
@@ -146,10 +148,19 @@ conflicts, deterministic success/failure/refund, invalid/tampered/replayed webho
 conflicting provider-event retries, concurrent duplicate delivery, Audit single-effect capture and
 cleanup ordering.
 
+## Entitlements handoff
+
+Migration `0016` observes only authoritative purchase/payment status transitions. A confirmed paid
+purchase synchronizes one grant snapshot for each reviewed product capability; a full refund
+revokes only the snapshots sourced from that purchase. Billing tables remain the commercial source
+of truth, while `@green-hive/entitlements` and `hive.can_project_capability(...)` remain the sole
+capability-decision boundary. See `docs/ENTITLEMENTS.md`.
+
 ## Deferred checkpoints
 
-- GH-0304: Entitlements derived through a reviewed Billing/Entitlement transaction boundary.
+- real provider adapters, checkout UI and provider-specific settlement rules;
+- GH-0401/GH-0402 usage accounting and Cost Guard.
 
-No frontend checkout is added in GH-0303. The verified fake-provider endpoint proves the ingress
+No frontend checkout is added in GH-0304. The verified fake-provider endpoint proves the ingress
 contract only; a real-provider adapter requires a separately reviewed signature scheme, payload
 mapping, secret rotation and provider-specific reconciliation implementation.

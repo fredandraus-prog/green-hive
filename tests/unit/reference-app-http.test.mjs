@@ -112,6 +112,10 @@ class FakeFacade {
   async getProject(token, organizationId, id) { this.calls.push(['getProject', token, organizationId, id]); return project(); }
   async archiveProject(token, organizationId, id) { this.calls.push(['archiveProject', token, organizationId, id]); return { ...project(), status: 'ARCHIVED' }; }
   async softDeleteProject(token, organizationId, id) { this.calls.push(['softDeleteProject', token, organizationId, id]); }
+  async canProjectCapability(token, organizationId, id, capabilityCode) {
+    this.calls.push(['canProjectCapability', token, organizationId, id, capabilityCode]);
+    return capabilityCode === 'REFERENCE_APP_RUN_JOB';
+  }
 }
 
 test('audit endpoint derives workspace scope from the protected cookie', async () => {
@@ -397,6 +401,45 @@ test('project routes derive owner and app only from the verified cookie session'
     );
     assert.equal(forged.statusCode, 400);
     assert.equal(forged.json().error.code, 'INVALID_PROJECT_INPUT');
+  } finally {
+    await application.close();
+  }
+});
+
+test('capability decisions derive project and workspace scope from the verified session', async () => {
+  const facade = new FakeFacade();
+  const application = await createReferenceAppHttpServer({
+    facade,
+    allowedOrigin: ORIGIN,
+    secureCookies: false,
+  });
+  try {
+    const signedIn = await application.inject(
+      postOptions('/api/auth/sign-in', { email: 'web@example.test', password: 'StrongPass123' }),
+    );
+    const cookie = cookieHeader(signedIn);
+    const allowed = await application.inject({
+      method: 'GET',
+      url: `/api/projects/${PROJECT_ID}/capabilities/REFERENCE_APP_RUN_JOB`,
+      headers: { cookie },
+    });
+    assert.equal(allowed.statusCode, 200);
+    assert.deepEqual(allowed.json(), { allowed: true });
+    assert.deepEqual(facade.calls.at(-1), [
+      'canProjectCapability',
+      session().accessToken,
+      ORGANIZATION_ID,
+      PROJECT_ID,
+      'REFERENCE_APP_RUN_JOB',
+    ]);
+
+    const invalid = await application.inject({
+      method: 'GET',
+      url: `/api/projects/${PROJECT_ID}/capabilities/not-valid`,
+      headers: { cookie },
+    });
+    assert.equal(invalid.statusCode, 400);
+    assert.equal(invalid.json().error.code, 'INVALID_ENTITLEMENT_INPUT');
   } finally {
     await application.close();
   }

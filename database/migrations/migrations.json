@@ -136,6 +136,15 @@
       "description": "Create verified idempotent payment webhook ingestion and provider-event reconciliation records.",
       "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_PROVIDER_EVENT_EXPORT_RESTORE",
       "rollbackStrategy": "Prefer a forward fix; export and verify provider-event identities, payment state and payment audit events before any controlled restoration."
+    },
+    {
+      "version": 16,
+      "file": "0016_create_project_entitlements.sql",
+      "sha256": "4e5bca6e876b44517ec35922d406cbcd60ff9cc4da358542e038f79b51c9b984",
+      "checkpoint": "GH-0304",
+      "description": "Create product capability mappings, project entitlement grants and the server-authoritative can service.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_ENTITLEMENT_EXPORT_RESTORE",
+      "rollbackStrategy": "Prefer a forward fix; export and verify product capability mappings, project entitlements and entitlement audit events before any controlled restoration."
     }
   ]
 }

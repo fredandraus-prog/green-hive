@@ -22,6 +22,8 @@ const requiredHiveTables = [
   'purchases',
   'payments',
   'payment_provider_events',
+  'product_entitlement_capabilities',
+  'project_entitlements',
 ];
 const requiredAuditTables = ['events'];
 const forceRlsTables = [
@@ -37,6 +39,8 @@ const forceRlsTables = [
   'purchases',
   'payments',
   'payment_provider_events',
+  'product_entitlement_capabilities',
+  'project_entitlements',
 ];
 const expectedPolicies = new Map([
   ['apps', ['apps_admin_select']],
@@ -97,6 +101,11 @@ const expectedPolicies = new Map([
   ['purchases', ['purchases_owner_select']],
   ['payments', ['payments_owner_limited_select']],
   ['payment_provider_events', []],
+  [
+    'product_entitlement_capabilities',
+    ['product_entitlement_capabilities_catalog_select'],
+  ],
+  ['project_entitlements', ['project_entitlements_owner_or_platform_select']],
 ]);
 const forbiddenHiveDomainTerms = [
   'break_even',
@@ -322,6 +331,13 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'hive.apply_verified_payment_webhook',
     'payment_provider_events',
     'PAYMENT_FAILED',
+    'hive.apply_entitlement_state_for_purchase',
+    'hive.sync_entitlements_after_billing_transition',
+    'hive.can_project_capability',
+    'audit.capture_entitlement_transition',
+    'audit_project_entitlements_after_transition',
+    'ENTITLEMENT_GRANTED',
+    'ENTITLEMENT_CHANGED',
   ];
   for (const marker of requiredContextMarkers) {
     if (!allSql.includes(marker)) errors.push(`trusted app context is missing marker: ${marker}`);
@@ -350,6 +366,8 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'purchases',
     'payments',
     'payment_provider_events',
+    'product_entitlement_capabilities',
+    'project_entitlements',
   ]) {
     if (new RegExp(`GRANT\\s+[\\s\\S]{0,120}\\b(INSERT|UPDATE|DELETE)\\b[\\s\\S]{0,120}ON\\s+hive\\.${billingTable}\\b[\\s\\S]{0,80}TO\\s+authenticated\\b`, 'i').test(allSql)) {
       errors.push(`authenticated must not receive direct write privileges on hive.${billingTable}`);
@@ -374,6 +392,7 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'hive.apply_provider_payment_result\\(uuid, text, text, text, text\\)',
     'hive.apply_provider_refund\\(uuid, text, text\\)',
     'hive.apply_verified_payment_webhook\\(\\s*text,\\s*text,\\s*text,\\s*uuid,\\s*text,\\s*text,\\s*text,\\s*text\\s*\\)',
+    'hive.apply_entitlement_state_for_purchase\\(uuid\\)',
   ]) {
     const revokePattern = new RegExp(
       `REVOKE\\s+ALL\\s+ON\\s+FUNCTION\\s+${protectedFunction}\\s+FROM\\s+(PUBLIC|authenticated)`,
@@ -388,6 +407,19 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
   }
   if (/payment_provider_events[\s\S]{0,2400}\b(raw_payload|raw_body|signature)\b\s+(text|jsonb?|bytea)\b/i.test(allSql)) {
     errors.push('verified webhook storage must not retain raw payloads or provider signatures');
+  }
+  for (const entitlementMarker of [
+    'CREATE TABLE hive.product_entitlement_capabilities',
+    'CREATE TABLE hive.project_entitlements',
+    "status IN ('ACTIVE', 'REVOKED')",
+    "source_type = 'PURCHASE'",
+    'UNIQUE (purchase_id, capability_code)',
+    'GRANT EXECUTE ON FUNCTION hive.can_project_capability(uuid, text) TO authenticated',
+    'REVOKE ALL ON FUNCTION hive.apply_entitlement_state_for_purchase(uuid) FROM authenticated',
+  ]) {
+    if (!allSql.includes(entitlementMarker)) {
+      errors.push(`entitlement contract is missing marker: ${entitlementMarker}`);
+    }
   }
   for (const requiredMarker of [
     'app_code text',
@@ -436,9 +468,15 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
       .sort();
     if (
       JSON.stringify(seedFiles) !==
-      JSON.stringify(['0001_reference_app.sql', '0002_reference_app_billing_catalog.sql'])
+      JSON.stringify([
+        '0001_reference_app.sql',
+        '0002_reference_app_billing_catalog.sql',
+        '0003_reference_app_entitlements.sql',
+      ])
     ) {
-      errors.push('operational seeds must contain only the canonical REFERENCE_APP app and billing catalog');
+      errors.push(
+        'operational seeds must contain only the canonical REFERENCE_APP app, billing catalog and entitlement mapping',
+      );
     }
     if (/auth\.users|OTHER_TEST_APP|10000000-0000-4000-8000/i.test(seed)) {
       errors.push('test identities leaked into the operational seed');
@@ -468,6 +506,37 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     }
     if (/auth\.users|OTHER_TEST_APP|10000000-0000-4000-8000/i.test(billingSeed)) {
       errors.push('test identities leaked into the operational billing seed');
+    }
+
+    const entitlementSeed = await readFile(
+      path.join(repositoryRoot, 'database', 'seeds', '0003_reference_app_entitlements.sql'),
+      'utf8',
+    );
+    const manifestCapabilities = [...manifest.entitlementCapabilities].sort();
+    const seededCapabilities = [
+      ...entitlementSeed.matchAll(/'([A-Z][A-Z0-9_]+)'/g),
+    ]
+      .map((match) => match[1])
+      .filter((code) => code.startsWith('REFERENCE_APP_') && code !== 'REFERENCE_APP_SANDBOX');
+    const uniqueSeededCapabilities = [...new Set(seededCapabilities)].sort();
+    if (
+      JSON.stringify(uniqueSeededCapabilities)
+      !== JSON.stringify(manifestCapabilities)
+    ) {
+      errors.push('REFERENCE_APP entitlement seed differs from the App Manifest capabilities');
+    }
+    for (const marker of [
+      "'40000000-0000-4000-8000-000000000001'::uuid",
+      "'REFERENCE_APP_RUN_JOB'",
+      "'REFERENCE_APP_GENERATE_FILE'",
+      'hive.apply_entitlement_state_for_purchase',
+    ]) {
+      if (!entitlementSeed.includes(marker)) {
+        errors.push(`REFERENCE_APP entitlement seed is missing canonical marker ${marker}`);
+      }
+    }
+    if (/auth\.users|OTHER_TEST_APP|10000000-0000-4000-8000/i.test(entitlementSeed)) {
+      errors.push('test identities leaked into the operational entitlement seed');
     }
 
     const fixture = await readFile(

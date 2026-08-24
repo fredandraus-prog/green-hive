@@ -8,6 +8,7 @@ import Fastify, {
 import { AuthError, type AuthSession } from '@green-hive/auth';
 import { AuditError } from '@green-hive/audit';
 import { BillingError, type BillingWebhookService } from '@green-hive/billing';
+import { EntitlementError, validateCapabilityCode } from '@green-hive/entitlements';
 import {
   ProjectError,
   WorkspaceError,
@@ -77,6 +78,7 @@ export type ReferenceAppHttpFacade = Pick<
   | 'getProject'
   | 'archiveProject'
   | 'softDeleteProject'
+  | 'canProjectCapability'
 >;
 
 export interface ReferenceAppHttpServerOptions {
@@ -179,6 +181,14 @@ function projectId(request: FastifyRequest): string {
   return params.id;
 }
 
+function capabilityCode(request: FastifyRequest): string {
+  const params = request.params as { capabilityCode?: unknown };
+  if (typeof params.capabilityCode !== 'string') {
+    throw new EntitlementError('INVALID_ENTITLEMENT_INPUT');
+  }
+  return validateCapabilityCode(params.capabilityCode);
+}
+
 async function withSession<Result>(
   request: FastifyRequest,
   reply: FastifyReply,
@@ -244,6 +254,14 @@ function publicError(error: unknown): { status: number; code: string; message: s
           : error.code === 'WORKSPACE_NOT_FOUND'
             ? 404
             : 503;
+    return { status, code: error.code, message: error.message };
+  }
+  if (error instanceof EntitlementError) {
+    const status = error.code === 'INVALID_ENTITLEMENT_INPUT'
+      ? 400
+      : error.code === 'ENTITLEMENT_ACCESS_DENIED'
+        ? 403
+        : 503;
     return { status, code: error.code, message: error.message };
   }
   if (error instanceof AuditError) {
@@ -727,6 +745,33 @@ export async function createReferenceAppHttpServer(
       },
     ),
   }));
+
+  application.get(
+    '/api/projects/:id/capabilities/:capabilityCode',
+    async (request, reply) => ({
+      allowed: await withSession(
+        request,
+        reply,
+        options.facade,
+        options.secureCookies,
+        async (token) => {
+          const workspace = await resolveWorkspace(
+            token,
+            request,
+            reply,
+            options.facade,
+            options.secureCookies,
+          );
+          return options.facade.canProjectCapability(
+            token,
+            workspace.id,
+            projectId(request),
+            capabilityCode(request),
+          );
+        },
+      ),
+    }),
+  );
 
   application.post('/api/projects/:id/archive', async (request, reply) => {
     exactObject(request.body, new Set(), new ProjectError('INVALID_PROJECT_INPUT'));
