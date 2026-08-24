@@ -1,6 +1,6 @@
 {
   "name": "@green-hive/entitlements",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
@@ -13,5 +13,8 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "dependencies": {
+    "@green-hive/core": "0.13.0"
+  }
 }

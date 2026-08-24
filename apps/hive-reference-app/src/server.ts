@@ -29,6 +29,11 @@ import {
   type WorkspaceMember,
 } from '@green-hive/projects';
 import type { TrustedAppContext, TrustedOrganizationContext } from '@green-hive/core';
+import {
+  EntitlementService,
+  PostgresEntitlementRepository,
+  type ProjectEntitlement,
+} from '@green-hive/entitlements';
 import { referenceAppManifest } from './manifest.js';
 
 export interface ReferenceAppCredentialsInput {
@@ -340,6 +345,33 @@ export class ReferenceAppServer {
     );
   }
 
+  async canProjectCapability(
+    accessToken: string,
+    organizationId: string,
+    projectId: string,
+    capabilityCode: string,
+  ): Promise<boolean> {
+    return this.#runInWorkspace(
+      accessToken,
+      organizationId,
+      ({ entitlementService, trustedContext }) =>
+        entitlementService.can(trustedContext, projectId, capabilityCode),
+    );
+  }
+
+  async listProjectEntitlements(
+    accessToken: string,
+    organizationId: string,
+    projectId: string,
+  ): Promise<readonly ProjectEntitlement[]> {
+    return this.#runInWorkspace(
+      accessToken,
+      organizationId,
+      ({ entitlementService, trustedContext }) =>
+        entitlementService.list(trustedContext, projectId),
+    );
+  }
+
   async #runWithoutWorkspace<Result>(
     accessToken: string,
     operation: (services: {
@@ -366,6 +398,7 @@ export class ReferenceAppServer {
     operation: (services: {
       readonly trustedContext: TrustedOrganizationContext;
       readonly auditService: AuditService;
+      readonly entitlementService: EntitlementService;
       readonly projectService: ProjectService;
       readonly workspaceService: WorkspaceService;
     }) => Promise<Result>,
@@ -377,6 +410,7 @@ export class ReferenceAppServer {
       ({ trustedContext, database }) => operation({
         trustedContext,
         auditService: new AuditService(new PostgresAuditEventRepository(database)),
+        entitlementService: new EntitlementService(new PostgresEntitlementRepository(database)),
         projectService: new ProjectService(new PostgresProjectRepository(database)),
         workspaceService: new WorkspaceService(new PostgresWorkspaceRepository(database)),
       }),

@@ -2,8 +2,9 @@
 
 ## Purpose
 
-Platform version `0.12.0` retains the tenant-aware workspace, Audit and Security boundaries and
-adds the server-side GH-0303 verified fake-provider webhook boundary. The implementation follows the canonical
+Platform version `0.13.0` retains the tenant-aware workspace, Audit and Security boundaries and
+adds the server-side GH-0303 verified fake-provider webhook boundary plus the GH-0304 capability
+decision. The implementation follows the canonical
 React + Vite direction and keeps privileged decisions in a Fastify server process.
 
 This is a platform validation shell, not the first commercial BeeGreen product. It exposes no
@@ -21,7 +22,7 @@ Fastify Reference App boundary
         |
         +--> Supabase Auth (loopback local or confirmed hosted project)
         |
-        +--> ReferenceAppServer -> Account/Project/Audit Services
+        +--> ReferenceAppServer -> Account/Project/Audit/Entitlement Services
                                              |
                                              v
                                 PostgreSQL/RLS (loopback or TLS session pooler)
@@ -69,6 +70,7 @@ HTTP routes:
 - `POST /api/webhooks/payments/:provider` — exact-body provider-signed server ingress; no browser
   session or Origin authority;
 - `GET /api/projects/:id`;
+- `GET /api/projects/:id/capabilities/:capabilityCode` — server-authoritative Entitlement decision;
 - `POST /api/projects/:id/archive`;
 - `POST /api/projects/:id/delete`.
 
