@@ -103,7 +103,7 @@ function hasCode(code) {
   return (error) => error instanceof UsageCostError && error.code === code;
 }
 
-test('GH-0401 persists isolated idempotent usage and cost ledgers without Cost Guard decisions', async () => {
+test('GH-0401 persists isolated idempotent usage and cost ledgers as independent accounting evidence', async () => {
   const database = new PGlite({ extensions: { pgcrypto } });
   await database.waitReady;
   try {

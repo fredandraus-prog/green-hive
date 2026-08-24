@@ -1,14 +1,15 @@
 # Green Hive database
 
-The database layer targets Supabase PostgreSQL. The immutable history through GH-0401 contains the
+The database layer targets Supabase PostgreSQL. The immutable history through GH-0402 contains the
 platform foundation, tenant-aware trusted context, row-level security, append-only Audit capture
 and server-authoritative sandbox payment transitions, verified provider-event deduplication and
 payment-derived project capability grants, exact-decimal project budgets and separate append-only
-logical usage and monetary cost ledgers.
+logical usage and monetary cost ledgers, plus entitlement-aware atomic cost reservations and
+no-overspend decisions.
 
 ## Layout
 
-- `migrations/`: seventeen sequential immutable migrations plus `migrations.json`.
+- `migrations/`: eighteen sequential immutable migrations plus `migrations.json`.
 - `seeds/`: only stable structural data; `REFERENCE_APP`, its manifest-registered sandbox catalog
   and reviewed product-to-capability mappings.
 - `tests/fixtures/`: disposable users, a second app and other test-only identities.

@@ -7,6 +7,47 @@ semantic versioning.
 
 No unreleased changes.
 
+## [0.15.0] - 2026-08-24
+
+### Added
+
+- GH-0402 `@green-hive/cost-guard` decision contracts, strict runtime validation, stable public
+  errors, PostgreSQL repository and server-side reserve/consume/release service.
+- Immutable migration `0018` with append-only Cost Guard decisions, lifecycle-constrained cost
+  reservations and exact-decimal atomic budget accounting.
+- Entitlement-first `ALLOW`, `DENY_ENTITLEMENT` and `DENY_BUDGET` decisions, including the stable
+  `BUDGET_EXHAUSTED` denial reason and operation-level idempotent replay.
+- Atomic consumption that replaces the reservation with actual cost and writes the GH-0401 cost
+  event in the same database transaction.
+
+### Security
+
+- User, app, workspace, project and capability scope is derived from the trusted session and
+  repeated inside every privileged Cost Guard function; consumer payloads cannot override it.
+- Budget rows are locked before the no-overspend decision. Concurrent estimates therefore cannot
+  reserve more than the configured cost ceiling.
+- Authenticated clients have no direct Cost Guard write or function-execution grants. Owners and
+  read-only administrators receive only the bounded columns allowed by forced RLS.
+- Audit capture stores the decision and non-confidential operational identity only; estimates,
+  actual cost, provider data, operation IDs and idempotency material remain excluded.
+
+### Validation
+
+- 104 unit tests and 17 embedded database tests pass, including entitlement denial, exact replay,
+  conflicting operation identity, terminal consume/release behavior and concurrent no-overspend.
+- The native local Supabase gate applies/reapplies 18 migrations, passes the five-scenario Cost
+  Guard matrix using separate PostgreSQL connections and restores a clean seeded baseline.
+- Dedicated Supabase staging passes the same Cost Guard matrix and finishes with 18 ledger rows,
+  zero pending migrations and zero disposable test artifacts.
+- The complete clean `npm run verify` gate and dependency audit pass with no known vulnerability.
+
+### Status
+
+- GH-0402 is `DONE`; coordinated platform packages advance to `0.15.0` while the `REFERENCE_APP`
+  product manifest remains `0.1.0`.
+- GH-0403 Jobs and later checkpoints remain not started. No provider price estimation, provider
+  selection, Jobs, AI, Search execution, Redis, remote Files or consumer-domain execution is added.
+
 ## [0.14.0] - 2026-08-24
 
 ### Added

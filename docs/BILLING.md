@@ -159,8 +159,9 @@ capability-decision boundary. See `docs/ENTITLEMENTS.md`.
 ## Deferred checkpoints
 
 - real provider adapters, checkout UI and provider-specific settlement rules;
-- GH-0402 atomic Cost Guard reserve/consume/release decisions. GH-0401 accounting is implemented
-  separately in `docs/USAGE-COST.md` and does not change Billing commercial truth.
+- provider-specific price estimation and settlement integration with the implemented GH-0402
+  Atomic Cost Guard. GH-0401 accounting and GH-0402 reservations do not change Billing commercial
+  truth; see `docs/USAGE-COST.md` and `docs/CHECKPOINT-GH-0402.md`.
 
 No frontend checkout is added in GH-0304. The verified fake-provider endpoint proves the ingress
 contract only; a real-provider adapter requires a separately reviewed signature scheme, payload

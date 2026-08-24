@@ -1,7 +1,13 @@
 import type { TrustedOrganizationContext } from '@green-hive/core';
-import { UsageCostError } from './errors.js';
+import { CostGuardError, UsageCostError } from './errors.js';
 import type {
   AccountingEventKind,
+  CostGuardDecision,
+  CostGuardDecisionOutcome,
+  CostGuardReasonCode,
+  CostGuardReservationResult,
+  CostReservation,
+  CostReservationStatus,
   CostEvent,
   UsageBudget,
   UsageBudgetStatus,
@@ -13,8 +19,11 @@ import type {
   UsageMeasurementKind,
   UsageSummary,
   ValidatedConfigureUsageBudgetInput,
+  ValidatedConsumeCostReservationInput,
   ValidatedRecordCostEventInput,
   ValidatedRecordUsageEventInput,
+  ValidatedReleaseCostReservationInput,
+  ValidatedReserveCostInput,
 } from './types.js';
 
 interface AuthorityRow extends Record<string, unknown> {
@@ -97,6 +106,46 @@ interface SummaryRow extends Record<string, unknown> {
   readonly net_quantity: string;
 }
 
+interface CostGuardDecisionRow extends Record<string, unknown> {
+  readonly id: string;
+  readonly organization_id: string;
+  readonly app_id: string;
+  readonly project_id: string;
+  readonly owner_user_id: string;
+  readonly budget_id: string;
+  readonly reservation_id: string | null;
+  readonly operation_id: string;
+  readonly capability_code: string;
+  readonly decision: CostGuardDecisionOutcome;
+  readonly reason_code: CostGuardReasonCode;
+  readonly estimated_amount: string;
+  readonly currency: string;
+  readonly metadata: UsageCostMetadata;
+  readonly created_at: Date | string;
+}
+
+interface CostReservationRow extends Record<string, unknown> {
+  readonly id: string;
+  readonly organization_id: string;
+  readonly app_id: string;
+  readonly project_id: string;
+  readonly owner_user_id: string;
+  readonly budget_id: string;
+  readonly decision_id: string;
+  readonly operation_id: string;
+  readonly capability_code: string;
+  readonly estimated_amount: string;
+  readonly consumed_amount: string;
+  readonly currency: string;
+  readonly status: CostReservationStatus;
+  readonly cost_event_id: string | null;
+  readonly metadata: UsageCostMetadata;
+  readonly reserved_at: Date | string;
+  readonly consumed_at: Date | string | null;
+  readonly released_at: Date | string | null;
+  readonly updated_at: Date | string;
+}
+
 const BUDGET_COLUMNS = `
   id, organization_id, app_id, project_id, owner_user_id, budget_type,
   measurement_kind, unit_code, ceiling_amount::text AS ceiling_amount,
@@ -112,6 +161,19 @@ const COST_COLUMNS = `
   id, organization_id, app_id, project_id, owner_user_id, budget_id,
   operation_id, event_kind, amount::text AS amount, currency, provider_code,
   service_code, model_code, cycle_id, occurred_at, metadata, created_at`;
+
+const COST_GUARD_DECISION_COLUMNS = `
+  id, organization_id, app_id, project_id, owner_user_id, budget_id,
+  reservation_id, operation_id, capability_code, decision, reason_code,
+  estimated_amount::text AS estimated_amount, currency, metadata, created_at`;
+
+const COST_RESERVATION_COLUMNS = `
+  id, organization_id, app_id, project_id, owner_user_id, budget_id,
+  decision_id, operation_id, capability_code,
+  estimated_amount::text AS estimated_amount,
+  consumed_amount::text AS consumed_amount,
+  currency, status, cost_event_id, metadata,
+  reserved_at, consumed_at, released_at, updated_at`;
 
 function asDate(value: Date | string, field: string): Date {
   const parsed = value instanceof Date ? new Date(value.getTime()) : new Date(value);
@@ -191,6 +253,50 @@ function mapCost(row: CostRow): CostEvent {
   };
 }
 
+function mapCostGuardDecision(row: CostGuardDecisionRow): CostGuardDecision {
+  return {
+    id: row.id,
+    organizationId: row.organization_id,
+    appId: row.app_id,
+    projectId: row.project_id,
+    ownerUserId: row.owner_user_id,
+    budgetId: row.budget_id,
+    reservationId: row.reservation_id,
+    operationId: row.operation_id,
+    capabilityCode: row.capability_code,
+    outcome: row.decision,
+    reasonCode: row.reason_code,
+    estimatedAmount: row.estimated_amount,
+    currency: row.currency,
+    metadata: row.metadata,
+    createdAt: asDate(row.created_at, 'created_at'),
+  };
+}
+
+function mapCostReservation(row: CostReservationRow): CostReservation {
+  return {
+    id: row.id,
+    organizationId: row.organization_id,
+    appId: row.app_id,
+    projectId: row.project_id,
+    ownerUserId: row.owner_user_id,
+    budgetId: row.budget_id,
+    decisionId: row.decision_id,
+    operationId: row.operation_id,
+    capabilityCode: row.capability_code,
+    estimatedAmount: row.estimated_amount,
+    consumedAmount: row.consumed_amount,
+    currency: row.currency,
+    status: row.status,
+    costEventId: row.cost_event_id,
+    metadata: row.metadata,
+    reservedAt: asDate(row.reserved_at, 'reserved_at'),
+    consumedAt: asOptionalDate(row.consumed_at, 'consumed_at'),
+    releasedAt: asOptionalDate(row.released_at, 'released_at'),
+    updatedAt: asDate(row.updated_at, 'updated_at'),
+  };
+}
+
 function mapKnownDatabaseError(error: unknown): never {
   const message = error instanceof Error ? error.message : '';
   for (const code of [
@@ -199,6 +305,14 @@ function mapKnownDatabaseError(error: unknown): never {
     'USAGE_COST_IDEMPOTENCY_CONFLICT',
   ] as const) {
     if (message.includes(code)) throw new UsageCostError(code);
+  }
+  for (const code of [
+    'COST_GUARD_ACCESS_DENIED',
+    'COST_GUARD_INVALID_INPUT',
+    'COST_GUARD_IDEMPOTENCY_CONFLICT',
+    'COST_GUARD_INVALID_TRANSITION',
+  ] as const) {
+    if (message.includes(code)) throw new CostGuardError(code);
   }
   throw error;
 }
@@ -366,6 +480,93 @@ export class PostgresUsageCostRepository implements UsageCostRepository {
     }));
   }
 
+  async reserveCost(
+    context: TrustedOrganizationContext,
+    input: ValidatedReserveCostInput,
+  ): Promise<CostGuardReservationResult> {
+    await this.#assertAuthority(context);
+    try {
+      const result = await this.#database.query<{ decision_id: string }>(
+        `SELECT hive.reserve_project_cost(
+           $1::uuid, $2::uuid, $3::text, $4::text, $5::numeric, $6::text, $7::jsonb
+         )::text AS decision_id`,
+        [
+          input.projectId,
+          input.budgetId,
+          input.operationId,
+          input.capabilityCode,
+          input.estimatedAmount,
+          input.currency,
+          JSON.stringify(input.metadata),
+        ],
+      );
+      const decisionId = result.rows[0]?.decision_id;
+      if (!decisionId) throw new Error('Cost Guard function returned no decision');
+      const decision = await this.#getCostGuardDecision(context, decisionId);
+      if (!decision) throw new Error('Cost Guard decision was not found');
+      const reservation = decision.reservationId
+        ? await this.#getCostReservation(context, decision.reservationId)
+        : null;
+      if (decision.reservationId && !reservation) {
+        throw new Error('Cost Guard reservation was not found');
+      }
+      return { decision, reservation };
+    } catch (error) {
+      mapKnownDatabaseError(error);
+    }
+  }
+
+  async consumeCostReservation(
+    context: TrustedOrganizationContext,
+    input: ValidatedConsumeCostReservationInput,
+  ): Promise<CostReservation> {
+    await this.#assertAuthority(context);
+    try {
+      const result = await this.#database.query<{ reservation_id: string }>(
+        `SELECT hive.consume_cost_reservation(
+           $1::uuid, $2::numeric, $3::text, $4::text, $5::text,
+           $6::timestamptz, $7::jsonb
+         )::text AS reservation_id`,
+        [
+          input.reservationId,
+          input.actualAmount,
+          input.providerCode,
+          input.serviceCode,
+          input.modelCode,
+          input.occurredAt,
+          JSON.stringify(input.metadata),
+        ],
+      );
+      const reservationId = result.rows[0]?.reservation_id;
+      if (!reservationId) throw new Error('Cost Guard consume returned no reservation');
+      const reservation = await this.#getCostReservation(context, reservationId);
+      if (!reservation) throw new Error('Consumed Cost Guard reservation was not found');
+      return reservation;
+    } catch (error) {
+      mapKnownDatabaseError(error);
+    }
+  }
+
+  async releaseCostReservation(
+    context: TrustedOrganizationContext,
+    input: ValidatedReleaseCostReservationInput,
+  ): Promise<CostReservation> {
+    await this.#assertAuthority(context);
+    try {
+      const result = await this.#database.query<{ reservation_id: string }>(
+        `SELECT hive.release_cost_reservation($1::uuid, $2::jsonb)::text AS reservation_id`,
+        [input.reservationId, JSON.stringify(input.metadata)],
+      );
+      const reservationId = result.rows[0]?.reservation_id;
+      if (!reservationId) throw new Error('Cost Guard release returned no reservation');
+      const reservation = await this.#getCostReservation(context, reservationId);
+      if (!reservation) throw new Error('Released Cost Guard reservation was not found');
+      return reservation;
+    } catch (error) {
+      mapKnownDatabaseError(error);
+    }
+  }
+
   async #getBudget(
     context: TrustedOrganizationContext,
     budgetId: string,
@@ -415,6 +616,40 @@ export class PostgresUsageCostRepository implements UsageCostRepository {
       [eventId, context.userId, authority.app_id, authority.organization_id],
     );
     return result.rows[0] ? mapCost(result.rows[0]) : null;
+  }
+
+  async #getCostGuardDecision(
+    context: TrustedOrganizationContext,
+    decisionId: string,
+  ): Promise<CostGuardDecision | null> {
+    const authority = await this.#assertAuthority(context);
+    const result = await this.#database.query<CostGuardDecisionRow>(
+      `SELECT ${COST_GUARD_DECISION_COLUMNS}
+       FROM hive.cost_guard_decisions
+       WHERE id = $1::uuid
+         AND owner_user_id = $2::uuid
+         AND app_id = $3::uuid
+         AND organization_id = $4::uuid`,
+      [decisionId, context.userId, authority.app_id, authority.organization_id],
+    );
+    return result.rows[0] ? mapCostGuardDecision(result.rows[0]) : null;
+  }
+
+  async #getCostReservation(
+    context: TrustedOrganizationContext,
+    reservationId: string,
+  ): Promise<CostReservation | null> {
+    const authority = await this.#assertAuthority(context);
+    const result = await this.#database.query<CostReservationRow>(
+      `SELECT ${COST_RESERVATION_COLUMNS}
+       FROM hive.cost_guard_reservations
+       WHERE id = $1::uuid
+         AND owner_user_id = $2::uuid
+         AND app_id = $3::uuid
+         AND organization_id = $4::uuid`,
+      [reservationId, context.userId, authority.app_id, authority.organization_id],
+    );
+    return result.rows[0] ? mapCostReservation(result.rows[0]) : null;
   }
 
   async #assertAuthority(context: TrustedOrganizationContext): Promise<AuthorityRow> {

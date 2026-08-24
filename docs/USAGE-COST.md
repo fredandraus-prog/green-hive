@@ -107,15 +107,16 @@ Metadata is object-shaped, size-bounded and rejects credential/content keys such
 No prompts, document contents, raw provider payloads, credentials or idempotency keys belong in
 accounting or Audit metadata.
 
-## GH-0402 handoff
+## GH-0402 atomic Cost Guard
 
-The next checkpoint will implement the canonical equation atomically:
+GH-0402 implements the canonical equation atomically for exact-decimal cost budgets:
 
 ```text
 used_cost + estimated_request_cost + reserved_future_cost
 <= project_or_cycle_cost_ceiling
 ```
 
-Only GH-0402 may add reserve/consume/release lifecycle operations, allow/deny decisions and the
-concurrent no-overspend gate. It must extend the schema with a new immutable migration.
-
+Migration `0018` adds entitlement-aware allow/deny decisions and `RESERVED`, `CONSUMED` and
+`RELEASED` reservations. A consumed reservation records its monetary `cost_event` in the same
+transaction. The actual amount cannot exceed the reserved estimate, and row locking prevents
+concurrent overspend. See `CHECKPOINT-GH-0402.md` for the complete boundary.

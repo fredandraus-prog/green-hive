@@ -38,11 +38,14 @@ stale until token refresh, changing app or platform role metadata requires a ref
 - `hive.configure_usage_budget(...)`, `hive.record_usage_event(...)` and
   `hive.record_cost_event(...)` repeat the same signed user/app/workspace/project authority behind
   a server-only execution grant.
+- `hive.reserve_project_cost(...)`, `hive.consume_cost_reservation(...)` and
+  `hive.release_cost_reservation(...)` repeat that authority, reject platform-admin command reuse
+  and serialize budget mutations under database row locks.
 
 All security-definer helpers use a fixed empty `search_path` and fully qualified object names.
 Functions and tables revoke `PUBLIC`; only required calls are granted to `authenticated`.
-The GH-0401 accounting writers are not required client calls and remain executable only by the
-trusted server role when present.
+The GH-0401 accounting and GH-0402 Cost Guard writers are not client calls and remain executable
+only by the trusted server role when present.
 
 ## App and owner isolation
 

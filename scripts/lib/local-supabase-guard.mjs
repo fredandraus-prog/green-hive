@@ -158,8 +158,22 @@ export async function cleanupGreenHiveUserData(client, userIds) {
        to_regclass('hive.project_entitlements')::text AS entitlements,
        to_regclass('hive.usage_budgets')::text AS usage_budgets,
        to_regclass('hive.usage_events')::text AS usage_events,
-       to_regclass('hive.cost_events')::text AS cost_events`,
+       to_regclass('hive.cost_events')::text AS cost_events,
+       to_regclass('hive.cost_guard_decisions')::text AS cost_guard_decisions,
+       to_regclass('hive.cost_guard_reservations')::text AS cost_guard_reservations`,
   );
+  if (billingTables.rows[0]?.cost_guard_reservations === 'hive.cost_guard_reservations') {
+    await client.query(
+      'DELETE FROM hive.cost_guard_reservations WHERE owner_user_id = ANY($1::uuid[])',
+      [userIds],
+    );
+  }
+  if (billingTables.rows[0]?.cost_guard_decisions === 'hive.cost_guard_decisions') {
+    await client.query(
+      'DELETE FROM hive.cost_guard_decisions WHERE owner_user_id = ANY($1::uuid[])',
+      [userIds],
+    );
+  }
   if (billingTables.rows[0]?.cost_events === 'hive.cost_events') {
     await client.query('DELETE FROM hive.cost_events WHERE owner_user_id = ANY($1::uuid[])', [
       userIds,

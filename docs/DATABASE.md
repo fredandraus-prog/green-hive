@@ -36,6 +36,8 @@ No app-domain concepts belong in `hive`.
   reserved fields.
 - `hive.usage_events`: append-only logical debit/credit quantities.
 - `hive.cost_events`: separate append-only exact-decimal monetary provider/platform costs.
+- `hive.cost_guard_decisions`: append-only entitlement/budget decisions keyed by trusted operation.
+- `hive.cost_guard_reservations`: exact-decimal `RESERVED`, `CONSUMED` or `RELEASED` lifecycle.
 - `audit.events`: immutable actor/tenant/app/project event metadata with request and correlation
   identifiers, protected by tenant-aware read RLS and no authenticated write grant.
 
@@ -48,7 +50,8 @@ The global app registry is deliberately not duplicated per organization. The ten
 USER -> ORGANIZATION / WORKSPACE -> ORGANIZATION_APP -> PROJECT -> PURCHASE -> PAYMENT
                                                                     -> ENTITLEMENT SNAPSHOTS
                                                                     -> USAGE BUDGETS/EVENTS
-                                                                    -> COST EVENTS
+                                                                     -> COST EVENTS
+                                                                    -> COST GUARD DECISIONS/RESERVATIONS
 ```
 
 ## Deployment workflow
@@ -95,5 +98,7 @@ Authenticated clients cannot write budgets, usage events or cost events and cann
 internal writer functions. Owner reads are limited to their project budgets and logical usage;
 raw monetary costs are visible only through platform-administration inspection RLS. Every server
 writer repeats trusted user/app/workspace/project scope and hashes the idempotency identity.
-Accounting rows are append-only. GH-0401 computes logical debit/credit summaries but does not
-reserve, consume or release budget; those atomic decisions remain GH-0402.
+Accounting rows are append-only. GH-0402 functions are server-only, lock the selected budget,
+check the active entitlement and atomically reserve, consume or release exact-decimal cost. A
+consume transition also records the matching monetary cost event in the same transaction. Owners
+and administrators have limited read columns but no direct write or function-execution authority.

@@ -1,19 +1,25 @@
 import type { TrustedOrganizationContext } from '@green-hive/core';
-import { UsageCostError } from './errors.js';
+import { CostGuardError, UsageCostError } from './errors.js';
 import {
   ACCOUNTING_EVENT_KINDS,
   USAGE_BUDGET_TYPES,
   USAGE_MEASUREMENT_KINDS,
   type AccountingEventKind,
   type ConfigureUsageBudgetInput,
+  type ConsumeCostReservationInput,
   type RecordCostEventInput,
   type RecordUsageEventInput,
+  type ReleaseCostReservationInput,
+  type ReserveCostInput,
   type UsageBudgetType,
   type UsageCostMetadata,
   type UsageMeasurementKind,
   type ValidatedConfigureUsageBudgetInput,
+  type ValidatedConsumeCostReservationInput,
   type ValidatedRecordCostEventInput,
   type ValidatedRecordUsageEventInput,
+  type ValidatedReleaseCostReservationInput,
+  type ValidatedReserveCostInput,
 } from './types.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -39,6 +45,15 @@ const COST_KEYS = new Set([
   'currency', 'providerCode', 'serviceCode', 'modelCode', 'cycleId', 'occurredAt',
   'metadata',
 ]);
+const RESERVE_COST_KEYS = new Set([
+  'projectId', 'budgetId', 'operationId', 'capabilityCode', 'estimatedAmount',
+  'currency', 'metadata',
+]);
+const CONSUME_COST_RESERVATION_KEYS = new Set([
+  'reservationId', 'actualAmount', 'providerCode', 'serviceCode', 'modelCode',
+  'occurredAt', 'metadata',
+]);
+const RELEASE_COST_RESERVATION_KEYS = new Set(['reservationId', 'metadata']);
 const CONFIDENTIAL_METADATA_KEYS = new Set([
   'authorization', 'content', 'cookie', 'document', 'password', 'payload', 'prompt',
   'secret', 'signature', 'token',
@@ -227,3 +242,64 @@ export function validateRecordCostEventInput(
   };
 }
 
+function asCostGuardValidation<Result>(operation: () => Result): Result {
+  try {
+    return operation();
+  } catch (error) {
+    if (error instanceof UsageCostError) throw new CostGuardError('COST_GUARD_INVALID_INPUT');
+    throw error;
+  }
+}
+
+export function validateTrustedCostGuardContext(value: unknown): TrustedOrganizationContext {
+  try {
+    return validateTrustedUsageCostContext(value);
+  } catch (error) {
+    if (error instanceof UsageCostError) throw new CostGuardError('COST_GUARD_ACCESS_DENIED');
+    throw error;
+  }
+}
+
+export function validateReserveCostInput(input: ReserveCostInput): ValidatedReserveCostInput {
+  return asCostGuardValidation(() => {
+    const value = onlyKeys(input, RESERVE_COST_KEYS);
+    return {
+      projectId: validateUuid(value.projectId),
+      budgetId: validateUuid(value.budgetId),
+      operationId: validateReference(value.operationId, 200),
+      capabilityCode: validateCode(value.capabilityCode, CODE),
+      estimatedAmount: validatePositiveDecimal(value.estimatedAmount),
+      currency: validateCode(value.currency, /^[A-Z]{3}$/),
+      metadata: validateMetadata(value.metadata),
+    };
+  });
+}
+
+export function validateConsumeCostReservationInput(
+  input: ConsumeCostReservationInput,
+): ValidatedConsumeCostReservationInput {
+  return asCostGuardValidation(() => {
+    const value = onlyKeys(input, CONSUME_COST_RESERVATION_KEYS);
+    return {
+      reservationId: validateUuid(value.reservationId),
+      actualAmount: validatePositiveDecimal(value.actualAmount),
+      providerCode: validateCode(value.providerCode, PROVIDER_CODE),
+      serviceCode: validateCode(value.serviceCode, PROVIDER_CODE),
+      modelCode: validateOptionalReference(value.modelCode),
+      occurredAt: validateOptionalDate(value.occurredAt),
+      metadata: validateMetadata(value.metadata),
+    };
+  });
+}
+
+export function validateReleaseCostReservationInput(
+  input: ReleaseCostReservationInput,
+): ValidatedReleaseCostReservationInput {
+  return asCostGuardValidation(() => {
+    const value = onlyKeys(input, RELEASE_COST_RESERVATION_KEYS);
+    return {
+      reservationId: validateUuid(value.reservationId),
+      metadata: validateMetadata(value.metadata),
+    };
+  });
+}

@@ -1,11 +1,11 @@
 # Dedicated Supabase staging gate
 
-Status: `DATABASE_RLS_PROJECT_AUTH_BILLING_ENTITLEMENTS_PASS - RENDER_HEALTHY_HTTPS`.
+Status: `DATABASE_RLS_PROJECT_AUTH_BILLING_ENTITLEMENTS_COST_GUARD_PASS - RENDER_HEALTHY_HTTPS`.
 
 The Green Hive staging environment is an isolated hosted Supabase project. It is used only to
 validate canonical migrations, RLS, Project Service, Auth/account, Billing, verified webhooks and
-Entitlements behavior before a public application deployment. It is not production and it is not a
-second migration source.
+Entitlements, Usage/Cost and Atomic Cost Guard behavior before a public application deployment. It
+is not production and it is not a second migration source.
 
 ## Confirmed environment
 
@@ -69,7 +69,7 @@ fails if a known disposable fixture remains.
 
 1. repeats the database-only preflight;
 2. runs `db:validate`;
-3. applies all canonical pending migrations, currently `0001` through `0017`, using the ledger;
+3. applies all canonical pending migrations, currently `0001` through `0018`, using the ledger;
 4. reapplies the migrator to prove no duplication;
 5. applies the structural `REFERENCE_APP`, sandbox Billing catalog and reviewed Entitlements
    mapping seeds twice;
@@ -77,8 +77,9 @@ fails if a known disposable fixture remains.
 
 `staging:database:test` executes the hosted RLS/database matrix, the 10-scenario Project/Workspace
 Service matrix, the 7-scenario native Billing Service/provider matrix, verified-webhook concurrency,
-the 6-scenario Entitlements matrix and the 5-scenario Usage/Cost matrix. `staging:auth:test` creates
-two uniquely named confirmed
+the 6-scenario Entitlements matrix, the 5-scenario Usage/Cost matrix and the 5-scenario Atomic Cost
+Guard matrix, including separate-connection concurrent reservation. `staging:auth:test` creates two
+uniquely named confirmed
 test accounts, executes the server-side Auth/account matrix, and deletes their projects,
 Usage/Cost, Entitlements, Billing rows, settings, profiles and Auth users in a final cleanup block.
 
@@ -89,7 +90,7 @@ unrelated Auth users. The only canonical migrations remain under `database/migra
 ## Passed hosted evidence
 
 - project identity and health: confirmed;
-- migrations/ledger: seventeen applied, zero pending, reapplication creates no duplicate;
+- migrations/ledger: eighteen applied, zero pending, reapplication creates no duplicate;
 - seeds: deterministic `REFERENCE_APP`, sandbox catalog and two reviewed capability mappings,
   reapplied twice;
 - database/RLS: 13 passed, 0 failed;
@@ -98,25 +99,26 @@ unrelated Auth users. The only canonical migrations remain under `database/migra
 - verified webhook concurrency/replay: 1 passed, 0 failed;
 - Entitlements grant/revoke/cross-scope matrix: 6 passed, 0 failed;
 - Usage/Cost exact-decimal/idempotency/RLS matrix: 5 passed, 0 failed;
+- Atomic Cost Guard entitlement/reserve/consume/release/concurrency matrix: 5 passed, 0 failed;
 - Auth/account core: 8 passed, 0 failed;
 - confirmed signup and isolated owner profiles: passed;
 - profile and owned-project access: passed;
 - `user_metadata` privilege forgery: denied;
 - only controlled `app_metadata.app_code` changes the active app: passed;
 - refresh rotation, logout revocation and stable public errors: passed;
-- final database state: seventeen ledger rows, one structural app, one sandbox product/price, two
+- final database state: eighteen ledger rows, one structural app, one sandbox product/price, two
   reviewed capability mappings and zero disposable fixture rows;
 - final Auth cleanup: zero `staging-owner-*@example.test` users.
 
 ## Hosted acceptance completion
 
 Database, RLS, Project/Workspace Service, Audit, Auth, Billing, verified webhooks, Entitlements,
-Usage/Cost and the deployed HTTPS cookie boundary pass.
+Usage/Cost, Atomic Cost Guard and the deployed HTTPS cookie boundary pass.
 Supabase Site URL and the sole `/auth/recovery` redirect match the Render origin, custom SMTP uses
 the dedicated Mailtrap sandbox, and the guarded runner passes signup/login/recovery/logout/profile,
 project, cross-user, cross-workspace, forged-scope, CSRF, logical deletion and payment-derived
 capability-decision scenarios. Cleanup asserts zero test-owned Auth, tenant, Billing, Entitlements,
-Usage/Cost and Audit rows. GH-0201, GH-0202, GH-0304 and GH-0401 are `DONE`.
+Usage/Cost, Cost Guard and Audit rows. GH-0201, GH-0202, GH-0304, GH-0401 and GH-0402 are `DONE`.
 
 Database egress hardening after a stable hosting topology and deployed rate limiting remain
 GH-0204/production operations.
