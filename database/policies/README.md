@@ -16,6 +16,7 @@ database transaction.
 | `hive.project_settings` | owner-only read/create/update through an authorized project | denied private settings content | denied |
 | `hive.products` / `hive.prices` | current-app catalog read only | read safe catalog metadata | denied |
 | `hive.purchases` / `hive.payments` | owner/project/workspace read only; pending purchase function only | denied private commercial rows | denied |
+| `hive.payment_provider_events` | no visibility or direct writes | no policy; controlled server operations only | denied |
 | `audit.events` | read selected organization/app events; no direct writes | read safe operational audit metadata; no writes | denied |
 
 Project deletion is logical and uses `hive.soft_delete_project(uuid)`. The function validates
@@ -30,3 +31,6 @@ or `DELETE` grant or policy on `audit.events`.
 
 Authenticated users cannot execute the GH-0302 payment-result/refund functions. Those functions
 are server-only and repeat user/app/workspace checks before applying an idempotent transition.
+The GH-0303 verified-webhook function and provider-event table are also revoked from
+`authenticated`. Forced RLS has no client policy on the event table, and raw payloads/signatures
+are not persisted.

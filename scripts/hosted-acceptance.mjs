@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomUUID } from 'node:crypto';
 import http from 'node:http';
 import pg from 'pg';
 import { GoTrueClient } from '@supabase/supabase-js';
@@ -16,6 +16,7 @@ const confirmation = process.env.GREEN_HIVE_HOSTED_TEST_CONFIRM?.trim();
 const databaseUrl = process.env.GREEN_HIVE_TEST_DATABASE_URL?.trim();
 const authUrl = process.env.GREEN_HIVE_SUPABASE_AUTH_URL?.trim();
 const serviceRoleKey = process.env.GREEN_HIVE_SUPABASE_SERVICE_ROLE_KEY?.trim();
+const webhookSecretValue = process.env.GREEN_HIVE_FAKE_WEBHOOK_SECRET?.trim();
 
 if (originValue !== EXPECTED_ORIGIN) {
   throw new Error(`GREEN_HIVE_HOSTED_APP_ORIGIN must be exactly ${EXPECTED_ORIGIN}`);
@@ -25,8 +26,18 @@ if (confirmation !== EXPECTED_CONFIRMATION) {
     `GREEN_HIVE_HOSTED_TEST_CONFIRM must be exactly ${EXPECTED_CONFIRMATION}`,
   );
 }
-if (!databaseUrl || !authUrl || !serviceRoleKey) {
+if (
+  !databaseUrl ||
+  !authUrl ||
+  !serviceRoleKey ||
+  !webhookSecretValue ||
+  !/^[A-Za-z0-9_-]{43,86}$/.test(webhookSecretValue)
+) {
   throw new Error('Guarded database and Auth Admin cleanup settings are required');
+}
+const webhookSecret = Buffer.from(webhookSecretValue, 'base64url');
+if (webhookSecret.byteLength < 32 || webhookSecret.byteLength > 64) {
+  throw new Error('Guarded hosted webhook secret is invalid');
 }
 
 const staging = stagingConfigurationFromEnvironment();
@@ -42,6 +53,7 @@ const fixtureEmails = Object.freeze([
 const fixtureUserIds = new Set();
 const fixtureOrganizationIds = new Set();
 const fixtureProjectIds = new Set();
+const fixtureProviderEventIds = new Set();
 
 class CookieJar {
   #cookies;
@@ -99,6 +111,106 @@ async function request(
     body = bodyText;
   }
   return { response, body, bodyText, setCookies };
+}
+
+async function createPendingPurchase(projectId, userId, organizationId) {
+  const client = new pg.Client({ connectionString: databaseUrl });
+  await client.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('SET LOCAL ROLE authenticated');
+    await client.query(
+      `SELECT
+         set_config('request.jwt.claims', $1, true),
+         set_config('request.green_hive.organization_id', $2, true)`,
+      [
+        JSON.stringify({
+          sub: userId,
+          app_metadata: { app_code: 'REFERENCE_APP', platform_role: 'USER' },
+        }),
+        organizationId,
+      ],
+    );
+    const created = await client.query(
+      `SELECT hive.create_pending_purchase(
+         $1::uuid,
+         'REFERENCE_APP_SANDBOX',
+         '50000000-0000-4000-8000-000000000001'::uuid,
+         $2::text
+       )::text AS purchase_id`,
+      [projectId, `hosted-webhook-${stamp}`],
+    );
+    await client.query('COMMIT');
+    return created.rows[0].purchase_id;
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => undefined);
+    throw error;
+  } finally {
+    await client.end();
+  }
+}
+
+async function deliverPaymentWebhook(payload, { validSignature = true } = {}) {
+  const rawBody = JSON.stringify(payload);
+  const timestamp = Math.floor(Date.now() / 1000);
+  const digest = createHmac('sha256', webhookSecret)
+    .update(Buffer.from(`${timestamp}.`, 'utf8'))
+    .update(Buffer.from(rawBody, 'utf8'))
+    .digest('hex');
+  const response = await fetch(
+    new URL('/api/webhooks/payments/GREEN_HIVE_FAKE', origin),
+    {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-green-hive-signature': `t=${timestamp},v1=${validSignature ? digest : '0'.repeat(64)}`,
+      },
+      body: rawBody,
+      redirect: 'error',
+      signal: AbortSignal.timeout(30_000),
+    },
+  );
+  const bodyText = await response.text();
+  return { response, body: bodyText ? JSON.parse(bodyText) : undefined, bodyText };
+}
+
+async function assertWebhookEvidence(purchaseId, providerEventId) {
+  const client = new pg.Client({ connectionString: databaseUrl });
+  await client.connect();
+  try {
+    const evidence = await client.query(
+      `SELECT
+         purchase.status AS purchase_status,
+         payment.status AS payment_status,
+         provider_event.delivery_count,
+         provider_event.effect,
+         count(audit_event.id)::integer AS audit_count
+       FROM hive.purchases AS purchase
+       JOIN hive.payments AS payment ON payment.purchase_id = purchase.id
+       JOIN hive.payment_provider_events AS provider_event
+         ON provider_event.payment_id = payment.id
+        AND provider_event.provider_event_id = $2::text
+       LEFT JOIN audit.events AS audit_event
+         ON audit_event.subject_id = payment.id
+        AND audit_event.event_code = 'PAYMENT_CONFIRMED'
+       WHERE purchase.id = $1::uuid
+       GROUP BY
+         purchase.status,
+         payment.status,
+         provider_event.delivery_count,
+         provider_event.effect`,
+      [purchaseId, providerEventId],
+    );
+    assert.deepEqual(evidence.rows, [{
+      purchase_status: 'CONFIRMED',
+      payment_status: 'PAID',
+      delivery_count: 2,
+      effect: 'PAYMENT_CONFIRMED',
+      audit_count: 1,
+    }]);
+  } finally {
+    await client.end();
+  }
 }
 
 function assertSafeError(result, status, code) {
@@ -307,9 +419,12 @@ async function cleanupFixtures() {
            WHERE created_by_user_id = ANY($2::uuid[])
               OR personal_owner_user_id = ANY($2::uuid[])) AS organizations,
          (SELECT count(*)::integer
-            FROM audit.events
-           WHERE actor_user_id = ANY($2::uuid[])) AS audit_events`,
-      [fixtureEmails, userIds],
+             FROM audit.events
+            WHERE actor_user_id = ANY($2::uuid[])) AS audit_events,
+         (SELECT count(*)::integer
+            FROM hive.payment_provider_events
+           WHERE provider_event_id = ANY($3::text[])) AS provider_events`,
+      [fixtureEmails, userIds, [...fixtureProviderEventIds]],
     );
     assert.ok(
       Object.values(remaining.rows[0] ?? {}).every((count) => count === 0),
@@ -415,6 +530,29 @@ async function run() {
   fixtureProjectIds.add(projectId);
   assert.equal(createdProject.body.project.ownerUserId, [...fixtureUserIds][0]);
   assert.equal(createdProject.body.project.organizationId, personalWorkspaceId);
+
+  const purchaseId = await createPendingPurchase(
+    projectId,
+    createdProject.body.project.ownerUserId,
+    personalWorkspaceId,
+  );
+  const providerEventId = `evt_hosted_${stamp}`;
+  fixtureProviderEventIds.add(providerEventId);
+  const webhookPayload = {
+    eventId: providerEventId,
+    type: 'PAYMENT_PAID',
+    purchaseId,
+    providerPaymentId: `pay_hosted_${stamp}`,
+  };
+  const invalidWebhook = await deliverPaymentWebhook(webhookPayload, { validSignature: false });
+  assertSafeError(invalidWebhook, 401, 'BILLING_WEBHOOK_SIGNATURE_INVALID');
+  const acceptedWebhook = await deliverPaymentWebhook(webhookPayload);
+  assert.equal(acceptedWebhook.response.status, 202);
+  assert.deepEqual(acceptedWebhook.body, { status: 'accepted', duplicate: false });
+  const duplicateWebhook = await deliverPaymentWebhook(webhookPayload);
+  assert.equal(duplicateWebhook.response.status, 202);
+  assert.deepEqual(duplicateWebhook.body, { status: 'accepted', duplicate: true });
+  await assertWebhookEvidence(purchaseId, providerEventId);
 
   const forgedProject = await request('/api/projects', {
     method: 'POST',
@@ -545,6 +683,7 @@ async function run() {
       crossUserAndCrossWorkspace: 'PASS',
       forgedScopeAndCsrf: 'PASS',
       logicalDeletion: 'PASS',
+      verifiedWebhookSingleEffect: 'PASS',
       passwordRecoveryThroughMailtrap: 'PASS',
       logout: 'PASS',
     },

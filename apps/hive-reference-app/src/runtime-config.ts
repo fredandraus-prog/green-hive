@@ -14,6 +14,7 @@ export interface ReferenceAppRuntimeConfiguration {
   readonly recoveryRedirect: URL;
   readonly publishableKey: string;
   readonly serviceRoleKey: string;
+  readonly fakeBillingWebhookSecret: Uint8Array;
   readonly bindHost: '127.0.0.1' | '0.0.0.0';
   readonly bindPort: number;
   readonly poolMax: number;
@@ -84,6 +85,17 @@ function parseDatabaseUrl(value: string): URL {
     throw new Error('DATABASE_URL must select the postgres database');
   }
   return parsed;
+}
+
+function parseWebhookSecret(value: string): Uint8Array {
+  if (!/^[A-Za-z0-9_-]{43,86}$/.test(value)) {
+    throw new Error('GREEN_HIVE_FAKE_WEBHOOK_SECRET must be a base64url secret');
+  }
+  const decoded = Buffer.from(value, 'base64url');
+  if (decoded.byteLength < 32 || decoded.byteLength > 64) {
+    throw new Error('GREEN_HIVE_FAKE_WEBHOOK_SECRET must decode to 32 through 64 bytes');
+  }
+  return Uint8Array.from(decoded);
 }
 
 function assertLocalPreview(
@@ -191,6 +203,9 @@ export function referenceAppRuntimeConfiguration(
     recoveryRedirect,
     publishableKey: required(environment, 'GREEN_HIVE_SUPABASE_PUBLISHABLE_KEY'),
     serviceRoleKey: required(environment, 'GREEN_HIVE_SUPABASE_SERVICE_ROLE_KEY'),
+    fakeBillingWebhookSecret: parseWebhookSecret(
+      required(environment, 'GREEN_HIVE_FAKE_WEBHOOK_SECRET'),
+    ),
     ...boundary,
     poolMax,
     httpLogs: parseBoolean(environment, 'GREEN_HIVE_HTTP_LOGS'),

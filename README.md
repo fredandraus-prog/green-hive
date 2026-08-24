@@ -11,18 +11,21 @@ hardened headers and secret/bundle guards pass locally and on the exact Render H
 Version `0.10.0` completes **GH-0301 (Billing Foundation)** with an app-scoped catalog,
 versioned exact-decimal prices and tenant-isolated pending purchases/payments. Version `0.11.0`
 completes **GH-0302 (Sandbox Billing Provider)** with deterministic success, failure and full-refund
-transitions behind a trusted server-only boundary.
+transitions behind a trusted server-only boundary. Version `0.12.0` completes **GH-0303 (Verified
+Idempotent Webhooks)** with exact-body HMAC verification, replay protection, provider-event
+deduplication and authoritative reconciliation.
 
-The checkpoint is deliberately narrow. Real payment-provider adapters, public checkout/webhook
-endpoints, webhook reconciliation, Entitlements, Cost Guard, AI, Search, Redis, remote storage and
-consumer-domain functionality remain out of scope.
+The checkpoint is deliberately narrow. The only public Billing ingress is the verified fake-provider
+webhook used to prove the platform contract. Real payment-provider adapters, checkout UI,
+Entitlements, Cost Guard, AI, Search, Redis, remote storage and consumer-domain functionality remain
+out of scope.
 
 ## What this checkpoint contains
 
 - the 18 canonical `@green-hive/*` packages, `hive-reference-app` and `hive-admin`;
 - canonical `AppManifestV1`, validator, App Registry and complete `REFERENCE_APP` manifest;
 - schemas `hive`, `audit` and `reference_app`;
-- fourteen immutable migrations and a SHA-256 migration ledger;
+- fifteen immutable migrations and a SHA-256 migration ledger;
 - organizations, memberships and tenant app installations around the global app registry;
 - tenant-scoped `projects` and `project_settings`;
 - production-safe structural seeds containing only `REFERENCE_APP` and its manifest-registered
@@ -43,6 +46,8 @@ consumer-domain functionality remain out of scope.
   with no authenticated direct-write grants and no payment-card storage;
 - a deterministic, network-free Billing sandbox adapter plus server-only, idempotent
   success/failure/full-refund transitions and safe payment Audit events;
+- a provider-neutral webhook verifier/processor, HMAC fake-provider adapter, minimal verified-event
+  ledger and exact duplicate single-effect enforcement;
 - a responsive React/Vite Reference App with signup, login, recovery, profile and project screens;
 - a loopback-only Fastify HTTP boundary with HttpOnly cookies, exact-origin CSRF checks, PKCE
   recovery, no-store responses and baseline security headers;
@@ -93,7 +98,7 @@ safeguards.
 
 ## Hosted staging workflow
 
-A dedicated Free-plan Supabase staging project is active in São Paulo. Its fourteen-migration database
+A dedicated Free-plan Supabase staging project is active in São Paulo. Its fifteen-migration database
 baseline, cross-organization RLS matrix, Project/Workspace Service and server-side Auth core have
 passed without changing the production
 candidate or the pre-existing Green Hive project:
@@ -210,7 +215,13 @@ are not retained. Authenticated users have no direct insert/update/delete grant 
 purchases or payments and cannot read provider references. GH-0302 adds a deterministic
 `GREEN_HIVE_FAKE` adapter whose outcome is server configuration, never request input. Only the
 trusted backend can apply verified success, failure and full-refund results; exact retries have one
-effect. Real providers, public checkout/webhook endpoints and reconciliation remain GH-0303.
+effect. GH-0303 adds `POST /api/webhooks/payments/{provider}`. The fake adapter verifies an HMAC of
+the exact raw body with a bounded timestamp before parsing; the server hashes but never retains the
+raw body or signature. `hive.apply_verified_payment_webhook(...)` locks the commercial rows and
+records `(provider_code, provider_event_id)` once. Exact redelivery increments only a delivery
+counter; identity reuse with different content is rejected. Authenticated clients cannot read the
+provider-event ledger or execute the transition. `BillingService.reconcilePayment(...)` queries the
+provider adapter and applies only a runtime-validated authoritative result.
 
 ## Migration discipline
 
@@ -221,7 +232,7 @@ metadata drift and a managed schema without a ledger. Except for provisioning th
 
 ## Status
 
-GH-0102, GH-0103, GH-0104, GH-0201, GH-0202, GH-0203, GH-0204, GH-0250, GH-0301 and GH-0302 are
+GH-0102, GH-0103, GH-0104, GH-0201, GH-0202, GH-0203, GH-0204, GH-0250, GH-0301, GH-0302 and GH-0303 are
 `DONE`.
 GH-0204 passed local abuse/bundle tests, the exact hosted security smoke and the complete
 authenticated HTTPS acceptance matrix on the single-instance Render staging service. See
@@ -236,5 +247,7 @@ web](docs/REFERENCE-APP-WEB.md), [Hosted staging](docs/HOSTED-STAGING.md), [Audi
 [GH-0302 checkpoint](docs/CHECKPOINT-GH-0302.md),
 [GH-0302 implementation validation](docs/VALIDATION-2026-08-23-GH0302-IMPLEMENTATION.md),
 [GH-0302 release validation](docs/VALIDATION-2026-08-23-GH0302-RELEASE.md),
+[GH-0303 checkpoint](docs/CHECKPOINT-GH-0303.md),
+[GH-0303 implementation validation](docs/VALIDATION-2026-08-23-GH0303-IMPLEMENTATION.md),
 [GH-0250 checkpoint](docs/CHECKPOINT-GH-0250.md), [Ideas Radar](IDEAS_RADAR.md) and
 [Reconciliation](docs/RECONCILIATION-2026-08-18.md).

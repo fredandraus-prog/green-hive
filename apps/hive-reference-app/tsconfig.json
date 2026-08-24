@@ -27,6 +27,9 @@
     },
     {
       "path": "../../packages/projects"
+    },
+    {
+      "path": "../../packages/billing"
     }
   ]
 }

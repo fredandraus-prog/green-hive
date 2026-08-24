@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { BillingError } from '../../packages/billing/dist/index.js';
 import {
   createReferenceAppHttpServer,
   REFERENCE_APP_COOKIE_NAMES,
@@ -396,6 +397,78 @@ test('project routes derive owner and app only from the verified cookie session'
     );
     assert.equal(forged.statusCode, 400);
     assert.equal(forged.json().error.code, 'INVALID_PROJECT_INPUT');
+  } finally {
+    await application.close();
+  }
+});
+
+test('payment webhook accepts a provider-signed raw body without browser Origin trust', async () => {
+  const calls = [];
+  const billingWebhookService = {
+    async process(providerCode, request) {
+      calls.push({ providerCode, signature: request.signature, rawBody: Buffer.from(request.rawBody) });
+      return {
+        eventRecordId: '80000000-0000-4000-8000-000000000001',
+        providerEventId: 'evt_http_0001',
+        purchaseId: '60000000-0000-4000-8000-000000000001',
+        paymentId: '70000000-0000-4000-8000-000000000001',
+        effect: 'PAYMENT_CONFIRMED',
+        duplicate: false,
+        deliveryCount: 1,
+      };
+    },
+  };
+  const application = await createReferenceAppHttpServer({
+    facade: new FakeFacade(),
+    allowedOrigin: ORIGIN,
+    secureCookies: false,
+    billingWebhookService,
+  });
+  try {
+    const rawPayload = '{"eventId":"evt_http_0001", "type":"PAYMENT_PAID"}';
+    const accepted = await application.inject({
+      method: 'POST',
+      url: '/api/webhooks/payments/GREEN_HIVE_FAKE',
+      headers: {
+        'content-type': 'application/json',
+        'x-green-hive-signature': `t=1800000000,v1=${'a'.repeat(64)}`,
+      },
+      payload: rawPayload,
+    });
+    assert.equal(accepted.statusCode, 202);
+    assert.deepEqual(accepted.json(), { status: 'accepted', duplicate: false });
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].providerCode, 'GREEN_HIVE_FAKE');
+    assert.equal(calls[0].rawBody.toString('utf8'), rawPayload);
+
+    const unsigned = await application.inject({
+      method: 'POST',
+      url: '/api/webhooks/payments/GREEN_HIVE_FAKE',
+      headers: { 'content-type': 'application/json' },
+      payload: '{}',
+    });
+    assert.equal(unsigned.statusCode, 401);
+    assert.equal(unsigned.json().error.code, 'BILLING_WEBHOOK_SIGNATURE_INVALID');
+
+    billingWebhookService.process = async () => {
+      throw new BillingError('BILLING_WEBHOOK_PROCESSING_FAILED');
+    };
+    const unavailable = await application.inject({
+      method: 'POST',
+      url: '/api/webhooks/payments/GREEN_HIVE_FAKE',
+      headers: {
+        'content-type': 'application/json',
+        'x-green-hive-signature': `t=1800000000,v1=${'b'.repeat(64)}`,
+      },
+      payload: '{}',
+    });
+    assert.equal(unavailable.statusCode, 503);
+    assert.deepEqual(unavailable.json(), {
+      error: {
+        code: 'BILLING_WEBHOOK_PROCESSING_FAILED',
+        message: 'Billing webhook could not be processed',
+      },
+    });
   } finally {
     await application.close();
   }

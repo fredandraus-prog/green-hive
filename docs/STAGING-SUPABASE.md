@@ -68,7 +68,7 @@ fails if a known disposable fixture remains.
 
 1. repeats the database-only preflight;
 2. runs `db:validate`;
-3. applies all canonical pending migrations, currently `0001` through `0014`, using the ledger;
+3. applies all canonical pending migrations, currently `0001` through `0015`, using the ledger;
 4. reapplies the migrator to prove no duplication;
 5. applies the structural `REFERENCE_APP` and sandbox Billing catalog seeds twice;
 6. verifies ledger, seed identities, native FKs, RLS, helpers and grants.
@@ -85,7 +85,7 @@ unrelated Auth users. The only canonical migrations remain under `database/migra
 ## Passed hosted evidence
 
 - project identity and health: confirmed;
-- migrations/ledger: fourteen applied, zero pending, reapplication creates no duplicate;
+- migrations/ledger: fifteen applied, zero pending, reapplication creates no duplicate;
 - seeds: deterministic `REFERENCE_APP` and sandbox catalog, reapplied twice;
 - database/RLS: 13 passed, 0 failed;
 - Project/Workspace Service: 10 passed, 0 failed;
@@ -96,7 +96,7 @@ unrelated Auth users. The only canonical migrations remain under `database/migra
 - `user_metadata` privilege forgery: denied;
 - only controlled `app_metadata.app_code` changes the active app: passed;
 - refresh rotation, logout revocation and stable public errors: passed;
-- final database state: fourteen ledger rows, one structural app, one sandbox product/price and
+- final database state: fifteen ledger rows, one structural app, one sandbox product/price and
   zero disposable fixture rows;
 - final Auth cleanup: zero `staging-owner-*@example.test` users.
 

@@ -16,6 +16,7 @@ The published sequence is immutable:
 12. app-scoped products and immutable-version exact-decimal prices with read-only catalog RLS.
 13. tenant purchases/payments, pending purchase transaction, limited reads and purchase Audit capture.
 14. trusted sandbox success/failure/full-refund transitions and payment Audit capture.
+15. verified provider-event identities, idempotent webhook application and forced-RLS retention.
 
 Files `0001` through `0006` remain byte-for-byte unchanged. GH-0250 is expressed only through the
 next-numbered migrations `0007` through `0010`. GH-0203 is expressed only through migration
@@ -23,6 +24,8 @@ next-numbered migrations `0007` through `0010`. GH-0203 is expressed only throug
 GH-0301 is expressed only through migrations `0012` and `0013`; migrations `0001` through `0011`
 remain unchanged.
 GH-0302 is expressed only through migration `0014`; migrations `0001` through `0013` remain
+unchanged.
+GH-0303 is expressed only through migration `0015`; migrations `0001` through `0014` remain
 unchanged.
 
 Every SQL file begins with parseable migration ID, checkpoint, description and rollback strategy

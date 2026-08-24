@@ -34,3 +34,5 @@ services:
         sync: false
       - key: GREEN_HIVE_SUPABASE_SERVICE_ROLE_KEY
         sync: false
+      - key: GREEN_HIVE_FAKE_WEBHOOK_SECRET
+        sync: false

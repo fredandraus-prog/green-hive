@@ -69,7 +69,7 @@ for (const file of await walk(repositoryRoot)) {
   }
   if (
     relativePath.startsWith('apps/hive-reference-app/src/web/') &&
-    /DATABASE_URL|SUPABASE_SERVICE_ROLE|SERVICE_ROLE_KEY|process\.env/.test(content)
+    /DATABASE_URL|SUPABASE_SERVICE_ROLE|SERVICE_ROLE_KEY|FAKE_WEBHOOK_SECRET|process\.env/.test(content)
   ) {
     errors.push(`${relativePath}: server-only configuration crosses into browser source`);
   }

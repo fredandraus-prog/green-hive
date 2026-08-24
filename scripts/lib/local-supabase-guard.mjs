@@ -153,8 +153,18 @@ export async function cleanupGreenHiveUserData(client, userIds) {
   const billingTables = await client.query(
     `SELECT
        to_regclass('hive.purchases')::text AS purchases,
-       to_regclass('hive.payments')::text AS payments`,
+       to_regclass('hive.payments')::text AS payments,
+       to_regclass('hive.payment_provider_events')::text AS provider_events`,
   );
+  if (billingTables.rows[0]?.provider_events === 'hive.payment_provider_events') {
+    await client.query(
+      `DELETE FROM hive.payment_provider_events
+       WHERE payment_id IN (
+         SELECT id FROM hive.payments WHERE owner_user_id = ANY($1::uuid[])
+       )`,
+      [userIds],
+    );
+  }
   if (billingTables.rows[0]?.payments === 'hive.payments') {
     await client.query('DELETE FROM hive.payments WHERE owner_user_id = ANY($1::uuid[])', [
       userIds,

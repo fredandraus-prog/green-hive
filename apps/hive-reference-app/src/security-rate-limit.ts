@@ -11,6 +11,7 @@ export const REFERENCE_APP_RATE_LIMIT_POLICIES = Object.freeze({
   AUTH_RECOVERY_EXCHANGE: Object.freeze({ limit: 10, windowMs: 15 * MINUTE }),
   AUTH_RECOVERY_COMPLETE: Object.freeze({ limit: 5, windowMs: 15 * MINUTE }),
   AUTH_SESSION: Object.freeze({ limit: 30, windowMs: 15 * MINUTE }),
+  BILLING_WEBHOOK: Object.freeze({ limit: 60, windowMs: MINUTE }),
   API_STANDARD: Object.freeze({ limit: 120, windowMs: MINUTE }),
   API_EXPENSIVE: Object.freeze({ limit: 30, windowMs: MINUTE }),
 });
@@ -60,6 +61,7 @@ const ROUTE_POLICIES = new Map<string, ReferenceAppRateLimitPolicyName>([
   ['POST /api/auth/recovery/complete', 'AUTH_RECOVERY_COMPLETE'],
   ['POST /api/auth/refresh', 'AUTH_SESSION'],
   ['POST /api/auth/sign-out', 'AUTH_SESSION'],
+  ['POST /api/webhooks/payments/:provider', 'BILLING_WEBHOOK'],
   ['GET /api/audit', 'API_EXPENSIVE'],
   ['GET /api/workspaces/members', 'API_EXPENSIVE'],
 ]);

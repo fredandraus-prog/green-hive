@@ -52,6 +52,7 @@ function findConfirmedProject(projects, configuration) {
 }
 
 async function inspectManagedState(client) {
+  const catalog = await loadMigrationCatalog(repositoryRoot);
   const schemas = await client.query(
     `SELECT nspname
      FROM pg_namespace
@@ -64,7 +65,7 @@ async function inspectManagedState(client) {
     if (schemas.rows.length > 0) {
       throw new Error('Managed schemas exist without the canonical Green Hive migration ledger');
     }
-    return Object.freeze({ state: 'EMPTY_READY', applied: 0, pending: 6 });
+    return Object.freeze({ state: 'EMPTY_READY', applied: 0, pending: catalog.migrations.length });
   }
 
   const applied = await client.query(
@@ -72,7 +73,6 @@ async function inspectManagedState(client) {
      FROM hive.schema_migrations
      ORDER BY version`,
   );
-  const catalog = await loadMigrationCatalog(repositoryRoot);
   const pending = planPendingMigrations(catalog.migrations, applied.rows);
   const artifacts = await client.query(
     `SELECT

@@ -93,8 +93,10 @@ The exact production retention duration remains `TO_DEFINE`, matching the platfo
 registry. Purging must be a separately authorized, audited operational workflow with verified
 retention/legal requirements; it is not part of GH-0203.
 
-GH-0302 captures payment success, failure and refund from trusted server transitions. Metadata is
+GH-0302/GH-0303 capture payment success, failure and refund from trusted server transitions and
+verified provider webhooks. Exact duplicate delivery changes only the private delivery counter and
+does not append another Audit event. Metadata is
 limited to provider code, resulting state and an optional bounded failure code; provider reference
-IDs, amounts, credentials and payloads are excluded. Login failure/success, Entitlements, Jobs,
-Files, feature flags, provider health, external webhooks and break-glass events remain future
+IDs, amounts, credentials, raw bodies and signatures are excluded. Login failure/success,
+Entitlements, Jobs, Files, feature flags, provider health, real external-provider adapters and break-glass events remain future
 integration points.

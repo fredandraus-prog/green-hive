@@ -34,7 +34,7 @@ It deliberately has no `preDeployCommand`, `db:migrate` or `db:seed` action.
    `sslmode=verify-full` and the fingerprint-pinned Supabase Root 2021 CA;
 8. provider keys and the database connection exist only in the server process;
 9. cookies are `HttpOnly`, host-only, `SameSite=Lax` and `Secure`;
-10. the database ledger has exactly migrations `0001` through `0014`, the structural
+10. the database ledger has exactly migrations `0001` through `0015`, the structural
     `REFERENCE_APP` plus sandbox catalog seeds exist and the tenant/audit/Billing helpers are
     present.
 
@@ -73,6 +73,7 @@ managed only in Render and must be reviewed against these rules without exposing
 | `DATABASE_URL` | Supabase connection settings | staging session pooler, port 5432, `sslmode=verify-full` |
 | `GREEN_HIVE_SUPABASE_PUBLISHABLE_KEY` | Supabase API settings | server environment only in this app |
 | `GREEN_HIVE_SUPABASE_SERVICE_ROLE_KEY` | Supabase API settings | server-only secret; never browser-visible |
+| `GREEN_HIVE_FAKE_WEBHOOK_SECRET` | generated 32-64 byte base64url value | Render server-only secret; never logged, committed or browser-visible |
 
 Do not paste those values into issues, commits, screenshots, chat messages or deployment logs.
 The SMTP credentials do not belong in Render because Supabase Auth sends recovery email.

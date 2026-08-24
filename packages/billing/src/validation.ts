@@ -1,9 +1,11 @@
 import type { TrustedOrganizationContext } from '@green-hive/core';
 import { BillingError } from './errors.js';
 import type {
+  ProviderReconciliationResult,
   ProviderPaymentResult,
   ProviderRefundResult,
   ValidatedCreatePurchaseInput,
+  VerifiedProviderWebhookEvent,
 } from './types.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -23,6 +25,15 @@ const PAYMENT_FAILED_KEYS = new Set([
   'failureCode',
 ]);
 const REFUND_KEYS = new Set(['status', 'providerCode', 'providerRefundId']);
+const VERIFIED_WEBHOOK_KEYS = new Set([
+  'providerCode',
+  'providerEventId',
+  'eventType',
+  'purchaseId',
+  'providerPaymentId',
+  'providerRefundId',
+  'failureCode',
+]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -83,14 +94,14 @@ export function validateCreatePurchaseInput(value: unknown): ValidatedCreatePurc
   };
 }
 
-function validateProviderCode(value: unknown): string {
+export function validateProviderCode(value: unknown): string {
   if (typeof value !== 'string' || !PROVIDER_CODE.test(value)) {
     throw new BillingError('BILLING_PROVIDER_FAILED');
   }
   return value;
 }
 
-function validateProviderReference(value: unknown): string {
+export function validateProviderReference(value: unknown): string {
   if (typeof value !== 'string' || !PROVIDER_REFERENCE.test(value)) {
     throw new BillingError('BILLING_PROVIDER_FAILED');
   }
@@ -133,5 +144,75 @@ export function validateProviderRefundResult(value: unknown): ProviderRefundResu
     status: 'REFUNDED',
     providerCode: validateProviderCode(value.providerCode),
     providerRefundId: validateProviderReference(value.providerRefundId),
+  };
+}
+
+export function validateProviderReconciliationResult(
+  value: unknown,
+): ProviderReconciliationResult {
+  if (isRecord(value) && value.status === 'REFUNDED') {
+    return validateProviderRefundResult(value);
+  }
+  return validateProviderPaymentResult(value);
+}
+
+export function validateVerifiedProviderWebhookEvent(
+  value: unknown,
+): VerifiedProviderWebhookEvent {
+  if (
+    !isRecord(value) ||
+    Object.keys(value).some((key) => !VERIFIED_WEBHOOK_KEYS.has(key)) ||
+    !['PAYMENT_PAID', 'PAYMENT_FAILED', 'PAYMENT_REFUNDED'].includes(
+      value.eventType as string,
+    )
+  ) {
+    throw new BillingError('INVALID_BILLING_WEBHOOK_INPUT');
+  }
+
+  let purchaseId: string;
+  let providerCode: string;
+  let providerEventId: string;
+  let providerPaymentId: string;
+  try {
+    purchaseId = validateBillingId(value.purchaseId);
+    providerCode = validateProviderCode(value.providerCode);
+    providerEventId = validateProviderReference(value.providerEventId);
+    providerPaymentId = validateProviderReference(value.providerPaymentId);
+  } catch {
+    throw new BillingError('INVALID_BILLING_WEBHOOK_INPUT');
+  }
+
+  const providerRefundId = value.providerRefundId;
+  const failureCode = value.failureCode;
+  if (
+    (value.eventType === 'PAYMENT_PAID' &&
+      (providerRefundId !== null || failureCode !== null)) ||
+    (value.eventType === 'PAYMENT_FAILED' &&
+      (providerRefundId !== null ||
+        typeof failureCode !== 'string' ||
+        !FAILURE_CODE.test(failureCode))) ||
+    (value.eventType === 'PAYMENT_REFUNDED' &&
+      (failureCode !== null || providerRefundId === null))
+  ) {
+    throw new BillingError('INVALID_BILLING_WEBHOOK_INPUT');
+  }
+
+  let normalizedRefundId: string | null = null;
+  if (providerRefundId !== null) {
+    try {
+      normalizedRefundId = validateProviderReference(providerRefundId);
+    } catch {
+      throw new BillingError('INVALID_BILLING_WEBHOOK_INPUT');
+    }
+  }
+
+  return {
+    providerCode,
+    providerEventId,
+    eventType: value.eventType as VerifiedProviderWebhookEvent['eventType'],
+    purchaseId,
+    providerPaymentId,
+    providerRefundId: normalizedRefundId,
+    failureCode: typeof failureCode === 'string' ? failureCode : null,
   };
 }

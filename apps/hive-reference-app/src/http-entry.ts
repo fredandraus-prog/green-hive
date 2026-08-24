@@ -5,6 +5,12 @@ import {
   PostgresAuthenticatedSessionRunner,
   SupabaseServerAuthProvider,
 } from '@green-hive/auth';
+import {
+  BillingWebhookService,
+  FakeBillingWebhookVerifier,
+  PostgresBillingWebhookRepository,
+  type BillingSqlExecutor,
+} from '@green-hive/billing';
 import { AppRegistry } from '@green-hive/core';
 import { createReferenceAppHttpServer } from './http-server.js';
 import { referenceAppManifest } from './manifest.js';
@@ -17,6 +23,15 @@ const pool = new pg.Pool({
   connectionString: configuration.databaseUrl.toString(),
   max: configuration.poolMax,
 });
+const billingDatabase: BillingSqlExecutor = {
+  async query<Row extends Record<string, unknown>>(
+    sql: string,
+    parameters: readonly unknown[] = [],
+  ) {
+    const result = await pool.query<Row>(sql, [...parameters]);
+    return { rows: result.rows };
+  },
+};
 const registry = new AppRegistry();
 registry.register(referenceAppManifest);
 const provider = new SupabaseServerAuthProvider({
@@ -33,6 +48,10 @@ const facade = new ReferenceAppServer({
   recoveryRedirectUrl: configuration.recoveryRedirect.href,
 });
 const readinessCheck = createReferenceAppReadinessCheck(pool);
+const billingWebhookService = new BillingWebhookService(
+  new PostgresBillingWebhookRepository(billingDatabase),
+  [new FakeBillingWebhookVerifier({ secret: configuration.fakeBillingWebhookSecret })],
+);
 const application = await createReferenceAppHttpServer({
   facade,
   allowedOrigin: configuration.appOrigin.origin,
@@ -40,6 +59,7 @@ const application = await createReferenceAppHttpServer({
   readinessCheck,
   webRoot: fileURLToPath(new URL('./web', import.meta.url)),
   logger: configuration.httpLogs,
+  billingWebhookService,
 });
 
 await readinessCheck();

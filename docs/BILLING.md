@@ -4,8 +4,9 @@
 
 Billing answers what was selected, purchased and paid. It does not decide what a project may use;
 that remains the Entitlements boundary. GH-0301 adds provider-neutral commercial state; GH-0302
-adds a deterministic sandbox adapter and trusted success/failure/full-refund transitions. It does
-not connect a real payment provider, expose a checkout/webhook endpoint or grant an Entitlement.
+adds a deterministic sandbox adapter and trusted success/failure/full-refund transitions; GH-0303
+adds verified, replay-bounded and idempotent webhook ingestion plus provider reconciliation. It does
+not connect a real payment provider, expose checkout UI or grant an Entitlement.
 
 ## Public TypeScript surface
 
@@ -17,10 +18,13 @@ not connect a real payment provider, expose a checkout/webhook endpoint or grant
 - `BillingRepository`, `PostgresBillingRepository` and `BillingService`;
 - `BillingProvider`, payment/refund request and runtime-validated result contracts;
 - `FakeBillingProvider` with server-configured `SUCCESS` or `FAILURE` behavior;
+- `BillingWebhookVerifier`, `BillingWebhookService`, `PostgresBillingWebhookRepository` and the
+  exact-body HMAC `FakeBillingWebhookVerifier`;
 - stable `BillingError` codes and runtime validators.
 
 `BillingService` exposes `listCatalog`, `getProduct`, `createPurchase`, `listPurchases` and
-`getPurchase`, plus `processPayment` and `refundPayment` when a provider is injected. All
+`getPurchase`, plus `processPayment`, `refundPayment` and `reconcilePayment` when a provider is
+injected. All
 operations require a `TrustedOrganizationContext` derived from a verified server-side session.
 Platform administrators cannot reuse owner commands.
 
@@ -84,6 +88,32 @@ only an exact idempotent retry. A different result or provider reference after t
 rejected. Authenticated clients therefore cannot promote their own pending payment even if they
 know every row UUID.
 
+## Verified webhook processing
+
+`POST /api/webhooks/payments/{provider}` is a server-to-server ingress. It does not trust browser
+cookies, `Origin`, user-supplied app/workspace scope, query strings or unsigned provider fields. The
+fake adapter requires `X-Green-Hive-Signature` in the exact form `t=<unix>,v1=<sha256>`, verifies
+HMAC-SHA256 over `<timestamp>.<exact raw body>`, compares in constant time and rejects timestamps
+outside the configured five-minute window before parsing a strict JSON shape.
+
+Only a successfully verified normalized event reaches
+`hive.apply_verified_payment_webhook(...)`. Migration `0015` stores one minimal row in
+`hive.payment_provider_events` for the unique `(provider_code, provider_event_id)` identity. It
+retains the SHA-256 digest, normalized provider references, effect and delivery timestamps/count;
+it never retains the raw request or signature. Exact redelivery increments only `delivery_count`.
+Reuse of the same provider event ID with different content, purchase or references fails closed.
+
+The function locks the purchase and payment, supports paid, failed and full-refund notifications,
+and permits a distinct later event that agrees with existing authoritative state as `NO_CHANGE`.
+Payment-state triggers therefore capture only one Audit effect. The function and event table are
+revoked from `PUBLIC` and `authenticated`; the event table has forced RLS with no client policy.
+The endpoint is separately source-rate-limited and returns a minimal `202` response.
+
+Because delivery is not guaranteed, `BillingProvider.reconcilePayment(...)` and
+`BillingService.reconcilePayment(...)` query the configured provider and apply the same validated
+server-authoritative payment/refund transitions. Reconciliation never accepts provider outcome,
+owner, app, workspace, amount or references from a consumer payload.
+
 ## Commercial snapshots and privacy
 
 Purchases retain product code, product/price IDs, price version, exact amount and currency. Later
@@ -105,18 +135,21 @@ payloads.
 - authenticated users have no direct `INSERT`, `UPDATE` or `DELETE` grant on Billing tables;
 - authenticated payment reads omit provider references and failure internals;
 - authenticated users cannot execute the payment-result or refund functions;
+- authenticated users cannot inspect provider-event identities or execute the verified-webhook
+  function;
 - the trusted backend rechecks the same user/app/workspace authority before applying a result;
 - physical deletion is not granted.
 
 The embedded and native Supabase matrices cover cross-user, cross-workspace and cross-app denial,
 forged commercial fields, direct payment mutation/function execution, hashed idempotency, seed
-conflicts, deterministic success/failure/refund, exact and conflicting retries, Audit capture and
+conflicts, deterministic success/failure/refund, invalid/tampered/replayed webhooks, exact and
+conflicting provider-event retries, concurrent duplicate delivery, Audit single-effect capture and
 cleanup ordering.
 
 ## Deferred checkpoints
 
-- GH-0303: verified, idempotent provider webhooks and reconciliation;
 - GH-0304: Entitlements derived through a reviewed Billing/Entitlement transaction boundary.
 
-No frontend checkout or public HTTP Billing endpoint is added in GH-0302. The service remains a
-server-side library; real-provider and webhook ingress begin only in GH-0303.
+No frontend checkout is added in GH-0303. The verified fake-provider endpoint proves the ingress
+contract only; a real-provider adapter requires a separately reviewed signature scheme, payload
+mapping, secret rotation and provider-specific reconciliation implementation.
