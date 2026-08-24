@@ -44,9 +44,8 @@ The native Supabase gate proved:
 - platform administration can inspect but cannot reuse owner commands;
 - a clean migrated/seeded baseline remains after fixture cleanup.
 
-## Pending release evidence
+## Release evidence
 
-Dedicated staging apply/test, CI, Render deployment, published HTTPS entitlement acceptance,
-release manifest, extracted-ZIP verification and tag are recorded separately when the release is
-promoted.
-
+Dedicated staging apply/test, CI, Render deployment and published HTTPS entitlement acceptance are
+recorded in [GH-0304 release validation](VALIDATION-2026-08-24-GH0304-RELEASE.md). The release
+manifest, extracted-ZIP verification and tag complete the promotion after that evidence is merged.
