@@ -38,6 +38,9 @@ No unreleased changes.
   five-scenario Usage/Cost matrix and restores a clean baseline.
 - Dedicated Supabase staging passes the same matrix and finishes with 17 ledger rows, zero pending
   migrations and zero disposable test artifacts.
+- GitHub CI passed both checks for PR #17; Render automatically deployed merge commit `15c2da2` as
+  `dep-da697o3l550s73cd75bg`, and the public readiness plus hosted security smokes passed on the
+  exact HTTPS staging origin.
 
 ### Status
 

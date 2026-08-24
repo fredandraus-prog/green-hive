@@ -163,6 +163,11 @@ therefore `DONE`. GH-0204 is also `DONE`: its exact hosted security smoke and th
 authenticated matrix pass, cleanup removes all test-owned Auth/database data, and the one recovery
 message created by the final run was deleted from Mailtrap.
 
+GH-0401 merge commit `15c2da2` was automatically published as Render deploy
+`dep-da697o3l550s73cd75bg` in 51.5 seconds. The public liveness, database readiness, HTTPS/security
+headers, Reference App shell and guarded hosted-security smokes all passed. No manual deploy, plan
+change, infrastructure change or new browser accounting endpoint was involved.
+
 ## Rollback
 
 If the first deploy fails, do not change the database to make the process start. Inspect the
