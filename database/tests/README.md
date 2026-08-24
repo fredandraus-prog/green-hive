@@ -8,6 +8,8 @@ The matrix covers owner access, cross-user denial, cross-app denial, forged owne
 untrusted `user_metadata`, read-only administration, logical deletion, retained settings,
 reapplicable seed behavior, conflicting seed identity, paid capability grants, refund revocation,
 independent-purchase retention and server-authoritative `can()` decisions.
+It also covers GH-0401 exact-decimal budgets, separate logical usage and monetary cost events,
+idempotent/conflicting replay, debit/credit aggregation, server-only writes and cross-scope denial.
 
 `npm run db:test:supabase` is the supported local external gate. It requires host
 `127.0.0.1|localhost`, port `54322`, database `postgres`,
@@ -18,12 +20,18 @@ remains supported by `db:test:external`.
 
 `projects:test:supabase` exercises the compiled `@green-hive/projects` service against the same
 native RLS boundary. It inserts only the existing fixed fixtures, removes them in `finally` and
-leaves the sixteen-migration plus structural seed baseline intact.
+leaves the seventeen-migration plus structural seed baseline intact.
 
 `entitlements:test:supabase` exercises the compiled `@green-hive/entitlements` service against
 native RLS. It proves no grant while pending, two manifest-derived grants after payment, independent
 revocation across two purchases, cross-user/workspace/app denial, read-only admin inspection and
 cleanup ordering.
+
+`usage-cost:test:supabase` exercises the compiled `@green-hive/cost-guard` GH-0401 foundation. It
+proves exact-decimal persistence, idempotent budget/event replay, conflicting-key rejection,
+logical debit/credit aggregation, server-only writers, owner-hidden raw cost, read-only admin
+inspection, cross-user/workspace/app isolation and complete fixture cleanup. It does not test a
+reserve/consume/release decision because that behavior belongs to GH-0402.
 
 `auth:test:supabase` exercises real Supabase Auth against the loopback-only Auth service. It covers
 signup, login, profile bootstrap/update, Project Service access, cross-user denial, signed app

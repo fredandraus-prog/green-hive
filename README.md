@@ -15,18 +15,21 @@ transitions behind a trusted server-only boundary. Version `0.12.0` completes **
 Idempotent Webhooks)** with exact-body HMAC verification, replay protection, provider-event
 deduplication and authoritative reconciliation. Version `0.13.0` completes **GH-0304
 (Entitlements)** with payment-derived project capability grants and a server-authoritative
-`can()` decision.
+`can()` decision. Version `0.14.0` completes **GH-0401 (Usage/Cost Foundation)** with
+project-scoped exact-decimal budgets and separate append-only logical usage and monetary cost
+ledgers.
 
 The checkpoint is deliberately narrow. The only public Billing ingress is the verified fake-provider
-webhook used to prove the platform contract. Real payment-provider adapters, checkout UI, Cost
-Guard, AI, Search, Redis, remote storage and consumer-domain functionality remain out of scope.
+webhook used to prove the platform contract. The atomic GH-0402 Cost Guard decision service, real
+payment-provider adapters, checkout UI, AI, Search, Redis, remote storage and consumer-domain
+functionality remain out of scope.
 
 ## What this checkpoint contains
 
 - the 18 canonical `@green-hive/*` packages, `hive-reference-app` and `hive-admin`;
 - canonical `AppManifestV1`, validator, App Registry and complete `REFERENCE_APP` manifest;
 - schemas `hive`, `audit` and `reference_app`;
-- sixteen immutable migrations and a SHA-256 migration ledger;
+- seventeen immutable migrations and a SHA-256 migration ledger;
 - organizations, memberships and tenant app installations around the global app registry;
 - tenant-scoped `projects` and `project_settings`;
 - production-safe structural seeds containing only `REFERENCE_APP`, its manifest-registered
@@ -51,6 +54,10 @@ Guard, AI, Search, Redis, remote storage and consumer-domain functionality remai
   ledger and exact duplicate single-effect enforcement;
 - typed `@green-hive/entitlements` contracts, purchase-derived immutable grant snapshots and the
   server-authoritative `hive.can_project_capability(...)` decision;
+- typed `@green-hive/cost-guard` GH-0401 contracts with exact-decimal budgets, append-only usage and
+  cost evidence, idempotent server writers and logical debit/credit aggregation;
+- owner-limited budget/logical-usage reads, admin-only raw monetary-cost inspection and no
+  authenticated direct write authority;
 - a responsive React/Vite Reference App with signup, login, recovery, profile and project screens;
 - a loopback-only Fastify HTTP boundary with HttpOnly cookies, exact-origin CSRF checks, PKCE
   recovery, no-store responses and baseline security headers;
@@ -101,7 +108,7 @@ safeguards.
 
 ## Hosted staging workflow
 
-A dedicated Free-plan Supabase staging project is active in São Paulo. Its sixteen-migration database
+A dedicated Free-plan Supabase staging project is active in São Paulo. Its seventeen-migration database
 baseline, cross-organization RLS matrix, Project/Workspace Service and server-side Auth core have
 passed without changing the production
 candidate or the pre-existing Green Hive project:

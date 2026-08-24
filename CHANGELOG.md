@@ -7,6 +7,45 @@ semantic versioning.
 
 No unreleased changes.
 
+## [0.14.0] - 2026-08-24
+
+### Added
+
+- GH-0401 `@green-hive/cost-guard` Usage/Cost contracts, runtime validation, stable public errors,
+  PostgreSQL repository and server-side service integration.
+- Immutable migration `0017` with project-scoped exact-decimal budgets, separate append-only
+  logical usage and monetary cost event ledgers, composite foreign keys and bounded metadata.
+- Idempotent protected writers for budget configuration and accounting events, plus exact-decimal
+  debit/credit usage aggregation without converting values to JavaScript floating point.
+- Limited Reference App server reads for owner budgets, logical events and summaries, with no raw
+  monetary-cost endpoint.
+
+### Security
+
+- Organization, app, project and owner scope is derived from the trusted JWT/session and repeated
+  inside every privileged write function; payloads cannot provide those authority fields.
+- Authenticated clients have no direct write or function-execution grants. Owners can read their
+  budgets and logical usage only; raw monetary provider costs are visible only to read-only
+  platform administration.
+- Idempotency keys and request fingerprints are SHA-256 hashes, confidential metadata keys are
+  rejected, event rows are append-only and no physical delete policy exists.
+
+### Validation
+
+- 101 unit tests and 16 embedded database tests pass, including exact decimals, idempotent replay,
+  conflicting keys, debit/credit aggregation, cross-user/app/workspace denial and Audit minimization.
+- The native local Supabase gate applies/reapplies 17 migrations and three seeds, passes the new
+  five-scenario Usage/Cost matrix and restores a clean baseline.
+- Dedicated Supabase staging passes the same matrix and finishes with 17 ledger rows, zero pending
+  migrations and zero disposable test artifacts.
+
+### Status
+
+- GH-0401 is `DONE`; coordinated platform packages advance to `0.14.0` while the `REFERENCE_APP`
+  product manifest remains `0.1.0`.
+- GH-0402 remains not started. No atomic reserve/consume/release decision, budget denial, real
+  provider, Jobs, AI, Redis, remote Files or consumer-domain execution is included.
+
 ## [0.13.0] - 2026-08-24
 
 ### Added

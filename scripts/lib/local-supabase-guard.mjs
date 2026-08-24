@@ -155,8 +155,26 @@ export async function cleanupGreenHiveUserData(client, userIds) {
        to_regclass('hive.purchases')::text AS purchases,
        to_regclass('hive.payments')::text AS payments,
        to_regclass('hive.payment_provider_events')::text AS provider_events,
-       to_regclass('hive.project_entitlements')::text AS entitlements`,
+       to_regclass('hive.project_entitlements')::text AS entitlements,
+       to_regclass('hive.usage_budgets')::text AS usage_budgets,
+       to_regclass('hive.usage_events')::text AS usage_events,
+       to_regclass('hive.cost_events')::text AS cost_events`,
   );
+  if (billingTables.rows[0]?.cost_events === 'hive.cost_events') {
+    await client.query('DELETE FROM hive.cost_events WHERE owner_user_id = ANY($1::uuid[])', [
+      userIds,
+    ]);
+  }
+  if (billingTables.rows[0]?.usage_events === 'hive.usage_events') {
+    await client.query('DELETE FROM hive.usage_events WHERE owner_user_id = ANY($1::uuid[])', [
+      userIds,
+    ]);
+  }
+  if (billingTables.rows[0]?.usage_budgets === 'hive.usage_budgets') {
+    await client.query('DELETE FROM hive.usage_budgets WHERE owner_user_id = ANY($1::uuid[])', [
+      userIds,
+    ]);
+  }
   if (billingTables.rows[0]?.entitlements === 'hive.project_entitlements') {
     await client.query(
       'DELETE FROM hive.project_entitlements WHERE owner_user_id = ANY($1::uuid[])',

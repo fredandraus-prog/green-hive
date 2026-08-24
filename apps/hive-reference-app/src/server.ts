@@ -34,6 +34,13 @@ import {
   PostgresEntitlementRepository,
   type ProjectEntitlement,
 } from '@green-hive/entitlements';
+import {
+  PostgresUsageCostRepository,
+  UsageCostService,
+  type UsageBudget,
+  type UsageEvent,
+  type UsageSummary,
+} from '@green-hive/cost-guard';
 import { referenceAppManifest } from './manifest.js';
 
 export interface ReferenceAppCredentialsInput {
@@ -372,6 +379,45 @@ export class ReferenceAppServer {
     );
   }
 
+  async listProjectUsageBudgets(
+    accessToken: string,
+    organizationId: string,
+    projectId: string,
+  ): Promise<readonly UsageBudget[]> {
+    return this.#runInWorkspace(
+      accessToken,
+      organizationId,
+      ({ usageCostService, trustedContext }) =>
+        usageCostService.listBudgets(trustedContext, projectId),
+    );
+  }
+
+  async listProjectUsageEvents(
+    accessToken: string,
+    organizationId: string,
+    projectId: string,
+  ): Promise<readonly UsageEvent[]> {
+    return this.#runInWorkspace(
+      accessToken,
+      organizationId,
+      ({ usageCostService, trustedContext }) =>
+        usageCostService.listUsageEvents(trustedContext, projectId),
+    );
+  }
+
+  async summarizeProjectUsage(
+    accessToken: string,
+    organizationId: string,
+    projectId: string,
+  ): Promise<readonly UsageSummary[]> {
+    return this.#runInWorkspace(
+      accessToken,
+      organizationId,
+      ({ usageCostService, trustedContext }) =>
+        usageCostService.summarizeUsage(trustedContext, projectId),
+    );
+  }
+
   async #runWithoutWorkspace<Result>(
     accessToken: string,
     operation: (services: {
@@ -400,6 +446,7 @@ export class ReferenceAppServer {
       readonly auditService: AuditService;
       readonly entitlementService: EntitlementService;
       readonly projectService: ProjectService;
+      readonly usageCostService: UsageCostService;
       readonly workspaceService: WorkspaceService;
     }) => Promise<Result>,
   ): Promise<Result> {
@@ -412,6 +459,7 @@ export class ReferenceAppServer {
         auditService: new AuditService(new PostgresAuditEventRepository(database)),
         entitlementService: new EntitlementService(new PostgresEntitlementRepository(database)),
         projectService: new ProjectService(new PostgresProjectRepository(database)),
+        usageCostService: new UsageCostService(new PostgresUsageCostRepository(database)),
         workspaceService: new WorkspaceService(new PostgresWorkspaceRepository(database)),
       }),
     );

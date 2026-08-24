@@ -26,6 +26,9 @@
       ],
       "@green-hive/entitlements": [
         "packages/entitlements/src/index.ts"
+      ],
+      "@green-hive/cost-guard": [
+        "packages/cost-guard/src/index.ts"
       ]
     },
     "types": [

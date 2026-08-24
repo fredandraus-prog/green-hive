@@ -34,14 +34,23 @@ const packageDependencies = (name) => {
       '@supabase/supabase-js': '2.112.3',
     };
   }
-  if (name === 'projects' || name === 'billing' || name === 'entitlements') {
+  if (
+    name === 'projects'
+    || name === 'billing'
+    || name === 'entitlements'
+    || name === 'cost-guard'
+  ) {
     return { '@green-hive/core': platformVersion };
   }
   return undefined;
 };
 
 const packageReferences = (name) =>
-  name === 'auth' || name === 'projects' || name === 'billing' || name === 'entitlements'
+  name === 'auth'
+    || name === 'projects'
+    || name === 'billing'
+    || name === 'entitlements'
+    || name === 'cost-guard'
     ? [{ path: '../core' }]
     : [];
 
@@ -103,6 +112,7 @@ const apps = [
       '@green-hive/audit': platformVersion,
       '@green-hive/billing': platformVersion,
       '@green-hive/core': platformVersion,
+      '@green-hive/cost-guard': platformVersion,
       '@green-hive/entitlements': platformVersion,
       '@green-hive/projects': platformVersion,
       fastify: '5.12.1',
@@ -117,6 +127,7 @@ const apps = [
       { path: '../../packages/audit' },
       { path: '../../packages/billing' },
       { path: '../../packages/entitlements' },
+      { path: '../../packages/cost-guard' },
       { path: '../../packages/projects' },
     ],
   },
