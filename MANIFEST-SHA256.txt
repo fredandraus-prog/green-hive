@@ -16,7 +16,7 @@ a353953c81659b823863890fc6539a92b27e40fde397eaf22439b6ea41102072 | 3931 | apps/h
 c7f9099f2ffe85a5a423c599ba460fc8a22cec5657f458d94433dc2f42b31658 | 27748 | apps/hive-reference-app/src/http-server.ts
 9ac4db6af5b1de55ffa37378d1566c5f55747dbef6d435b2358e6283242b5462 | 276 | apps/hive-reference-app/src/index.ts
 845b8ab0537d1535fc97b0a4979a93ce763a1b139bb312465c2957e0396c5baf | 1011 | apps/hive-reference-app/src/manifest.ts
-a5dab82e0e59c92664a77514b746dc57a39b020eb23ee2fe86dd3d88042eab05 | 5839 | apps/hive-reference-app/src/readiness.ts
+9e260add988db899dbffa4ecfa058f520ba956051e7b72a881f943f1fd751ba5 | 6478 | apps/hive-reference-app/src/readiness.ts
 6a324fb535341df48d7e2b8105223d923484fdad0316f3b139e499129e70643a | 8441 | apps/hive-reference-app/src/runtime-config.ts
 1cd244688dde0103cf2883498fa5c2e444da56a09c86224fa62becb50d0bd572 | 8739 | apps/hive-reference-app/src/security-rate-limit.ts
 80989f3f1c238e0dc9f0ce9108789e535c2178bc5c8f3dda95b48c0187f3bed7 | 15184 | apps/hive-reference-app/src/server.ts
@@ -289,7 +289,7 @@ d9d27e3ba324be81a4833ab6f261b0d50c275ca991ea2c20673717e5928752e6 | 8758 | tests/
 dbe148b0aad0f7bdd7ffc5426ff1395d0fe992e2d7e376f82451fe3beea0d24e | 4693 | tests/unit/reference-app-frontend.test.mjs
 2cd2a6b7f944ce623e80f45f4a1a9a5407e7018d45fc55b2d4b5fab4e190e8fc | 19348 | tests/unit/reference-app-http.test.mjs
 68d0e2fbb27ab33242a527dbbde9d0de37905417c8e7451a740fc6707463fb80 | 676 | tests/unit/release-content.test.mjs
-c7ad3861ce8c345a11b5da6ca971fd0b0d5eb9ddbdc7eb501f36cee7fcf1bec1 | 5208 | tests/unit/runtime-config.test.mjs
+472cc544a3a5cdcc0e2e4282b242d11ab85c3cd493bab3db819388f8825eb0c8 | 5230 | tests/unit/runtime-config.test.mjs
 63ba6b439c52e2fd94e91ae994235b7811c3fc245e9e797f2d064fd74472f0fe | 8292 | tests/unit/security-rate-limit.test.mjs
 3c1101b2f419f90485844293a9acbb2d065c693fd112d2a8ea856d2790147249 | 3914 | tests/unit/staging-guard.test.mjs
 b4855e583d10f74ee2346a0394c3a911f78e15fc5d1d9ea3d2bfa51eb8fd1ce7 | 2431 | tests/unit/supabase-ca.test.mjs
