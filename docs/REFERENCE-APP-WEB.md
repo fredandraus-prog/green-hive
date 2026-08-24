@@ -2,12 +2,12 @@
 
 ## Purpose
 
-Platform version `0.11.0` retains the tenant-aware workspace, Audit and Security boundaries and
-adds the server-side GH-0302 sandbox Billing provider. The implementation follows the canonical
+Platform version `0.12.0` retains the tenant-aware workspace, Audit and Security boundaries and
+adds the server-side GH-0303 verified fake-provider webhook boundary. The implementation follows the canonical
 React + Vite direction and keeps privileged decisions in a Fastify server process.
 
 This is a platform validation shell, not the first commercial BeeGreen product. It exposes no
-checkout UI or public Billing endpoint. Real provider payments, AI, Redis, jobs, webhooks, remote
+checkout UI or end-user Billing screen. Real provider payments, AI, Redis, jobs, external provider adapters, remote
 storage and consumer-domain behavior remain absent.
 
 ## Runtime topology
@@ -66,6 +66,8 @@ HTTP routes:
 - `GET/POST /api/workspaces/members`;
 - `GET/POST /api/projects`;
 - `GET /api/audit`;
+- `POST /api/webhooks/payments/:provider` — exact-body provider-signed server ingress; no browser
+  session or Origin authority;
 - `GET /api/projects/:id`;
 - `POST /api/projects/:id/archive`;
 - `POST /api/projects/:id/delete`.

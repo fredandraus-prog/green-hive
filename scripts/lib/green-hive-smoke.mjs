@@ -72,6 +72,8 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ,'purchases_product_app_fk'
        ,'purchases_price_product_app_fk'
        ,'payments_purchase_scope_fk'
+       ,'payment_provider_events_purchase_fk'
+       ,'payment_provider_events_payment_purchase_fk'
      )
      ORDER BY conname`,
   );
@@ -81,6 +83,8 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     { conname: 'audit_events_project_scope_fk', target: 'hive.projects' },
     { conname: 'organization_apps_installer_membership_fk', target: 'hive.organization_members' },
     { conname: 'organization_members_user_fk', target: 'auth.users' },
+    { conname: 'payment_provider_events_payment_purchase_fk', target: 'hive.payments' },
+    { conname: 'payment_provider_events_purchase_fk', target: 'hive.purchases' },
     { conname: 'payments_purchase_scope_fk', target: 'hive.purchases' },
     { conname: 'prices_product_app_fk', target: 'hive.products' },
     { conname: 'products_app_fk', target: 'hive.apps' },
@@ -111,11 +115,12 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
          'prices',
          'purchases',
          'payments'
+         ,'payment_provider_events'
        ))
        OR (pg_namespace.nspname = 'audit' AND relname = 'events')
      ORDER BY schema_name, relname`,
   );
-  assert.equal(rls.rows.length, 13);
+  assert.equal(rls.rows.length, 14);
   assert.ok(rls.rows.every((entry) => entry.relrowsecurity));
 
   const helpers = await client.query(
@@ -144,9 +149,10 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ,'hive.apply_provider_payment_result(uuid,text,text,text,text)'
        ,'hive.apply_provider_refund(uuid,text,text)'
        ,'audit.capture_payment_transition()'
+       ,'hive.apply_verified_payment_webhook(text,text,text,uuid,text,text,text,text)'
      ]) AS names(name)`,
   );
-  assert.equal(helpers.rows.length, 23);
+  assert.equal(helpers.rows.length, 24);
   assert.ok(helpers.rows.every((entry) => entry.helper));
 
   const privileges = await client.query(
@@ -189,6 +195,11 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        has_column_privilege('authenticated', 'hive.payments', 'provider_payment_id', 'SELECT') AS provider_reference_select,
        has_column_privilege('authenticated', 'hive.payments', 'provider_refund_id', 'SELECT') AS provider_refund_select,
        has_column_privilege('authenticated', 'hive.payments', 'refunded_amount', 'SELECT') AS refunded_amount_select,
+       has_table_privilege(
+         'authenticated',
+         'hive.payment_provider_events',
+         'SELECT'
+       ) AS provider_event_select,
        has_function_privilege(
          'authenticated',
          'hive.create_pending_purchase(uuid,text,uuid,text)',
@@ -213,7 +224,17 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
          'service_role',
          'hive.apply_provider_refund(uuid,text,text)',
          'EXECUTE'
-       ) AS service_role_can_apply_refund`,
+       ) AS service_role_can_apply_refund,
+       has_function_privilege(
+         'authenticated',
+         'hive.apply_verified_payment_webhook(text,text,text,uuid,text,text,text,text)',
+         'EXECUTE'
+       ) AS authenticated_can_apply_webhook,
+       has_function_privilege(
+         'service_role',
+         'hive.apply_verified_payment_webhook(text,text,text,uuid,text,text,text,text)',
+         'EXECUTE'
+       ) AS service_role_can_apply_webhook`,
   );
   assert.deepEqual(billingPrivileges.rows[0], {
     catalog_select: true,
@@ -226,11 +247,14 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     provider_reference_select: false,
     provider_refund_select: false,
     refunded_amount_select: true,
+    provider_event_select: false,
     can_create_pending_purchase: true,
     authenticated_can_apply_payment: false,
     authenticated_can_apply_refund: false,
     service_role_can_apply_payment: true,
     service_role_can_apply_refund: true,
+    authenticated_can_apply_webhook: false,
+    service_role_can_apply_webhook: true,
   });
 
   const auditTriggers = await client.query(

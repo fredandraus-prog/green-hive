@@ -127,6 +127,15 @@
       "description": "Add provider-neutral payment and refund transitions for the deterministic sandbox adapter.",
       "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_COMMERCIAL_LEDGER_EXPORT_RESTORE",
       "rollbackStrategy": "Prefer a forward fix; export and verify purchases, payments and payment audit events before any controlled restoration."
+    },
+    {
+      "version": 15,
+      "file": "0015_create_verified_payment_webhooks.sql",
+      "sha256": "5caa2ec9de41c1a7e6ffb49e14671bf3b8329a3a76bbd90778a49183b4435f96",
+      "checkpoint": "GH-0303",
+      "description": "Create verified idempotent payment webhook ingestion and provider-event reconciliation records.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_PROVIDER_EVENT_EXPORT_RESTORE",
+      "rollbackStrategy": "Prefer a forward fix; export and verify provider-event identities, payment state and payment audit events before any controlled restoration."
     }
   ]
 }

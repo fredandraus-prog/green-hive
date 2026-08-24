@@ -20,6 +20,9 @@
       ],
       "@green-hive/projects": [
         "packages/projects/src/index.ts"
+      ],
+      "@green-hive/billing": [
+        "packages/billing/src/index.ts"
       ]
     },
     "types": [

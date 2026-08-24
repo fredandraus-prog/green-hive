@@ -11,6 +11,7 @@ import {
   validateBillingId,
   validateCreatePurchaseInput,
   validateProviderPaymentResult,
+  validateProviderReconciliationResult,
   validateProviderRefundResult,
   validateProductCode,
   validateTrustedBillingContext,
@@ -123,6 +124,31 @@ export class BillingService {
     const result = validateProviderRefundResult(providerResult);
     return this.#execute(() =>
       this.#repository.applyRefundResult(trustedContext, validatedPurchaseId, result),
+    );
+  }
+
+  async reconcilePayment(context: TrustedAppContext, purchaseId: string): Promise<Purchase> {
+    const trustedContext = this.#ownerContext(context);
+    const validatedPurchaseId = validateBillingId(purchaseId);
+    const provider = this.#configuredProvider();
+    const purchase = await this.#findPurchase(trustedContext, validatedPurchaseId);
+    const providerResult = await this.#executeProvider(() =>
+      provider.reconcilePayment({
+        purchaseId: purchase.id,
+        paymentId: purchase.payment.id,
+        currentStatus: purchase.payment.status,
+        amount: purchase.payment.amount,
+        currency: purchase.payment.currency,
+      }),
+    );
+    const result = validateProviderReconciliationResult(providerResult);
+    if (result.status === 'REFUNDED') {
+      return this.#execute(() =>
+        this.#repository.applyRefundResult(trustedContext, validatedPurchaseId, result),
+      );
+    }
+    return this.#execute(() =>
+      this.#repository.applyPaymentResult(trustedContext, validatedPurchaseId, result),
     );
   }
 

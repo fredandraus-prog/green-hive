@@ -17,6 +17,7 @@ $linkedProjectPath = Join-Path $canonicalRepositoryRoot 'supabase\.temp\project-
 $secretPath = Join-Path $engineRoot '.secrets\green-hive-staging-db-password.dpapi'
 $publishableKeyPath = Join-Path $engineRoot '.secrets\green-hive-staging-publishable-key.dpapi'
 $serviceRoleKeyPath = Join-Path $engineRoot '.secrets\green-hive-staging-secret-key.dpapi'
+$webhookSecretPath = Join-Path $engineRoot '.secrets\green-hive-staging-webhook-secret.dpapi'
 $certificatePath = Join-Path $repositoryRoot 'config\supabase-root-2021-ca.crt'
 
 foreach ($requiredPath in @(
@@ -31,6 +32,10 @@ foreach ($requiredPath in @(
   if (-not (Test-Path -LiteralPath $requiredPath)) {
     throw "Required staging configuration is unavailable: $requiredPath"
   }
+}
+
+if ($Operation -eq 'hosted-acceptance' -and -not (Test-Path -LiteralPath $webhookSecretPath)) {
+  throw "Required hosted webhook secret is unavailable: $webhookSecretPath"
 }
 
 $configuration = Get-Content -LiteralPath $configurationPath -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -86,11 +91,13 @@ try {
     $env:GREEN_HIVE_SUPABASE_PUBLISHABLE_KEY = $publishableKey
     $env:GREEN_HIVE_SUPABASE_SERVICE_ROLE_KEY = $serviceRoleKey
     if ($Operation -eq 'hosted-acceptance') {
+      $webhookSecret = Unprotect-DpapiText $webhookSecretPath
       $env:GREEN_HIVE_STAGING_APP_ORIGIN = 'https://green-hive-staging.onrender.com'
       $env:GREEN_HIVE_SUPABASE_AUTH_URL = $configuration.authUrl
       $env:GREEN_HIVE_AUTH_RECOVERY_REDIRECT = 'https://green-hive-staging.onrender.com/auth/recovery'
       $env:GREEN_HIVE_HOSTED_APP_ORIGIN = 'https://green-hive-staging.onrender.com'
       $env:GREEN_HIVE_HOSTED_TEST_CONFIRM = 'CREATE_DISPOSABLE_HOSTED_FIXTURES'
+      $env:GREEN_HIVE_FAKE_WEBHOOK_SECRET = $webhookSecret
     }
     & npm run build --silent
     if ($LASTEXITCODE -eq 0) {
@@ -115,6 +122,9 @@ try {
     if ($LASTEXITCODE -eq 0) {
       & node --test --test-reporter=spec database/tests/billing-service.supabase.integration.test.mjs
     }
+    if ($LASTEXITCODE -eq 0) {
+      & node --test --test-reporter=spec database/tests/billing-webhook.supabase.integration.test.mjs
+    }
   } elseif ($Operation -eq 'apply') {
     & node (Join-Path $repositoryRoot 'scripts\staging-apply.mjs')
   } else {
@@ -128,7 +138,7 @@ try {
     [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($passwordPointer)
   }
   Remove-Variable plainPassword,databaseUrl,escapedPassword -ErrorAction SilentlyContinue
-  Remove-Variable publishableKey,serviceRoleKey -ErrorAction SilentlyContinue
+  Remove-Variable publishableKey,serviceRoleKey,webhookSecret -ErrorAction SilentlyContinue
   Remove-Item Env:GREEN_HIVE_STAGING_PROJECT_REF -ErrorAction SilentlyContinue
   Remove-Item Env:GREEN_HIVE_STAGING_PROJECT_NAME -ErrorAction SilentlyContinue
   Remove-Item Env:GREEN_HIVE_STAGING_REGION -ErrorAction SilentlyContinue
@@ -143,6 +153,7 @@ try {
   Remove-Item Env:GREEN_HIVE_SUPABASE_AUTH_URL -ErrorAction SilentlyContinue
   Remove-Item Env:GREEN_HIVE_SUPABASE_PUBLISHABLE_KEY -ErrorAction SilentlyContinue
   Remove-Item Env:GREEN_HIVE_SUPABASE_SERVICE_ROLE_KEY -ErrorAction SilentlyContinue
+  Remove-Item Env:GREEN_HIVE_FAKE_WEBHOOK_SECRET -ErrorAction SilentlyContinue
   Remove-Item Env:GREEN_HIVE_STAGING_APP_ORIGIN -ErrorAction SilentlyContinue
   Remove-Item Env:GREEN_HIVE_AUTH_RECOVERY_REDIRECT -ErrorAction SilentlyContinue
   Remove-Item Env:GREEN_HIVE_HOSTED_APP_ORIGIN -ErrorAction SilentlyContinue

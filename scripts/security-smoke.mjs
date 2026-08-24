@@ -6,6 +6,7 @@ const textExtensions = new Set(['.css', '.html', '.js', '.map']);
 const forbidden = Object.freeze([
   ['database URL', /(?:DATABASE_URL|postgres(?:ql)?:\/\/)/i],
   ['service-role environment name', /GREEN_HIVE_SUPABASE_SERVICE_ROLE_KEY/i],
+  ['webhook secret environment name', /GREEN_HIVE_FAKE_WEBHOOK_SECRET/i],
   ['Supabase secret key', /(?:sb_secret_|service_role)/i],
   ['server certificate path', /supabase-root-2021-ca\.crt/i],
 ]);

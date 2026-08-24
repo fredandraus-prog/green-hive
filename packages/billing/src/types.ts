@@ -120,14 +120,87 @@ export interface ProviderRefundResult {
   readonly providerRefundId: string;
 }
 
+export interface ProviderReconciliationRequest {
+  readonly purchaseId: string;
+  readonly paymentId: string;
+  readonly currentStatus: PaymentStatus;
+  /** Exact decimal string; providers must not convert it to a JS float. */
+  readonly amount: string;
+  readonly currency: string;
+}
+
+export type ProviderReconciliationResult = ProviderPaymentResult | ProviderRefundResult;
+
 export interface BillingProvider {
   processPayment(request: ProviderPaymentRequest): Promise<ProviderPaymentResult>;
   refundPayment(request: ProviderRefundRequest): Promise<ProviderRefundResult>;
+  reconcilePayment(request: ProviderReconciliationRequest): Promise<ProviderReconciliationResult>;
 }
 
 export interface FakeBillingProviderOptions {
   readonly paymentOutcome?: SandboxPaymentOutcome;
   readonly failureCode?: string;
+  readonly reconciliationOutcome?: 'SUCCESS' | 'FAILURE' | 'REFUND';
+}
+
+export const BILLING_WEBHOOK_EVENT_TYPES = [
+  'PAYMENT_PAID',
+  'PAYMENT_FAILED',
+  'PAYMENT_REFUNDED',
+] as const;
+export type BillingWebhookEventType = (typeof BILLING_WEBHOOK_EVENT_TYPES)[number];
+
+export interface ProviderWebhookVerificationRequest {
+  readonly rawBody: Uint8Array;
+  readonly signature: string;
+}
+
+export interface VerifiedProviderWebhookEvent {
+  readonly providerCode: string;
+  readonly providerEventId: string;
+  readonly eventType: BillingWebhookEventType;
+  readonly purchaseId: string;
+  readonly providerPaymentId: string;
+  readonly providerRefundId: string | null;
+  readonly failureCode: string | null;
+}
+
+export interface BillingWebhookVerifier {
+  readonly providerCode: string;
+  verify(
+    request: ProviderWebhookVerificationRequest,
+  ): Promise<VerifiedProviderWebhookEvent>;
+}
+
+export interface FakeBillingWebhookVerifierOptions {
+  readonly secret: string | Uint8Array;
+  readonly now?: () => number;
+  readonly toleranceSeconds?: number;
+}
+
+export const BILLING_WEBHOOK_EFFECTS = [
+  'PAYMENT_CONFIRMED',
+  'PAYMENT_FAILED',
+  'PAYMENT_REFUNDED',
+  'NO_CHANGE',
+] as const;
+export type BillingWebhookEffect = (typeof BILLING_WEBHOOK_EFFECTS)[number];
+
+export interface BillingWebhookProcessingResult {
+  readonly eventRecordId: string;
+  readonly providerEventId: string;
+  readonly purchaseId: string;
+  readonly paymentId: string;
+  readonly effect: BillingWebhookEffect;
+  readonly duplicate: boolean;
+  readonly deliveryCount: number;
+}
+
+export interface BillingWebhookRepository {
+  applyVerifiedEvent(
+    event: VerifiedProviderWebhookEvent,
+    payloadSha256: string,
+  ): Promise<BillingWebhookProcessingResult>;
 }
 
 export interface Purchase {

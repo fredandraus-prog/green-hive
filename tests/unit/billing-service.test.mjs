@@ -421,6 +421,45 @@ test('Billing Service applies sandbox success and full refund idempotently', asy
   assert.equal((await service.refundPayment(contextA, pending.id)).payment.status, 'REFUNDED');
 });
 
+test('provider reconciliation applies authoritative success, failure and refund states', async () => {
+  const repository = new FakeBillingRepository();
+  const create = async (key) => new BillingService(repository).createPurchase(contextA, {
+    projectId: PROJECT_A_ID,
+    productCode: 'REFERENCE_APP_SANDBOX',
+    priceId: PRICE_ID,
+    idempotencyKey: key,
+  });
+
+  const successPurchase = await create('purchase-reconciliation-success-0001');
+  const confirmed = await new BillingService(
+    repository,
+    new FakeBillingProvider({ reconciliationOutcome: 'SUCCESS' }),
+  ).reconcilePayment(contextA, successPurchase.id);
+  assert.equal(confirmed.status, 'CONFIRMED');
+  assert.equal(confirmed.payment.status, 'PAID');
+
+  const failedPurchase = await create('purchase-reconciliation-failure-0001');
+  const failed = await new BillingService(
+    repository,
+    new FakeBillingProvider({ reconciliationOutcome: 'FAILURE' }),
+  ).reconcilePayment(contextA, failedPurchase.id);
+  assert.equal(failed.status, 'CANCELED');
+  assert.equal(failed.payment.status, 'FAILED');
+
+  const refundPurchase = await create('purchase-reconciliation-refund-0001');
+  const paidService = new BillingService(
+    repository,
+    new FakeBillingProvider({ paymentOutcome: 'SUCCESS' }),
+  );
+  await paidService.processPayment(contextA, refundPurchase.id);
+  const refunded = await new BillingService(
+    repository,
+    new FakeBillingProvider({ reconciliationOutcome: 'REFUND' }),
+  ).reconcilePayment(contextA, refundPurchase.id);
+  assert.equal(refunded.status, 'CONFIRMED');
+  assert.equal(refunded.payment.status, 'REFUNDED');
+});
+
 test('sandbox failure is server-configured and cannot be overridden by caller input', async () => {
   const repository = new FakeBillingRepository();
   const service = new BillingService(

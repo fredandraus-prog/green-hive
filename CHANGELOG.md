@@ -7,6 +7,43 @@ semantic versioning.
 
 No unreleased changes.
 
+## [0.12.0] - 2026-08-23
+
+### Added
+
+- GH-0303 provider-neutral webhook verification/processing contracts, exact-body HMAC fake-provider
+  adapter and a dedicated `POST /api/webhooks/payments/{provider}` server-to-server endpoint.
+- Immutable migration `0015` with a minimal provider-event identity ledger and the locked,
+  server-only `hive.apply_verified_payment_webhook(...)` transition.
+- Provider-authoritative `BillingService.reconcilePayment(...)` and deterministic sandbox
+  reconciliation outcomes for paid, failed and fully refunded state.
+
+### Security
+
+- Signatures are compared in constant time over the exact raw body and bounded provider timestamp;
+  unsigned, malformed, tampered and replayed deliveries fail before state mutation.
+- Exact duplicates increment only a delivery counter. Reuse of one provider event ID with different
+  content or scope fails closed, including concurrent native PostgreSQL delivery.
+- Raw webhook bodies and signatures are never stored. The SHA-256 digest and minimal normalized
+  references are server-only under forced RLS with no authenticated policy or function execution.
+- The webhook path does not trust browser Origin, cookies, caller app/workspace fields or
+  `user_metadata`; all other mutating browser routes retain exact-origin CSRF enforcement.
+
+### Validation
+
+- 92 unit tests and 14 embedded database tests pass, including signature tampering/replay, strict
+  payload shapes, exact/conflicting retries, paid/failed/refunded state and single Audit effects.
+- The native local Supabase gate applies all 15 migrations twice safely, passes a concurrent
+  duplicate webhook matrix and restores a clean seeded baseline with zero test fixtures.
+- The dedicated Supabase staging matrix passes migration `0015`, RLS/grants, verified webhook
+  concurrency and cleanup; the published HTTPS endpoint/readiness gate is covered separately.
+
+### Status
+
+- GH-0303 is `DONE`; coordinated platform packages advance to `0.12.0` while the `REFERENCE_APP`
+  product manifest remains `0.1.0`.
+- GH-0304 Entitlements is not started. Billing commercial state still grants no capability.
+
 ## [0.11.0] - 2026-08-23
 
 ### Added

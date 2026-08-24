@@ -20,12 +20,13 @@ Status date: 2026-08-23.
 | GH-0259 | DONE | stable organization/app-installation ownership identities created without implementing Billing | none |
 | GH-0301 | DONE | app catalog, exact-decimal price versions, tenant purchase/payment snapshots, transactional pending creation, Audit and embedded/native Supabase service/RLS gates | none |
 | GH-0302 | DONE | deterministic network-free provider, server-only success/failure/full-refund transitions, safe Audit and embedded/local/staging Supabase gates | none |
-| GH-0303+ | NOT_STARTED | verified webhooks, reconciliation and Entitlements remain outside this release | implement signed, idempotent webhook processing next |
+| GH-0303 | DONE | exact-body HMAC verification, replay rejection, provider-event uniqueness, concurrent duplicate single effect, reconciliation and embedded/local/staging gates | none |
+| GH-0304+ | NOT_STARTED | Entitlements and later checkpoints remain outside this release | implement the reviewed Entitlement boundary next |
 
 The local Supabase parity gate passed on PostgreSQL 17.6 with native `auth.users`, `auth.uid()` and
-`auth.jwt()`. The dedicated hosted staging project also passes the fourteen-migration baseline,
+`auth.jwt()`. The dedicated hosted staging project also passes the fifteen-migration baseline,
 RLS, Project/Workspace/Billing Services and server-side Auth/account matrices. Hosted test users
-and rows are removed after each run, leaving fourteen ledger records and the structural
+and rows are removed after each run, leaving fifteen ledger records and the structural
 `REFERENCE_APP` plus sandbox catalog seeds.
 
 The Reference App has a responsive React/Vite shell and a Fastify HTTP adapter. Tokens remain
@@ -41,7 +42,9 @@ repository.
 GH-0301/GH-0302 provide provider-neutral commercial foundations and a deterministic sandbox
 adapter. Owners can request an idempotent pending purchase; the trusted backend can then apply one
 configured success/failure result and a full refund. Authenticated users cannot select that result,
-execute the transition functions or read provider references. Billing still grants no Entitlement.
+execute the transition functions or read provider references. GH-0303 verifies exact webhook bytes,
+deduplicates provider events under lock and provides authoritative provider reconciliation without
+storing raw payloads or signatures. Billing still grants no Entitlement.
 
 The private GitHub repository now deploys `main` through the CI-gated Render Blueprint. The Free
 service `green-hive-staging` is live at the exact HTTPS origin, database-backed readiness and the

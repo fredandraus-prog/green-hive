@@ -7,6 +7,7 @@ import Fastify, {
 } from 'fastify';
 import { AuthError, type AuthSession } from '@green-hive/auth';
 import { AuditError } from '@green-hive/audit';
+import { BillingError, type BillingWebhookService } from '@green-hive/billing';
 import {
   ProjectError,
   WorkspaceError,
@@ -86,6 +87,11 @@ export interface ReferenceAppHttpServerOptions {
   readonly webRoot?: string;
   readonly logger?: boolean;
   readonly rateLimit?: ReferenceAppRateLimitOptions;
+  readonly billingWebhookService?: Pick<BillingWebhookService, 'process'>;
+}
+
+function isBillingWebhookRequest(method: string, url: string): boolean {
+  return method === 'POST' && /^\/api\/webhooks\/payments\/[^/?]+(?:\?.*)?$/.test(url);
 }
 
 function exactObject(
@@ -248,6 +254,19 @@ function publicError(error: unknown): { status: number; code: string; message: s
         : 503;
     return { status, code: error.code, message: error.message };
   }
+  if (error instanceof BillingError) {
+    const status = error.code === 'INVALID_BILLING_WEBHOOK_INPUT'
+      ? 400
+      : error.code === 'BILLING_WEBHOOK_SIGNATURE_INVALID'
+        ? 401
+        : error.code === 'BILLING_WEBHOOK_PROVIDER_UNSUPPORTED'
+          ? 404
+          : error.code === 'BILLING_WEBHOOK_IDEMPOTENCY_CONFLICT'
+              || error.code === 'INVALID_PAYMENT_TRANSITION'
+            ? 409
+            : 503;
+    return { status, code: error.code, message: error.message };
+  }
   return { status: 500, code: 'INTERNAL_ERROR', message: 'Request could not be completed' };
 }
 
@@ -256,11 +275,31 @@ export async function createReferenceAppHttpServer(
 ): Promise<FastifyInstance> {
   const allowedOrigin = new URL(options.allowedOrigin).origin;
   const rateLimiter = new ReferenceAppRateLimiter(options.rateLimit);
+  const rawJsonBodies = new WeakMap<FastifyRequest, Uint8Array>();
   const application = Fastify({
     logger: options.logger ?? false,
     bodyLimit: 32 * 1024,
     trustProxy: false,
   });
+  application.removeContentTypeParser('application/json');
+  application.addContentTypeParser(
+    'application/json',
+    { parseAs: 'buffer' },
+    (request, body, done) => {
+      const rawBody = Buffer.isBuffer(body) ? body : Buffer.from(body);
+      rawJsonBodies.set(request, rawBody);
+      try {
+        done(null, JSON.parse(rawBody.toString('utf8')));
+      } catch {
+        done(
+          isBillingWebhookRequest(request.method, request.url)
+            ? new BillingError('INVALID_BILLING_WEBHOOK_INPUT')
+            : new AuthError('INVALID_AUTH_INPUT'),
+          undefined,
+        );
+      }
+    },
+  );
   await application.register(cookie);
 
   application.addHook('onRequest', async (request, reply) => {
@@ -285,7 +324,10 @@ export async function createReferenceAppHttpServer(
       reply.header('Pragma', 'no-cache');
     }
     if (request.url.startsWith('/api/') && MUTATING_METHODS.has(request.method)) {
-      if (request.headers.origin !== allowedOrigin) {
+      if (
+        !isBillingWebhookRequest(request.method, request.url) &&
+        request.headers.origin !== allowedOrigin
+      ) {
         throw new AuthError('INVALID_AUTH_INPUT');
       }
       if (!request.headers['content-type']?.toLowerCase().startsWith('application/json')) {
@@ -320,6 +362,26 @@ export async function createReferenceAppHttpServer(
       return reply.code(503).send({ status: 'not_ready', app: 'REFERENCE_APP' });
     }
   });
+
+  application.post<{ Params: { provider: string } }>(
+    '/api/webhooks/payments/:provider',
+    async (request, reply) => {
+      if (!options.billingWebhookService) {
+        throw new BillingError('BILLING_WEBHOOK_PROCESSING_FAILED');
+      }
+      const signature = request.headers['x-green-hive-signature'];
+      if (typeof signature !== 'string') {
+        throw new BillingError('BILLING_WEBHOOK_SIGNATURE_INVALID');
+      }
+      const rawBody = rawJsonBodies.get(request);
+      if (!rawBody) throw new BillingError('INVALID_BILLING_WEBHOOK_INPUT');
+      const result = await options.billingWebhookService.process(request.params.provider, {
+        signature,
+        rawBody,
+      });
+      return reply.code(202).send({ status: 'accepted', duplicate: result.duplicate });
+    },
+  );
 
   application.post('/api/auth/sign-up', async (request, reply) => {
     const body = exactObject(request.body, SIGN_UP_BODY_KEYS, new AuthError('INVALID_AUTH_INPUT'));

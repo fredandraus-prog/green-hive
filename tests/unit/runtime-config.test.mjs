@@ -17,6 +17,7 @@ const hostedEnvironment = Object.freeze({
   GREEN_HIVE_SUPABASE_AUTH_URL: `https://${projectRef}.supabase.co/auth/v1`,
   GREEN_HIVE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_example_value',
   GREEN_HIVE_SUPABASE_SERVICE_ROLE_KEY: 'sb_example_server_only_value',
+  GREEN_HIVE_FAKE_WEBHOOK_SECRET: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
   GREEN_HIVE_AUTH_RECOVERY_REDIRECT:
     'https://green-hive-staging.onrender.com/auth/recovery',
   GREEN_HIVE_STAGING_PROJECT_REF: projectRef,
@@ -64,6 +65,7 @@ test('local runtime remains restricted to the canonical loopback preview', () =>
     GREEN_HIVE_SUPABASE_AUTH_URL: 'http://127.0.0.1:54321',
     GREEN_HIVE_SUPABASE_PUBLISHABLE_KEY: 'local-publishable',
     GREEN_HIVE_SUPABASE_SERVICE_ROLE_KEY: 'local-server-only',
+    GREEN_HIVE_FAKE_WEBHOOK_SECRET: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
     GREEN_HIVE_AUTH_RECOVERY_REDIRECT: 'http://127.0.0.1:3000/auth/recovery',
     GREEN_HIVE_HTTP_LOGS: 'false',
   };
@@ -83,8 +85,8 @@ test('local runtime remains restricted to the canonical loopback preview', () =>
 
 test('readiness requires the full migration, seed and helper contract', async () => {
   const readyState = {
-    migration_count: 14,
-    migration_version: 14,
+    migration_count: 15,
+    migration_version: 15,
     reference_app_count: 1,
     reference_product_count: 1,
     reference_price_count: 1,
@@ -94,6 +96,7 @@ test('readiness requires the full migration, seed and helper contract', async ()
     billing_purchase_ready: true,
     billing_function_ready: true,
     billing_provider_ready: true,
+    billing_webhook_ready: true,
     app_helper_ready: true,
     organization_helper_ready: true,
   };

@@ -21,5 +21,5 @@ GH-0258,"Shared Workspace",DONE,PASS,"Typed shared workspace creation selection 
 GH-0259,"Billing ownership preparation",DONE,PASS,"Stable organization and app-installation ownership identities without Billing behavior","Begin Billing only after remaining GH-2 gates or explicit reprioritization"
 GH-0301,"Billing Foundation",DONE,PASS,"Migrations 0012/0013 app catalog exact-decimal prices tenant purchase/payment snapshots hashed idempotency transactional pending creation Audit and embedded/local/staging service plus RLS matrices","None"
 GH-0302,"Fake/sandbox payment provider adapter",DONE,PASS,"Migration 0014 deterministic network-free provider trusted success failure full-refund transitions safe Audit and embedded/local/staging Supabase matrices","None"
-GH-0303,"Verified idempotent webhook processing",NOT_STARTED,NOT_RUN,"Outside platform 0.11.0","Signed provider webhook verification duplicate-event single effect and reconciliation"
-GH-0304,"Entitlement schema and can service",NOT_STARTED,NOT_RUN,"Outside platform 0.11.0","Derive capabilities separately from Billing commercial truth"
+GH-0303,"Verified idempotent webhook processing",DONE,PASS,"Migration 0015 exact-body HMAC verification replay rejection provider-event uniqueness concurrent duplicate single effect minimal retention reconciliation and embedded/local/staging Supabase matrices","None"
+GH-0304,"Entitlement schema and can service",NOT_STARTED,NOT_RUN,"Outside platform 0.12.0","Derive capabilities separately from Billing commercial truth"

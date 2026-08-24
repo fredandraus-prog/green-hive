@@ -24,6 +24,7 @@ test('Render Blueprint is a guarded web service without automatic database mutat
     'DATABASE_URL',
     'GREEN_HIVE_SUPABASE_PUBLISHABLE_KEY',
     'GREEN_HIVE_SUPABASE_SERVICE_ROLE_KEY',
+    'GREEN_HIVE_FAKE_WEBHOOK_SECRET',
   ]) {
     assert.match(blueprint, new RegExp(`key: ${key}\\n        sync: false`));
   }
@@ -59,11 +60,15 @@ test('hosted acceptance is exact-target, loopback-mediated and cleanup guarded',
   assert.match(acceptance, /server\.listen\(0, '127\.0\.0\.1'/);
   assert.match(acceptance, /cleanupGreenHiveUserData/);
   assert.match(acceptance, /admin\.admin\.deleteUser/);
+  assert.match(acceptance, /X-Green-Hive-Signature|x-green-hive-signature/);
+  assert.match(acceptance, /BILLING_WEBHOOK_SIGNATURE_INVALID/);
+  assert.match(acceptance, /verifiedWebhookSingleEffect: 'PASS'/);
   assert.match(acceptance, /finally \{\n  await cleanupFixtures\(\)/);
   assert.doesNotMatch(acceptance, /console\.log\([^\n]*(recoveryUrl|serviceRoleKey|databaseUrl)/);
 
   assert.match(wrapper, /rev-parse --path-format=absolute --git-common-dir/);
   assert.match(wrapper, /green-hive-staging-secret-key\.dpapi/);
+  assert.match(wrapper, /green-hive-staging-webhook-secret\.dpapi/);
   assert.match(wrapper, /Remove-Item Env:GREEN_HIVE_HOSTED_TEST_CONFIRM/);
 });
 
@@ -88,5 +93,6 @@ test('hosted security smoke is exact-target and exercises bounded Auth abuse wit
   assert.doesNotMatch(smoke, /DATABASE_URL|SERVICE_ROLE|serviceRole|admin\.deleteUser/);
   assert.match(bundleSmoke, /SECURITY_BUNDLE_SMOKE_PASS/);
   assert.match(bundleSmoke, /GREEN_HIVE_SUPABASE_SERVICE_ROLE_KEY/);
+  assert.match(bundleSmoke, /GREEN_HIVE_FAKE_WEBHOOK_SECRET/);
   assert.match(packageJson.scripts.verify, /npm run security:smoke$/);
 });

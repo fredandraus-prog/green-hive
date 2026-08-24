@@ -30,7 +30,8 @@ npm run supabase:stop
 The external gate validates Docker/Supabase health, runs `db:validate`, migrates an empty managed
 state, reapplies the migrator, seeds twice, runs the native RLS matrix and ledger-drift tests,
 cleans only test-owned objects, restores migrations and the `REFERENCE_APP` seed, and runs the
-GH-0104 Project/Workspace Service, GH-0203 Audit and GH-0302 sandbox Billing integration matrices.
+GH-0104 Project/Workspace Service, GH-0203 Audit, GH-0302 sandbox Billing and GH-0303 verified
+webhook/reconciliation integration matrices.
 The Billing matrix proves authenticated clients cannot apply provider results while the trusted
 backend supports idempotent success, failure and full refund.
 

@@ -21,6 +21,7 @@ const requiredHiveTables = [
   'prices',
   'purchases',
   'payments',
+  'payment_provider_events',
 ];
 const requiredAuditTables = ['events'];
 const forceRlsTables = [
@@ -35,6 +36,7 @@ const forceRlsTables = [
   'prices',
   'purchases',
   'payments',
+  'payment_provider_events',
 ];
 const expectedPolicies = new Map([
   ['apps', ['apps_admin_select']],
@@ -94,6 +96,7 @@ const expectedPolicies = new Map([
   ['prices', ['prices_catalog_select']],
   ['purchases', ['purchases_owner_select']],
   ['payments', ['payments_owner_limited_select']],
+  ['payment_provider_events', []],
 ]);
 const forbiddenHiveDomainTerms = [
   'break_even',
@@ -316,6 +319,8 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'hive.apply_provider_refund',
     'audit.capture_payment_transition',
     'audit_payments_after_transition',
+    'hive.apply_verified_payment_webhook',
+    'payment_provider_events',
     'PAYMENT_FAILED',
   ];
   for (const marker of requiredContextMarkers) {
@@ -339,7 +344,13 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
   if (/GRANT\s+[\s\S]{0,100}\bDELETE\b[\s\S]{0,100}\bTO\s+authenticated\b/i.test(allSql)) {
     errors.push('authenticated must not receive physical DELETE privileges');
   }
-  for (const billingTable of ['products', 'prices', 'purchases', 'payments']) {
+  for (const billingTable of [
+    'products',
+    'prices',
+    'purchases',
+    'payments',
+    'payment_provider_events',
+  ]) {
     if (new RegExp(`GRANT\\s+[\\s\\S]{0,120}\\b(INSERT|UPDATE|DELETE)\\b[\\s\\S]{0,120}ON\\s+hive\\.${billingTable}\\b[\\s\\S]{0,80}TO\\s+authenticated\\b`, 'i').test(allSql)) {
       errors.push(`authenticated must not receive direct write privileges on hive.${billingTable}`);
     }
@@ -354,12 +365,15 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'REVOKE ALL ON FUNCTION hive.create_pending_purchase(uuid, text, uuid, text) FROM PUBLIC',
     'provider_refund_id text',
     'refunded_amount numeric(20, 6)',
+    'payload_sha256 text',
+    "event_type IN ('PAYMENT_PAID', 'PAYMENT_FAILED', 'PAYMENT_REFUNDED')",
   ]) {
     if (!allSql.includes(billingMarker)) errors.push(`billing contract is missing marker: ${billingMarker}`);
   }
   for (const protectedFunction of [
     'hive.apply_provider_payment_result\\(uuid, text, text, text, text\\)',
     'hive.apply_provider_refund\\(uuid, text, text\\)',
+    'hive.apply_verified_payment_webhook\\(\\s*text,\\s*text,\\s*text,\\s*uuid,\\s*text,\\s*text,\\s*text,\\s*text\\s*\\)',
   ]) {
     const revokePattern = new RegExp(
       `REVOKE\\s+ALL\\s+ON\\s+FUNCTION\\s+${protectedFunction}\\s+FROM\\s+(PUBLIC|authenticated)`,
@@ -371,6 +385,9 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
   }
   if (/\b(card_number|cardholder|cvv|cvc|full_card)\b\s+(text|varchar|character|jsonb?|bytea)\b/i.test(allSql)) {
     errors.push('payment-card data leaked into Green Hive migrations');
+  }
+  if (/payment_provider_events[\s\S]{0,2400}\b(raw_payload|raw_body|signature)\b\s+(text|jsonb?|bytea)\b/i.test(allSql)) {
+    errors.push('verified webhook storage must not retain raw payloads or provider signatures');
   }
   for (const requiredMarker of [
     'app_code text',
