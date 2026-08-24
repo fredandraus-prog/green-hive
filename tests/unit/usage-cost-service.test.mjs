@@ -241,5 +241,5 @@ test('Usage/Cost errors stay stable and storage details never escape', async () 
   ]);
   assert.deepEqual(USAGE_MEASUREMENT_KINDS, ['USAGE', 'COST']);
   assert.deepEqual(ACCOUNTING_EVENT_KINDS, ['DEBIT', 'CREDIT']);
-  assert.equal(COST_GUARD_STATUS, 'FOUNDATION_ONLY');
+  assert.equal(COST_GUARD_STATUS, 'ATOMIC_RESERVATIONS');
 });

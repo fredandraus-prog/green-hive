@@ -19,6 +19,7 @@ The published sequence is immutable:
 15. verified provider-event identities, idempotent webhook application and forced-RLS retention.
 16. product capability mappings, project entitlement snapshots and the authoritative `can` helper.
 17. project-scoped budgets plus separate append-only logical usage and monetary cost ledgers.
+18. entitlement-aware atomic cost decisions, reservations, consumption and release.
 
 Files `0001` through `0006` remain byte-for-byte unchanged. GH-0250 is expressed only through the
 next-numbered migrations `0007` through `0010`. GH-0203 is expressed only through migration
@@ -32,7 +33,9 @@ unchanged.
 GH-0304 is expressed only through migration `0016`; migrations `0001` through `0015` remain
 unchanged.
 GH-0401 is expressed only through migration `0017`; migrations `0001` through `0016` remain
-unchanged. It does not implement the GH-0402 reserve/consume/release decision service.
+unchanged.
+GH-0402 is expressed only through migration `0018`; migrations `0001` through `0017` remain
+unchanged. Consumption reconciles one cost event inside the same transaction.
 
 Every SQL file begins with parseable migration ID, checkpoint, description and rollback strategy
 metadata. `migrations.json` stores the same description and strategy plus the immutable SHA-256.

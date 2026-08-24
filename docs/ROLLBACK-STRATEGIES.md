@@ -22,6 +22,7 @@ Once real data exists, a reviewed forward correction is normally safer.
 | `0015` | forward-fix verified-event constraints/function | export and verify provider-event identities, payment state and payment Audit events before restoration |
 | `0016` | forward-fix entitlement mappings/grants/functions | export and verify mappings, purchase grant snapshots and Entitlement Audit events before restoration |
 | `0017` | forward-fix Usage/Cost schema and protected writers | export and verify budgets, both accounting ledgers and budget Audit evidence before restoration |
+| `0018` | forward-fix Cost Guard decisions/reservations/functions | export and reconcile decisions, reservations, budgets, cost events and Cost Guard Audit evidence before restoration |
 
 If a ledger checksum, filename or rollback description differs, deployment stops. Never edit the
 ledger to hide drift. Restore the canonical migration or introduce a reviewed next-numbered

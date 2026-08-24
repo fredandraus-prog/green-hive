@@ -96,6 +96,13 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ,'usage_events_budget_scope_fk'
        ,'cost_events_project_scope_fk'
        ,'cost_events_budget_scope_fk'
+       ,'cost_guard_decisions_project_scope_fk'
+       ,'cost_guard_decisions_budget_scope_fk'
+       ,'cost_guard_decisions_reservation_fk'
+       ,'cost_guard_reservations_project_scope_fk'
+       ,'cost_guard_reservations_budget_scope_fk'
+       ,'cost_guard_reservations_decision_fk'
+       ,'cost_guard_reservations_cost_event_fk'
      )
      ORDER BY conname`,
   );
@@ -105,6 +112,13 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     { conname: 'audit_events_project_scope_fk', target: 'hive.projects' },
     { conname: 'cost_events_budget_scope_fk', target: 'hive.usage_budgets' },
     { conname: 'cost_events_project_scope_fk', target: 'hive.projects' },
+    { conname: 'cost_guard_decisions_budget_scope_fk', target: 'hive.usage_budgets' },
+    { conname: 'cost_guard_decisions_project_scope_fk', target: 'hive.projects' },
+    { conname: 'cost_guard_decisions_reservation_fk', target: 'hive.cost_guard_reservations' },
+    { conname: 'cost_guard_reservations_budget_scope_fk', target: 'hive.usage_budgets' },
+    { conname: 'cost_guard_reservations_cost_event_fk', target: 'hive.cost_events' },
+    { conname: 'cost_guard_reservations_decision_fk', target: 'hive.cost_guard_decisions' },
+    { conname: 'cost_guard_reservations_project_scope_fk', target: 'hive.projects' },
     { conname: 'organization_apps_installer_membership_fk', target: 'hive.organization_members' },
     { conname: 'organization_members_user_fk', target: 'auth.users' },
     { conname: 'payment_provider_events_payment_purchase_fk', target: 'hive.payments' },
@@ -152,12 +166,14 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
          ,'project_entitlements'
          ,'usage_budgets'
          ,'usage_events'
-         ,'cost_events'
+          ,'cost_events'
+          ,'cost_guard_decisions'
+          ,'cost_guard_reservations'
        ))
        OR (pg_namespace.nspname = 'audit' AND relname = 'events')
      ORDER BY schema_name, relname`,
   );
-  assert.equal(rls.rows.length, 19);
+  assert.equal(rls.rows.length, 21);
   assert.ok(rls.rows.every((entry) => entry.relrowsecurity));
 
   const helpers = await client.query(
@@ -194,10 +210,14 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ,'hive.configure_usage_budget(uuid,text,text,text,numeric,text,timestamp with time zone,timestamp with time zone,text,jsonb)'
        ,'hive.record_usage_event(uuid,uuid,text,text,text,text,numeric,text,text,text,text,text,timestamp with time zone,jsonb)'
        ,'hive.record_cost_event(uuid,uuid,text,text,text,numeric,text,text,text,text,text,timestamp with time zone,jsonb)'
-       ,'audit.capture_usage_budget_configured()'
+        ,'audit.capture_usage_budget_configured()'
+        ,'hive.reserve_project_cost(uuid,uuid,text,text,numeric,text,jsonb)'
+        ,'hive.consume_cost_reservation(uuid,numeric,text,text,text,timestamp with time zone,jsonb)'
+        ,'hive.release_cost_reservation(uuid,jsonb)'
+        ,'audit.capture_cost_guard_decision()'
      ]) AS names(name)`,
   );
-  assert.equal(helpers.rows.length, 32);
+  assert.equal(helpers.rows.length, 36);
   assert.ok(helpers.rows.every((entry) => entry.helper));
 
   const privileges = await client.query(
@@ -431,6 +451,66 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     service_role_can_record_cost: true,
   });
 
+  const costGuardPrivileges = await client.query(
+    `SELECT
+       has_table_privilege('authenticated', 'hive.cost_guard_decisions', 'SELECT')
+         AS decision_table_select,
+       has_any_column_privilege('authenticated', 'hive.cost_guard_decisions', 'SELECT')
+         AS decision_column_select,
+       has_table_privilege('authenticated', 'hive.cost_guard_reservations', 'SELECT')
+         AS reservation_table_select,
+       has_any_column_privilege('authenticated', 'hive.cost_guard_reservations', 'SELECT')
+         AS reservation_column_select,
+       has_table_privilege('authenticated', 'hive.cost_guard_decisions', 'INSERT')
+         AS decision_insert,
+       has_table_privilege('authenticated', 'hive.cost_guard_reservations', 'UPDATE')
+         AS reservation_update,
+       has_function_privilege(
+         'authenticated',
+         'hive.reserve_project_cost(uuid,uuid,text,text,numeric,text,jsonb)',
+         'EXECUTE'
+       ) AS authenticated_can_reserve,
+       has_function_privilege(
+         'service_role',
+         'hive.reserve_project_cost(uuid,uuid,text,text,numeric,text,jsonb)',
+         'EXECUTE'
+       ) AS service_role_can_reserve,
+       has_function_privilege(
+         'authenticated',
+         'hive.consume_cost_reservation(uuid,numeric,text,text,text,timestamp with time zone,jsonb)',
+         'EXECUTE'
+       ) AS authenticated_can_consume,
+       has_function_privilege(
+         'service_role',
+         'hive.consume_cost_reservation(uuid,numeric,text,text,text,timestamp with time zone,jsonb)',
+         'EXECUTE'
+       ) AS service_role_can_consume,
+       has_function_privilege(
+         'authenticated',
+         'hive.release_cost_reservation(uuid,jsonb)',
+         'EXECUTE'
+       ) AS authenticated_can_release,
+       has_function_privilege(
+         'service_role',
+         'hive.release_cost_reservation(uuid,jsonb)',
+         'EXECUTE'
+       ) AS service_role_can_release`,
+  );
+  assert.deepEqual(costGuardPrivileges.rows[0], {
+    decision_table_select: false,
+    decision_column_select: true,
+    reservation_table_select: false,
+    reservation_column_select: true,
+    decision_insert: false,
+    reservation_update: false,
+    authenticated_can_reserve: false,
+    service_role_can_reserve: true,
+    authenticated_can_consume: false,
+    service_role_can_consume: true,
+    authenticated_can_release: false,
+    service_role_can_release: true,
+  });
+
   const auditTriggers = await client.query(
     `SELECT tgname
      FROM pg_trigger
@@ -445,11 +525,12 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ,'entitlements_payments_after_transition'
        ,'audit_project_entitlements_after_transition'
        ,'audit_usage_budgets_after_insert'
+       ,'audit_cost_guard_decisions_after_insert'
      )
        AND NOT tgisinternal
      ORDER BY tgname`,
   );
-  assert.equal(auditTriggers.rows.length, 10);
+  assert.equal(auditTriggers.rows.length, 11);
 
   return Object.freeze({
     ledgerRows: ledger.rows.length,

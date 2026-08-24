@@ -19,6 +19,27 @@ export type UsageBudgetStatus = (typeof USAGE_BUDGET_STATUSES)[number];
 export const ACCOUNTING_EVENT_KINDS = ['DEBIT', 'CREDIT'] as const;
 export type AccountingEventKind = (typeof ACCOUNTING_EVENT_KINDS)[number];
 
+export const COST_GUARD_DECISION_OUTCOMES = [
+  'ALLOW',
+  'ALLOW_CACHED',
+  'ALLOW_CHEAPER_PROVIDER',
+  'ALLOW_REDUCED_CONTEXT',
+  'ALLOW_REDUCED_SCOPE',
+  'DENY_ENTITLEMENT',
+  'DENY_BUDGET',
+] as const;
+export type CostGuardDecisionOutcome = (typeof COST_GUARD_DECISION_OUTCOMES)[number];
+
+export const COST_GUARD_REASON_CODES = [
+  'BUDGET_RESERVED',
+  'ENTITLEMENT_REQUIRED',
+  'BUDGET_EXHAUSTED',
+] as const;
+export type CostGuardReasonCode = (typeof COST_GUARD_REASON_CODES)[number];
+
+export const COST_RESERVATION_STATUSES = ['RESERVED', 'CONSUMED', 'RELEASED'] as const;
+export type CostReservationStatus = (typeof COST_RESERVATION_STATUSES)[number];
+
 export type UsageCostMetadataValue = boolean | number | string | null;
 export type UsageCostMetadata = Readonly<Record<string, UsageCostMetadataValue>>;
 
@@ -96,6 +117,80 @@ export interface UsageSummary {
   readonly debitedQuantity: string;
   readonly creditedQuantity: string;
   readonly netQuantity: string;
+}
+
+export interface CostGuardDecision {
+  readonly id: string;
+  readonly organizationId: string;
+  readonly appId: string;
+  readonly projectId: string;
+  readonly ownerUserId: string;
+  readonly budgetId: string;
+  readonly reservationId: string | null;
+  readonly operationId: string;
+  readonly capabilityCode: string;
+  readonly outcome: CostGuardDecisionOutcome;
+  readonly reasonCode: CostGuardReasonCode;
+  /** Exact PostgreSQL numeric value. Never convert this field to a JS float. */
+  readonly estimatedAmount: string;
+  readonly currency: string;
+  readonly metadata: UsageCostMetadata;
+  readonly createdAt: Date;
+}
+
+export interface CostReservation {
+  readonly id: string;
+  readonly organizationId: string;
+  readonly appId: string;
+  readonly projectId: string;
+  readonly ownerUserId: string;
+  readonly budgetId: string;
+  readonly decisionId: string;
+  readonly operationId: string;
+  readonly capabilityCode: string;
+  /** Exact PostgreSQL numeric value. Never convert this field to a JS float. */
+  readonly estimatedAmount: string;
+  /** Exact PostgreSQL numeric value. Never convert this field to a JS float. */
+  readonly consumedAmount: string;
+  readonly currency: string;
+  readonly status: CostReservationStatus;
+  readonly costEventId: string | null;
+  readonly metadata: UsageCostMetadata;
+  readonly reservedAt: Date;
+  readonly consumedAt: Date | null;
+  readonly releasedAt: Date | null;
+  readonly updatedAt: Date;
+}
+
+export interface CostGuardReservationResult {
+  readonly decision: CostGuardDecision;
+  readonly reservation: CostReservation | null;
+}
+
+export interface ReserveCostInput {
+  readonly projectId: string;
+  readonly budgetId: string;
+  /** Canonical idempotency identity for the provider operation. */
+  readonly operationId: string;
+  readonly capabilityCode: string;
+  readonly estimatedAmount: string;
+  readonly currency: string;
+  readonly metadata?: UsageCostMetadata;
+}
+
+export interface ConsumeCostReservationInput {
+  readonly reservationId: string;
+  readonly actualAmount: string;
+  readonly providerCode: string;
+  readonly serviceCode: string;
+  readonly modelCode?: string;
+  readonly occurredAt?: Date;
+  readonly metadata?: UsageCostMetadata;
+}
+
+export interface ReleaseCostReservationInput {
+  readonly reservationId: string;
+  readonly metadata?: UsageCostMetadata;
 }
 
 export interface ConfigureUsageBudgetInput {
@@ -190,6 +285,31 @@ export interface ValidatedRecordCostEventInput {
   readonly metadata: UsageCostMetadata;
 }
 
+export interface ValidatedReserveCostInput {
+  readonly projectId: string;
+  readonly budgetId: string;
+  readonly operationId: string;
+  readonly capabilityCode: string;
+  readonly estimatedAmount: string;
+  readonly currency: string;
+  readonly metadata: UsageCostMetadata;
+}
+
+export interface ValidatedConsumeCostReservationInput {
+  readonly reservationId: string;
+  readonly actualAmount: string;
+  readonly providerCode: string;
+  readonly serviceCode: string;
+  readonly modelCode: string | null;
+  readonly occurredAt: Date | null;
+  readonly metadata: UsageCostMetadata;
+}
+
+export interface ValidatedReleaseCostReservationInput {
+  readonly reservationId: string;
+  readonly metadata: UsageCostMetadata;
+}
+
 export interface UsageCostRepository {
   configureBudget(
     context: TrustedOrganizationContext,
@@ -215,6 +335,18 @@ export interface UsageCostRepository {
     context: TrustedOrganizationContext,
     projectId: string,
   ): Promise<readonly UsageSummary[]>;
+  reserveCost(
+    context: TrustedOrganizationContext,
+    input: ValidatedReserveCostInput,
+  ): Promise<CostGuardReservationResult>;
+  consumeCostReservation(
+    context: TrustedOrganizationContext,
+    input: ValidatedConsumeCostReservationInput,
+  ): Promise<CostReservation>;
+  releaseCostReservation(
+    context: TrustedOrganizationContext,
+    input: ValidatedReleaseCostReservationInput,
+  ): Promise<CostReservation>;
 }
 
 export interface UsageCostSqlResult<Row> {

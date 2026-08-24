@@ -27,6 +27,8 @@ const requiredHiveTables = [
   'usage_budgets',
   'usage_events',
   'cost_events',
+  'cost_guard_decisions',
+  'cost_guard_reservations',
 ];
 const requiredAuditTables = ['events'];
 const forceRlsTables = [
@@ -47,6 +49,8 @@ const forceRlsTables = [
   'usage_budgets',
   'usage_events',
   'cost_events',
+  'cost_guard_decisions',
+  'cost_guard_reservations',
 ];
 const expectedPolicies = new Map([
   ['apps', ['apps_admin_select']],
@@ -115,6 +119,8 @@ const expectedPolicies = new Map([
   ['usage_budgets', ['usage_budgets_owner_or_platform_select']],
   ['usage_events', ['usage_events_owner_or_platform_select']],
   ['cost_events', ['cost_events_platform_select']],
+  ['cost_guard_decisions', ['cost_guard_decisions_owner_or_platform_select']],
+  ['cost_guard_reservations', ['cost_guard_reservations_owner_or_platform_select']],
 ]);
 const forbiddenHiveDomainTerms = [
   'break_even',
@@ -353,6 +359,12 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'audit.capture_usage_budget_configured',
     'audit_usage_budgets_after_insert',
     'USAGE_BUDGET_CONFIGURED',
+    'hive.reserve_project_cost',
+    'hive.consume_cost_reservation',
+    'hive.release_cost_reservation',
+    'audit.capture_cost_guard_decision',
+    'audit_cost_guard_decisions_after_insert',
+    'COST_GUARD_DECIDED',
   ];
   for (const marker of requiredContextMarkers) {
     if (!allSql.includes(marker)) errors.push(`trusted app context is missing marker: ${marker}`);
@@ -386,6 +398,8 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'usage_budgets',
     'usage_events',
     'cost_events',
+    'cost_guard_decisions',
+    'cost_guard_reservations',
   ]) {
     if (new RegExp(`GRANT\\s+[\\s\\S]{0,120}\\b(INSERT|UPDATE|DELETE)\\b[\\s\\S]{0,120}ON\\s+hive\\.${billingTable}\\b[\\s\\S]{0,80}TO\\s+authenticated\\b`, 'i').test(allSql)) {
       errors.push(`authenticated must not receive direct write privileges on hive.${billingTable}`);
@@ -414,6 +428,9 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'hive.configure_usage_budget\\(\\s*uuid,\\s*text,\\s*text,\\s*text,\\s*numeric,\\s*text,\\s*timestamptz,\\s*timestamptz,\\s*text,\\s*jsonb\\s*\\)',
     'hive.record_usage_event\\(\\s*uuid,\\s*uuid,\\s*text,\\s*text,\\s*text,\\s*text,\\s*numeric,\\s*text,\\s*text,\\s*text,\\s*text,\\s*text,\\s*timestamptz,\\s*jsonb\\s*\\)',
     'hive.record_cost_event\\(\\s*uuid,\\s*uuid,\\s*text,\\s*text,\\s*text,\\s*numeric,\\s*text,\\s*text,\\s*text,\\s*text,\\s*text,\\s*timestamptz,\\s*jsonb\\s*\\)',
+    'hive.reserve_project_cost\\(\\s*uuid,\\s*uuid,\\s*text,\\s*text,\\s*numeric,\\s*text,\\s*jsonb\\s*\\)',
+    'hive.consume_cost_reservation\\(\\s*uuid,\\s*numeric,\\s*text,\\s*text,\\s*text,\\s*timestamptz,\\s*jsonb\\s*\\)',
+    'hive.release_cost_reservation\\(\\s*uuid,\\s*jsonb\\s*\\)',
   ]) {
     const revokePattern = new RegExp(
       `REVOKE\\s+ALL\\s+ON\\s+FUNCTION\\s+${protectedFunction}\\s+FROM\\s+(PUBLIC|authenticated)`,
@@ -465,8 +482,26 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
       errors.push(`usage/cost foundation is missing marker: ${usageCostMarker}`);
     }
   }
-  if (/\b(reserve_budget|consume_budget|release_budget|cost_guard_decision)\b/i.test(allSql)) {
-    errors.push('GH-0401 must not implement GH-0402 reserve/consume/release decisions');
+  for (const costGuardMarker of [
+    'CREATE TABLE hive.cost_guard_decisions',
+    'CREATE TABLE hive.cost_guard_reservations',
+    "decision IN (",
+    "status IN ('RESERVED', 'CONSUMED', 'RELEASED')",
+    'cost_guard_decisions_operation_unique',
+    'cost_guard_reservations_operation_unique',
+    'FOR UPDATE',
+    'COST_GUARD_IDEMPOTENCY_CONFLICT',
+    'COST_GUARD_INVALID_TRANSITION',
+    "selected_decision := 'DENY_ENTITLEMENT'",
+    "selected_decision := 'DENY_BUDGET'",
+    'created_cost_event_id := hive.record_cost_event',
+    'REVOKE ALL ON FUNCTION hive.reserve_project_cost(',
+    'REVOKE ALL ON FUNCTION hive.consume_cost_reservation(',
+    'REVOKE ALL ON FUNCTION hive.release_cost_reservation(',
+  ]) {
+    if (!allSql.includes(costGuardMarker)) {
+      errors.push(`atomic Cost Guard contract is missing marker: ${costGuardMarker}`);
+    }
   }
   for (const requiredMarker of [
     'app_code text',

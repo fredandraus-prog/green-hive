@@ -10,6 +10,9 @@ reapplicable seed behavior, conflicting seed identity, paid capability grants, r
 independent-purchase retention and server-authoritative `can()` decisions.
 It also covers GH-0401 exact-decimal budgets, separate logical usage and monetary cost events,
 idempotent/conflicting replay, debit/credit aggregation, server-only writes and cross-scope denial.
+GH-0402 adds entitlement denial, exact-decimal reserve/consume/release, duplicate replay,
+conflicting operation identity, bounded actual cost, same-transaction cost evidence, cross-scope
+denial and concurrent no-overspend assertions.
 
 `npm run db:test:supabase` is the supported local external gate. It requires host
 `127.0.0.1|localhost`, port `54322`, database `postgres`,
@@ -20,7 +23,7 @@ remains supported by `db:test:external`.
 
 `projects:test:supabase` exercises the compiled `@green-hive/projects` service against the same
 native RLS boundary. It inserts only the existing fixed fixtures, removes them in `finally` and
-leaves the seventeen-migration plus structural seed baseline intact.
+leaves the eighteen-migration plus structural seed baseline intact.
 
 `entitlements:test:supabase` exercises the compiled `@green-hive/entitlements` service against
 native RLS. It proves no grant while pending, two manifest-derived grants after payment, independent
@@ -30,8 +33,12 @@ cleanup ordering.
 `usage-cost:test:supabase` exercises the compiled `@green-hive/cost-guard` GH-0401 foundation. It
 proves exact-decimal persistence, idempotent budget/event replay, conflicting-key rejection,
 logical debit/credit aggregation, server-only writers, owner-hidden raw cost, read-only admin
-inspection, cross-user/workspace/app isolation and complete fixture cleanup. It does not test a
-reserve/consume/release decision because that behavior belongs to GH-0402.
+inspection, cross-user/workspace/app isolation and complete fixture cleanup.
+
+`cost-guard:test:supabase` exercises GH-0402 using separate PostgreSQL connections for the
+concurrency gate. It proves that simultaneous estimates cannot reserve beyond one budget, verifies
+entitlement-first denial, idempotent replay, consume/release terminal behavior, same-transaction
+cost evidence, read-only authenticated/admin access and complete fixture cleanup.
 
 `auth:test:supabase` exercises real Supabase Auth against the loopback-only Auth service. It covers
 signup, login, profile bootstrap/update, Project Service access, cross-user denial, signed app

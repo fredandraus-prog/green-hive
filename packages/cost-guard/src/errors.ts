@@ -24,3 +24,30 @@ export class UsageCostError extends Error {
   }
 }
 
+export const COST_GUARD_ERROR_CODES = [
+  'COST_GUARD_ACCESS_DENIED',
+  'COST_GUARD_INVALID_INPUT',
+  'COST_GUARD_IDEMPOTENCY_CONFLICT',
+  'COST_GUARD_INVALID_TRANSITION',
+  'COST_GUARD_OPERATION_FAILED',
+] as const;
+
+export type CostGuardErrorCode = (typeof COST_GUARD_ERROR_CODES)[number];
+
+const COST_GUARD_SAFE_MESSAGES: Readonly<Record<CostGuardErrorCode, string>> = Object.freeze({
+  COST_GUARD_ACCESS_DENIED: 'Cost Guard operation is not permitted',
+  COST_GUARD_INVALID_INPUT: 'Cost Guard input is invalid',
+  COST_GUARD_IDEMPOTENCY_CONFLICT: 'Operation identity conflicts with an earlier Cost Guard decision',
+  COST_GUARD_INVALID_TRANSITION: 'Cost reservation cannot perform the requested transition',
+  COST_GUARD_OPERATION_FAILED: 'Cost Guard operation could not be completed',
+});
+
+export class CostGuardError extends Error {
+  readonly code: CostGuardErrorCode;
+
+  constructor(code: CostGuardErrorCode) {
+    super(COST_GUARD_SAFE_MESSAGES[code]);
+    this.name = 'CostGuardError';
+    this.code = code;
+  }
+}

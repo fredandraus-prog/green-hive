@@ -154,6 +154,15 @@
       "description": "Create project-scoped usage budgets and separate append-only usage and monetary cost ledgers.",
       "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_USAGE_COST_LEDGER_EXPORT_RESTORE",
       "rollbackStrategy": "Prefer a forward fix; export and verify usage budgets, usage events, cost events and budget audit evidence before any controlled restoration."
+    },
+    {
+      "version": 18,
+      "file": "0018_create_atomic_cost_guard.sql",
+      "sha256": "c1519e3feb5ead0642422dbbbb879802a0ab0c7170547ba960e8276615eb5f6d",
+      "checkpoint": "GH-0402",
+      "description": "Add entitlement-aware atomic cost reservation, consumption and release decisions.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_COST_GUARD_LEDGER_EXPORT_RESTORE",
+      "rollbackStrategy": "Prefer a forward fix; export and verify decisions, reservations, budgets, cost events and Cost Guard audit evidence before any controlled restoration."
     }
   ]
 }

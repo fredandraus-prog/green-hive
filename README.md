@@ -18,18 +18,20 @@ deduplication and authoritative reconciliation. Version `0.13.0` completes **GH-
 `can()` decision. Version `0.14.0` completes **GH-0401 (Usage/Cost Foundation)** with
 project-scoped exact-decimal budgets and separate append-only logical usage and monetary cost
 ledgers.
+Version `0.15.0` implements **GH-0402 (Atomic Cost Guard)** with entitlement-aware exact-decimal
+reservation, consume/release reconciliation and a concurrent no-overspend gate.
 
 The checkpoint is deliberately narrow. The only public Billing ingress is the verified fake-provider
-webhook used to prove the platform contract. The atomic GH-0402 Cost Guard decision service, real
-payment-provider adapters, checkout UI, AI, Search, Redis, remote storage and consumer-domain
-functionality remain out of scope.
+webhook used to prove the platform contract. Real provider estimation/routing, payment-provider
+adapters, checkout UI, Jobs, AI, Search, Redis, remote storage and consumer-domain functionality
+remain out of scope.
 
 ## What this checkpoint contains
 
 - the 18 canonical `@green-hive/*` packages, `hive-reference-app` and `hive-admin`;
 - canonical `AppManifestV1`, validator, App Registry and complete `REFERENCE_APP` manifest;
 - schemas `hive`, `audit` and `reference_app`;
-- seventeen immutable migrations and a SHA-256 migration ledger;
+- eighteen immutable migrations and a SHA-256 migration ledger;
 - organizations, memberships and tenant app installations around the global app registry;
 - tenant-scoped `projects` and `project_settings`;
 - production-safe structural seeds containing only `REFERENCE_APP`, its manifest-registered
@@ -54,8 +56,10 @@ functionality remain out of scope.
   ledger and exact duplicate single-effect enforcement;
 - typed `@green-hive/entitlements` contracts, purchase-derived immutable grant snapshots and the
   server-authoritative `hive.can_project_capability(...)` decision;
-- typed `@green-hive/cost-guard` GH-0401 contracts with exact-decimal budgets, append-only usage and
-  cost evidence, idempotent server writers and logical debit/credit aggregation;
+- typed `@green-hive/cost-guard` contracts with exact-decimal budgets, append-only usage/cost
+  evidence and entitlement-aware atomic reserve/consume/release operations;
+- append-only Cost Guard decisions, lifecycle-controlled reservations, stable allow/deny reasons,
+  operation-level idempotency and same-transaction monetary cost reconciliation;
 - owner-limited budget/logical-usage reads, admin-only raw monetary-cost inspection and no
   authenticated direct write authority;
 - a responsive React/Vite Reference App with signup, login, recovery, profile and project screens;
@@ -108,9 +112,9 @@ safeguards.
 
 ## Hosted staging workflow
 
-A dedicated Free-plan Supabase staging project is active in São Paulo. Its seventeen-migration database
-baseline, cross-organization RLS matrix, Project/Workspace Service and server-side Auth core have
-passed without changing the production
+A dedicated Free-plan Supabase staging project is active in São Paulo. Its eighteen-migration
+database baseline, cross-organization RLS matrix, Project/Workspace Service, Billing,
+Entitlements, Usage/Cost and Atomic Cost Guard gates have passed without changing the production
 candidate or the pre-existing Green Hive project:
 
 ```text
