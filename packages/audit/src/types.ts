@@ -16,6 +16,7 @@ export const AUDIT_EVENT_CODES = [
   'PAYMENT_REFUNDED',
   'ENTITLEMENT_GRANTED',
   'ENTITLEMENT_CHANGED',
+  'USAGE_BUDGET_CONFIGURED',
   'JOB_FAILED',
   'FILE_EXPORTED',
   'ADMIN_ACCESS',
@@ -36,6 +37,8 @@ export const AUDIT_SUBJECT_TYPES = [
   'PROJECT',
   'PURCHASE',
   'PAYMENT',
+  'ENTITLEMENT',
+  'USAGE_BUDGET',
   'PLATFORM',
 ] as const;
 export type AuditSubjectType = (typeof AUDIT_SUBJECT_TYPES)[number];

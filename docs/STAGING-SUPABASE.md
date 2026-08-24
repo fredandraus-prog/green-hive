@@ -69,17 +69,18 @@ fails if a known disposable fixture remains.
 
 1. repeats the database-only preflight;
 2. runs `db:validate`;
-3. applies all canonical pending migrations, currently `0001` through `0016`, using the ledger;
+3. applies all canonical pending migrations, currently `0001` through `0017`, using the ledger;
 4. reapplies the migrator to prove no duplication;
 5. applies the structural `REFERENCE_APP`, sandbox Billing catalog and reviewed Entitlements
    mapping seeds twice;
 6. verifies ledger, seed identities, native FKs, RLS, helpers and grants.
 
 `staging:database:test` executes the hosted RLS/database matrix, the 10-scenario Project/Workspace
-Service matrix, the 7-scenario native Billing Service/provider matrix, verified-webhook concurrency
-and the 6-scenario Entitlements matrix. `staging:auth:test` creates two uniquely named confirmed
+Service matrix, the 7-scenario native Billing Service/provider matrix, verified-webhook concurrency,
+the 6-scenario Entitlements matrix and the 5-scenario Usage/Cost matrix. `staging:auth:test` creates
+two uniquely named confirmed
 test accounts, executes the server-side Auth/account matrix, and deletes their projects,
-Entitlements, Billing rows, settings, profiles and Auth users in a final cleanup block.
+Usage/Cost, Entitlements, Billing rows, settings, profiles and Auth users in a final cleanup block.
 
 These commands never run `supabase db reset --linked`, never drop a remote schema and never clear
 unrelated Auth users. The only canonical migrations remain under `database/migrations`;
@@ -88,7 +89,7 @@ unrelated Auth users. The only canonical migrations remain under `database/migra
 ## Passed hosted evidence
 
 - project identity and health: confirmed;
-- migrations/ledger: sixteen applied, zero pending, reapplication creates no duplicate;
+- migrations/ledger: seventeen applied, zero pending, reapplication creates no duplicate;
 - seeds: deterministic `REFERENCE_APP`, sandbox catalog and two reviewed capability mappings,
   reapplied twice;
 - database/RLS: 13 passed, 0 failed;
@@ -96,25 +97,26 @@ unrelated Auth users. The only canonical migrations remain under `database/migra
 - Billing Service/provider: 7 passed, 0 failed;
 - verified webhook concurrency/replay: 1 passed, 0 failed;
 - Entitlements grant/revoke/cross-scope matrix: 6 passed, 0 failed;
+- Usage/Cost exact-decimal/idempotency/RLS matrix: 5 passed, 0 failed;
 - Auth/account core: 8 passed, 0 failed;
 - confirmed signup and isolated owner profiles: passed;
 - profile and owned-project access: passed;
 - `user_metadata` privilege forgery: denied;
 - only controlled `app_metadata.app_code` changes the active app: passed;
 - refresh rotation, logout revocation and stable public errors: passed;
-- final database state: sixteen ledger rows, one structural app, one sandbox product/price, two
+- final database state: seventeen ledger rows, one structural app, one sandbox product/price, two
   reviewed capability mappings and zero disposable fixture rows;
 - final Auth cleanup: zero `staging-owner-*@example.test` users.
 
 ## Hosted acceptance completion
 
-Database, RLS, Project/Workspace Service, Audit, Auth, Billing, verified webhooks, Entitlements and
-the deployed HTTPS cookie boundary pass.
+Database, RLS, Project/Workspace Service, Audit, Auth, Billing, verified webhooks, Entitlements,
+Usage/Cost and the deployed HTTPS cookie boundary pass.
 Supabase Site URL and the sole `/auth/recovery` redirect match the Render origin, custom SMTP uses
 the dedicated Mailtrap sandbox, and the guarded runner passes signup/login/recovery/logout/profile,
 project, cross-user, cross-workspace, forged-scope, CSRF, logical deletion and payment-derived
-capability-decision scenarios. Cleanup asserts zero test-owned Auth, tenant, Billing, Entitlements
-and Audit rows. GH-0201, GH-0202 and GH-0304 are `DONE`.
+capability-decision scenarios. Cleanup asserts zero test-owned Auth, tenant, Billing, Entitlements,
+Usage/Cost and Audit rows. GH-0201, GH-0202, GH-0304 and GH-0401 are `DONE`.
 
 Database egress hardening after a stable hosting topology and deployed rate limiting remain
 GH-0204/production operations.

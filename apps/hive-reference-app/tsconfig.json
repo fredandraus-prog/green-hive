@@ -26,13 +26,16 @@
       "path": "../../packages/audit"
     },
     {
-      "path": "../../packages/projects"
-    },
-    {
       "path": "../../packages/billing"
     },
     {
       "path": "../../packages/entitlements"
+    },
+    {
+      "path": "../../packages/cost-guard"
+    },
+    {
+      "path": "../../packages/projects"
     }
   ]
 }

@@ -22,12 +22,13 @@ Status date: 2026-08-24.
 | GH-0302 | DONE | deterministic network-free provider, server-only success/failure/full-refund transitions, safe Audit and embedded/local/staging Supabase gates | none |
 | GH-0303 | DONE | exact-body HMAC verification, replay rejection, provider-event uniqueness, concurrent duplicate single effect, reconciliation and embedded/local/staging gates | none |
 | GH-0304 | DONE | manifest-reviewed product mappings, payment-derived grant/revocation snapshots, server-authoritative `can()`, Audit and embedded/local/staging/HTTPS gates | none |
-| GH-0401+ | NOT_STARTED | usage accounting, Cost Guard and later checkpoints remain outside this release | implement Usage/Cost Foundation next |
+| GH-0401 | DONE | exact-decimal project budgets, separate append-only usage/cost ledgers, idempotent server writers, limited owner reads, admin inspection and embedded/local/staging gates | none |
+| GH-0402+ | NOT_STARTED | atomic Cost Guard decisions and later checkpoints remain outside this release | implement reserve/consume/release next |
 
 The local Supabase parity gate passed on PostgreSQL 17.6 with native `auth.users`, `auth.uid()` and
-`auth.jwt()`. The dedicated hosted staging project also passes the sixteen-migration baseline,
+`auth.jwt()`. The dedicated hosted staging project also passes the seventeen-migration baseline,
 RLS, Project/Workspace/Billing Services and server-side Auth/account matrices. Hosted test users
-and rows are removed after each run, leaving sixteen ledger records and the structural
+and rows are removed after each run, leaving seventeen ledger records and the structural
 `REFERENCE_APP`, sandbox catalog and entitlement-mapping seeds.
 
 The Reference App has a responsive React/Vite shell and a Fastify HTTP adapter. Tokens remain
@@ -48,9 +49,13 @@ deduplicates provider events under lock and provides authoritative provider reco
 storing raw payloads or signatures. GH-0304 derives independent project capability snapshots only
 from those authoritative transitions. Its server-side `can()` decision repeats
 user/app/workspace/project scope and accepts no commercial or grant authority from browser input.
+GH-0401 adds separate logical-usage and monetary-cost evidence plus limited owner-visible budgets.
+All accounting writes remain server-only and idempotent. Monetary provider cost stays hidden from
+project owners, and no reserve/consume/release or budget-approval decision exists before GH-0402.
 
 The private GitHub repository deploys `main` through the CI-gated Render Blueprint. The Free service
 `green-hive-staging` is live at the exact HTTPS origin with database-backed readiness, public and
 security smokes, and the disposable authenticated acceptance matrix. The GH-0304 deployment of
-merge commit `99a1015` proved payment-derived capability decisions, cross-scope denial, verified
-webhook single effect and final cleanup against the sixteen-migration staging baseline.
+merge commit `99a1015` proved payment-derived capability decisions, cross-scope denial and verified
+webhook single effect. The GH-0401 staging gate then proved the seventeenth migration and left zero
+test artifacts; published HTTPS promotion is recorded separately in its release evidence.

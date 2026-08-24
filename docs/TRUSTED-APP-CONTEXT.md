@@ -35,9 +35,14 @@ stale until token refresh, changing app or platform role metadata requires a ref
 - `hive.ensure_personal_organization(text)` provisions the user's single personal workspace.
 - `hive.create_shared_organization(text)` creates a shared workspace with the caller as owner.
 - `hive.soft_delete_project(uuid)` performs the controlled logical-deletion transition.
+- `hive.configure_usage_budget(...)`, `hive.record_usage_event(...)` and
+  `hive.record_cost_event(...)` repeat the same signed user/app/workspace/project authority behind
+  a server-only execution grant.
 
 All security-definer helpers use a fixed empty `search_path` and fully qualified object names.
 Functions and tables revoke `PUBLIC`; only required calls are granted to `authenticated`.
+The GH-0401 accounting writers are not required client calls and remain executable only by the
+trusted server role when present.
 
 ## App and owner isolation
 

@@ -1,4 +1,4 @@
-export const REFERENCE_APP_EXPECTED_MIGRATION_VERSION = 16;
+export const REFERENCE_APP_EXPECTED_MIGRATION_VERSION = 17;
 
 interface ReadinessRow extends Record<string, unknown> {
   readonly migration_count: number;
@@ -15,6 +15,7 @@ interface ReadinessRow extends Record<string, unknown> {
   readonly billing_webhook_ready: boolean;
   readonly entitlement_mapping_count: number;
   readonly entitlements_ready: boolean;
+  readonly usage_cost_ready: boolean;
   readonly app_helper_ready: boolean;
   readonly organization_helper_ready: boolean;
 }
@@ -81,6 +82,18 @@ export function createReferenceAppReadinessCheck(database: ReadinessDatabase): (
            AND to_regprocedure('hive.apply_entitlement_state_for_purchase(uuid)') IS NOT NULL
            AND to_regprocedure('hive.can_project_capability(uuid,text)') IS NOT NULL
            AS entitlements_ready,
+         to_regclass('hive.usage_budgets') IS NOT NULL
+           AND to_regclass('hive.usage_events') IS NOT NULL
+           AND to_regclass('hive.cost_events') IS NOT NULL
+           AND to_regprocedure(
+             'hive.configure_usage_budget(uuid,text,text,text,numeric,text,timestamp with time zone,timestamp with time zone,text,jsonb)'
+           ) IS NOT NULL
+           AND to_regprocedure(
+             'hive.record_usage_event(uuid,uuid,text,text,text,text,numeric,text,text,text,text,text,timestamp with time zone,jsonb)'
+           ) IS NOT NULL
+           AND to_regprocedure(
+             'hive.record_cost_event(uuid,uuid,text,text,text,numeric,text,text,text,text,text,timestamp with time zone,jsonb)'
+           ) IS NOT NULL AS usage_cost_ready,
          to_regprocedure('hive.current_app_code()') IS NOT NULL AS app_helper_ready,
          to_regprocedure('hive.current_organization_id()') IS NOT NULL AS organization_helper_ready`,
       [
@@ -106,6 +119,7 @@ export function createReferenceAppReadinessCheck(database: ReadinessDatabase): (
       !state.billing_webhook_ready ||
       state.entitlement_mapping_count !== 2 ||
       !state.entitlements_ready ||
+      !state.usage_cost_ready ||
       !state.app_helper_ready ||
       !state.organization_helper_ready
     ) {

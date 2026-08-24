@@ -24,6 +24,9 @@ const requiredHiveTables = [
   'payment_provider_events',
   'product_entitlement_capabilities',
   'project_entitlements',
+  'usage_budgets',
+  'usage_events',
+  'cost_events',
 ];
 const requiredAuditTables = ['events'];
 const forceRlsTables = [
@@ -41,6 +44,9 @@ const forceRlsTables = [
   'payment_provider_events',
   'product_entitlement_capabilities',
   'project_entitlements',
+  'usage_budgets',
+  'usage_events',
+  'cost_events',
 ];
 const expectedPolicies = new Map([
   ['apps', ['apps_admin_select']],
@@ -106,6 +112,9 @@ const expectedPolicies = new Map([
     ['product_entitlement_capabilities_catalog_select'],
   ],
   ['project_entitlements', ['project_entitlements_owner_or_platform_select']],
+  ['usage_budgets', ['usage_budgets_owner_or_platform_select']],
+  ['usage_events', ['usage_events_owner_or_platform_select']],
+  ['cost_events', ['cost_events_platform_select']],
 ]);
 const forbiddenHiveDomainTerms = [
   'break_even',
@@ -338,6 +347,12 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'audit_project_entitlements_after_transition',
     'ENTITLEMENT_GRANTED',
     'ENTITLEMENT_CHANGED',
+    'hive.configure_usage_budget',
+    'hive.record_usage_event',
+    'hive.record_cost_event',
+    'audit.capture_usage_budget_configured',
+    'audit_usage_budgets_after_insert',
+    'USAGE_BUDGET_CONFIGURED',
   ];
   for (const marker of requiredContextMarkers) {
     if (!allSql.includes(marker)) errors.push(`trusted app context is missing marker: ${marker}`);
@@ -368,6 +383,9 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'payment_provider_events',
     'product_entitlement_capabilities',
     'project_entitlements',
+    'usage_budgets',
+    'usage_events',
+    'cost_events',
   ]) {
     if (new RegExp(`GRANT\\s+[\\s\\S]{0,120}\\b(INSERT|UPDATE|DELETE)\\b[\\s\\S]{0,120}ON\\s+hive\\.${billingTable}\\b[\\s\\S]{0,80}TO\\s+authenticated\\b`, 'i').test(allSql)) {
       errors.push(`authenticated must not receive direct write privileges on hive.${billingTable}`);
@@ -393,6 +411,9 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'hive.apply_provider_refund\\(uuid, text, text\\)',
     'hive.apply_verified_payment_webhook\\(\\s*text,\\s*text,\\s*text,\\s*uuid,\\s*text,\\s*text,\\s*text,\\s*text\\s*\\)',
     'hive.apply_entitlement_state_for_purchase\\(uuid\\)',
+    'hive.configure_usage_budget\\(\\s*uuid,\\s*text,\\s*text,\\s*text,\\s*numeric,\\s*text,\\s*timestamptz,\\s*timestamptz,\\s*text,\\s*jsonb\\s*\\)',
+    'hive.record_usage_event\\(\\s*uuid,\\s*uuid,\\s*text,\\s*text,\\s*text,\\s*text,\\s*numeric,\\s*text,\\s*text,\\s*text,\\s*text,\\s*text,\\s*timestamptz,\\s*jsonb\\s*\\)',
+    'hive.record_cost_event\\(\\s*uuid,\\s*uuid,\\s*text,\\s*text,\\s*text,\\s*numeric,\\s*text,\\s*text,\\s*text,\\s*text,\\s*text,\\s*timestamptz,\\s*jsonb\\s*\\)',
   ]) {
     const revokePattern = new RegExp(
       `REVOKE\\s+ALL\\s+ON\\s+FUNCTION\\s+${protectedFunction}\\s+FROM\\s+(PUBLIC|authenticated)`,
@@ -420,6 +441,32 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     if (!allSql.includes(entitlementMarker)) {
       errors.push(`entitlement contract is missing marker: ${entitlementMarker}`);
     }
+  }
+  for (const usageCostMarker of [
+    'CREATE TABLE hive.usage_budgets',
+    'CREATE TABLE hive.usage_events',
+    'CREATE TABLE hive.cost_events',
+    "budget_type IN (",
+    "measurement_kind IN ('USAGE', 'COST')",
+    'ceiling_amount numeric(24, 8)',
+    'quantity numeric(24, 8)',
+    'amount numeric(24, 8)',
+    "event_kind IN ('DEBIT', 'CREDIT')",
+    'usage_budgets_project_scope_fk',
+    'usage_events_project_scope_fk',
+    'cost_events_project_scope_fk',
+    'USAGE_COST_IDEMPOTENCY_CONFLICT',
+    'REVOKE ALL ON FUNCTION hive.configure_usage_budget(',
+    'REVOKE ALL ON FUNCTION hive.record_usage_event(',
+    'REVOKE ALL ON FUNCTION hive.record_cost_event(',
+    'Reservation and consumption decisions remain GH-0402',
+  ]) {
+    if (!allSql.includes(usageCostMarker)) {
+      errors.push(`usage/cost foundation is missing marker: ${usageCostMarker}`);
+    }
+  }
+  if (/\b(reserve_budget|consume_budget|release_budget|cost_guard_decision)\b/i.test(allSql)) {
+    errors.push('GH-0401 must not implement GH-0402 reserve/consume/release decisions');
   }
   for (const requiredMarker of [
     'app_code text',

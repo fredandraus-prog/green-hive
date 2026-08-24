@@ -110,7 +110,6 @@ payload enters an Entitlement Audit event.
 - manual/internal grants and time-limited grants;
 - subscription periods, seats and quantity-based capabilities;
 - administrative grant mutation workflows;
-- usage accounting and Cost Guard;
+- GH-0402 atomic Cost Guard decisions (GH-0401 accounting evidence is implemented separately);
 - Jobs, AI, Files and real-provider integrations;
 - frontend purchase/checkout and capability-management screens.
-

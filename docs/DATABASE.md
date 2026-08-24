@@ -4,7 +4,7 @@
 
 | Schema | Purpose in this checkpoint |
 |---|---|
-| `hive` | ledger, app registry, organizations, projects, Billing catalog/ledger and RLS helpers |
+| `hive` | ledger, app registry, organizations, projects, Billing/Entitlements/Usage accounting and RLS helpers |
 | `audit` | append-only operational accountability events |
 | `reference_app` | reserved for Reference App domain migrations |
 
@@ -32,6 +32,10 @@ No app-domain concepts belong in `hive`.
 - `hive.product_entitlement_capabilities`: reviewed product-to-App-Manifest capability mapping.
 - `hive.project_entitlements`: immutable purchase/capability grant snapshots with explicit active
   or revoked lifecycle.
+- `hive.usage_budgets`: exact-decimal project/cycle ceilings with constrained future consumed and
+  reserved fields.
+- `hive.usage_events`: append-only logical debit/credit quantities.
+- `hive.cost_events`: separate append-only exact-decimal monetary provider/platform costs.
 - `audit.events`: immutable actor/tenant/app/project event metadata with request and correlation
   identifiers, protected by tenant-aware read RLS and no authenticated write grant.
 
@@ -43,6 +47,8 @@ The global app registry is deliberately not duplicated per organization. The ten
 ```text
 USER -> ORGANIZATION / WORKSPACE -> ORGANIZATION_APP -> PROJECT -> PURCHASE -> PAYMENT
                                                                     -> ENTITLEMENT SNAPSHOTS
+                                                                    -> USAGE BUDGETS/EVENTS
+                                                                    -> COST EVENTS
 ```
 
 ## Deployment workflow
@@ -82,3 +88,12 @@ internal synchronizer in the same database transaction. `hive.can_project_capabi
 the only authenticated SQL decision entrypoint and repeats verified user, app, organization,
 project-status, mapping and manifest checks. Multiple purchases remain independent: revoking one
 does not negate another active grant for the same project/capability.
+
+## Usage and cost authority
+
+Authenticated clients cannot write budgets, usage events or cost events and cannot execute their
+internal writer functions. Owner reads are limited to their project budgets and logical usage;
+raw monetary costs are visible only through platform-administration inspection RLS. Every server
+writer repeats trusted user/app/workspace/project scope and hashes the idempotency identity.
+Accounting rows are append-only. GH-0401 computes logical debit/credit summaries but does not
+reserve, consume or release budget; those atomic decisions remain GH-0402.

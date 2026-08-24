@@ -145,6 +145,15 @@
       "description": "Create product capability mappings, project entitlement grants and the server-authoritative can service.",
       "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_ENTITLEMENT_EXPORT_RESTORE",
       "rollbackStrategy": "Prefer a forward fix; export and verify product capability mappings, project entitlements and entitlement audit events before any controlled restoration."
+    },
+    {
+      "version": 17,
+      "file": "0017_create_usage_cost_foundation.sql",
+      "sha256": "ab9f27f96f44eed134877e173c86ec575daf950f2ccf5f6bb69f413ec5ced392",
+      "checkpoint": "GH-0401",
+      "description": "Create project-scoped usage budgets and separate append-only usage and monetary cost ledgers.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_USAGE_COST_LEDGER_EXPORT_RESTORE",
+      "rollbackStrategy": "Prefer a forward fix; export and verify usage budgets, usage events, cost events and budget audit evidence before any controlled restoration."
     }
   ]
 }
