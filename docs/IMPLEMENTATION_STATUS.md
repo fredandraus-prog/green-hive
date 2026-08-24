@@ -22,7 +22,7 @@ Status date: 2026-08-24.
 | GH-0302 | DONE | deterministic network-free provider, server-only success/failure/full-refund transitions, safe Audit and embedded/local/staging Supabase gates | none |
 | GH-0303 | DONE | exact-body HMAC verification, replay rejection, provider-event uniqueness, concurrent duplicate single effect, reconciliation and embedded/local/staging gates | none |
 | GH-0304 | DONE | manifest-reviewed product mappings, payment-derived grant/revocation snapshots, server-authoritative `can()`, Audit and embedded/local/staging/HTTPS gates | none |
-| GH-0401 | DONE | exact-decimal project budgets, separate append-only usage/cost ledgers, idempotent server writers, limited owner reads, admin inspection and embedded/local/staging gates | none |
+| GH-0401 | DONE | exact-decimal project budgets, separate append-only usage/cost ledgers, idempotent server writers, limited owner reads, admin inspection and embedded/local/staging/HTTPS gates | none |
 | GH-0402+ | NOT_STARTED | atomic Cost Guard decisions and later checkpoints remain outside this release | implement reserve/consume/release next |
 
 The local Supabase parity gate passed on PostgreSQL 17.6 with native `auth.users`, `auth.uid()` and
@@ -57,5 +57,6 @@ The private GitHub repository deploys `main` through the CI-gated Render Bluepri
 `green-hive-staging` is live at the exact HTTPS origin with database-backed readiness, public and
 security smokes, and the disposable authenticated acceptance matrix. The GH-0304 deployment of
 merge commit `99a1015` proved payment-derived capability decisions, cross-scope denial and verified
-webhook single effect. The GH-0401 staging gate then proved the seventeenth migration and left zero
-test artifacts; published HTTPS promotion is recorded separately in its release evidence.
+webhook single effect. GH-0401 merge commit `15c2da2` was then deployed automatically by Render as
+`dep-da697o3l550s73cd75bg`; its seventeenth-migration staging gate left zero test artifacts, and the
+public readiness plus hosted security smokes passed on the exact HTTPS origin.

@@ -90,5 +90,6 @@ fixtures and retained the structural `REFERENCE_APP`, sandbox catalog and entitl
   behavior was added;
 - no reserve, consume, release, allow/deny or no-overspend decision was added.
 
-GitHub CI, merge identity, Render deployment, published readiness/HTTPS checks and the final release
-ZIP are recorded in the separate GH-0401 release validation evidence after promotion.
+GitHub CI, merge identity, Render deployment and the published readiness/HTTPS checks are recorded
+in [GH-0401 release validation](VALIDATION-2026-08-24-GH0401-RELEASE.md). The final source-only ZIP
+is generated from the tagged release after that release evidence is merged.
