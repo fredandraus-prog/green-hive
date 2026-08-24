@@ -568,7 +568,11 @@ async function run() {
   const ownerAudit = await request('/api/audit', { jar: jarA });
   assert.equal(ownerAudit.response.status, 200);
   const projectEvents = ownerAudit.body.events.filter((event) => event.projectId === projectId);
-  assert.deepEqual(projectEvents.map((event) => event.eventCode), ['PROJECT_CREATED']);
+  assert.deepEqual(projectEvents.map((event) => event.eventCode).sort(), [
+    'PAYMENT_CONFIRMED',
+    'PROJECT_CREATED',
+    'PURCHASE_CREATED',
+  ]);
   assert.doesNotMatch(
     JSON.stringify(projectEvents),
     /Hosted acceptance project|hosted-https|password|token|cookie|payload/i,
@@ -651,7 +655,13 @@ async function run() {
       .filter((event) => event.projectId === projectId)
       .map((event) => event.eventCode)
       .sort(),
-    ['PROJECT_ARCHIVED', 'PROJECT_CREATED', 'PROJECT_DELETION_REQUESTED'],
+    [
+      'PAYMENT_CONFIRMED',
+      'PROJECT_ARCHIVED',
+      'PROJECT_CREATED',
+      'PROJECT_DELETION_REQUESTED',
+      'PURCHASE_CREATED',
+    ],
   );
 
   const otherOwnerAudit = await request('/api/audit', { jar: jarB });
