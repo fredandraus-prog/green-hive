@@ -37,7 +37,8 @@ The `REFERENCE_APP` product manifest remains `0.1.0`. Platform packages advance 
 - `db:validate` verifies 16 immutable migrations, 16 RLS-protected tables and three isolated seeds;
 - the native local Supabase gate applies/reapplies all migrations and seeds, verifies grants/helpers,
   passes all prior service matrices plus six GH-0304 scenarios and restores a clean baseline;
-- dedicated staging and published HTTPS evidence are recorded in the release validation document.
+- dedicated staging and published HTTPS evidence are recorded in the
+  [GH-0304 release validation](VALIDATION-2026-08-24-GH0304-RELEASE.md).
 
 ## Recovery
 
@@ -51,4 +52,3 @@ boundary.
 
 Real providers, checkout UI, internal/manual grants, subscriptions, usage accounting, Cost Guard,
 Jobs, AI, Redis, Files and domain execution remain outside GH-0304.
-

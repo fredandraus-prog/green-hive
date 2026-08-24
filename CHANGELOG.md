@@ -7,7 +7,7 @@ semantic versioning.
 
 No unreleased changes.
 
-## [0.13.0] - 2026-08-23
+## [0.13.0] - 2026-08-24
 
 ### Added
 

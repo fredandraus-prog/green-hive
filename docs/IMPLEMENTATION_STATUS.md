@@ -1,6 +1,6 @@
 # Implementation status
 
-Status date: 2026-08-23.
+Status date: 2026-08-24.
 
 | Checkpoint | Status | Validation | Remaining gate |
 |---|---|---|---|
@@ -49,8 +49,8 @@ storing raw payloads or signatures. GH-0304 derives independent project capabili
 from those authoritative transitions. Its server-side `can()` decision repeats
 user/app/workspace/project scope and accepts no commercial or grant authority from browser input.
 
-The private GitHub repository now deploys `main` through the CI-gated Render Blueprint. The Free
-service `green-hive-staging` is live at the exact HTTPS origin, database-backed readiness and the
-public smoke pass, and the full disposable hosted acceptance matrix cleans its users, tenant rows
-and Mailtrap messages. GH-0204 is `DONE` after the exact hosted security smoke proved the deployed
-limits and unthrottled health probes on merge commit `67b55cf`.
+The private GitHub repository deploys `main` through the CI-gated Render Blueprint. The Free service
+`green-hive-staging` is live at the exact HTTPS origin with database-backed readiness, public and
+security smokes, and the disposable authenticated acceptance matrix. The GH-0304 deployment of
+merge commit `99a1015` proved payment-derived capability decisions, cross-scope denial, verified
+webhook single effect and final cleanup against the sixteen-migration staging baseline.

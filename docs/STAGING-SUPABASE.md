@@ -1,10 +1,11 @@
 # Dedicated Supabase staging gate
 
-Status: `DATABASE_RLS_PROJECT_AUTH_BILLING_PASS - RENDER_HEALTHY_HTTPS`.
+Status: `DATABASE_RLS_PROJECT_AUTH_BILLING_ENTITLEMENTS_PASS - RENDER_HEALTHY_HTTPS`.
 
 The Green Hive staging environment is an isolated hosted Supabase project. It is used only to
-validate canonical migrations, RLS, Project Service and Auth/account behavior before a public
-application deployment. It is not production and it is not a second migration source.
+validate canonical migrations, RLS, Project Service, Auth/account, Billing, verified webhooks and
+Entitlements behavior before a public application deployment. It is not production and it is not a
+second migration source.
 
 ## Confirmed environment
 
@@ -23,10 +24,10 @@ the organization had no payment method or invoice and Spend Cap was enabled. Pla
 state can change outside this repository and must be rechecked before any future paid resource is
 created.
 
-Database SSL enforcement is enabled. The Render service exists, but a healthy deployment and its
-egress topology have not yet been confirmed. Network access therefore still accepts the standard
-Supabase public CIDRs; restrict that boundary only after the real hosting source addresses or
-supported pooler architecture are known.
+Database SSL enforcement is enabled and the Render service is healthy. The Free service does not
+provide a stable egress identity suitable for a narrow database allowlist, so network access still
+uses the standard Supabase public endpoint with verified TLS. Restrict that boundary only after a
+stable hosting source address or supported private/pooler architecture is available.
 
 Official references:
 
@@ -68,15 +69,17 @@ fails if a known disposable fixture remains.
 
 1. repeats the database-only preflight;
 2. runs `db:validate`;
-3. applies all canonical pending migrations, currently `0001` through `0015`, using the ledger;
+3. applies all canonical pending migrations, currently `0001` through `0016`, using the ledger;
 4. reapplies the migrator to prove no duplication;
-5. applies the structural `REFERENCE_APP` and sandbox Billing catalog seeds twice;
+5. applies the structural `REFERENCE_APP`, sandbox Billing catalog and reviewed Entitlements
+   mapping seeds twice;
 6. verifies ledger, seed identities, native FKs, RLS, helpers and grants.
 
 `staging:database:test` executes the hosted RLS/database matrix, the 10-scenario Project/Workspace
-Service matrix and the 7-scenario native Billing Service/provider matrix. `staging:auth:test` creates two
-uniquely named confirmed test accounts, executes the server-side Auth/account matrix, and deletes
-their projects, Billing rows, settings, profiles and Auth users in a final cleanup block.
+Service matrix, the 7-scenario native Billing Service/provider matrix, verified-webhook concurrency
+and the 6-scenario Entitlements matrix. `staging:auth:test` creates two uniquely named confirmed
+test accounts, executes the server-side Auth/account matrix, and deletes their projects,
+Entitlements, Billing rows, settings, profiles and Auth users in a final cleanup block.
 
 These commands never run `supabase db reset --linked`, never drop a remote schema and never clear
 unrelated Auth users. The only canonical migrations remain under `database/migrations`;
@@ -85,28 +88,33 @@ unrelated Auth users. The only canonical migrations remain under `database/migra
 ## Passed hosted evidence
 
 - project identity and health: confirmed;
-- migrations/ledger: fifteen applied, zero pending, reapplication creates no duplicate;
-- seeds: deterministic `REFERENCE_APP` and sandbox catalog, reapplied twice;
+- migrations/ledger: sixteen applied, zero pending, reapplication creates no duplicate;
+- seeds: deterministic `REFERENCE_APP`, sandbox catalog and two reviewed capability mappings,
+  reapplied twice;
 - database/RLS: 13 passed, 0 failed;
 - Project/Workspace Service: 10 passed, 0 failed;
 - Billing Service/provider: 7 passed, 0 failed;
+- verified webhook concurrency/replay: 1 passed, 0 failed;
+- Entitlements grant/revoke/cross-scope matrix: 6 passed, 0 failed;
 - Auth/account core: 8 passed, 0 failed;
 - confirmed signup and isolated owner profiles: passed;
 - profile and owned-project access: passed;
 - `user_metadata` privilege forgery: denied;
 - only controlled `app_metadata.app_code` changes the active app: passed;
 - refresh rotation, logout revocation and stable public errors: passed;
-- final database state: fifteen ledger rows, one structural app, one sandbox product/price and
-  zero disposable fixture rows;
+- final database state: sixteen ledger rows, one structural app, one sandbox product/price, two
+  reviewed capability mappings and zero disposable fixture rows;
 - final Auth cleanup: zero `staging-owner-*@example.test` users.
 
 ## Hosted acceptance completion
 
-Database, RLS, Project/Workspace Service, Audit, Auth and the deployed HTTPS cookie boundary pass.
+Database, RLS, Project/Workspace Service, Audit, Auth, Billing, verified webhooks, Entitlements and
+the deployed HTTPS cookie boundary pass.
 Supabase Site URL and the sole `/auth/recovery` redirect match the Render origin, custom SMTP uses
 the dedicated Mailtrap sandbox, and the guarded runner passes signup/login/recovery/logout/profile,
-project, cross-user, cross-workspace, forged-scope, CSRF and logical-deletion scenarios. Cleanup
-asserts zero test-owned Auth and tenant/Audit rows. GH-0201 and GH-0202 are `DONE`.
+project, cross-user, cross-workspace, forged-scope, CSRF, logical deletion and payment-derived
+capability-decision scenarios. Cleanup asserts zero test-owned Auth, tenant, Billing, Entitlements
+and Audit rows. GH-0201, GH-0202 and GH-0304 are `DONE`.
 
 Database egress hardening after a stable hosting topology and deployed rate limiting remain
 GH-0204/production operations.
