@@ -10,6 +10,8 @@ Reference App product contract.
 
 The `0.15.0` application has not yet been merged into `main` or deployed to Render. Hosted database
 parity is complete, while the public application deployment remains a post-review release action.
+The subsequent promotion and hosted-readiness correction are recorded separately in
+`VALIDATION-2026-08-24-GH0402-RELEASE.md` so this implementation snapshot remains factual.
 
 ## Preservation and working branch
 
@@ -143,4 +145,3 @@ GH-0402 does not add provider price lookup or estimation, provider selection, re
 Jobs, AI execution, Search execution, Redis, remote Files, external webhooks or consumer-domain
 behavior. The additional canonical decision names remain public contract values but are not emitted
 by this slice. GH-0403 Jobs is the next checkpoint.
-

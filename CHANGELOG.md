@@ -40,6 +40,11 @@ No unreleased changes.
 - Dedicated Supabase staging passes the same Cost Guard matrix and finishes with 18 ledger rows,
   zero pending migrations and zero disposable test artifacts.
 - The complete clean `npm run verify` gate and dependency audit pass with no known vulnerability.
+- GitHub CI passed both checks for feature PR #19 and readiness hotfix PR #20. Render rejected the
+  first GH-0402 deploy because the application still expected 17 migrations; the minimal hotfix
+  advanced readiness to 18 and verifies the Cost Guard tables/functions. Deploy
+  `dep-da6djmbncjis738915rg` then succeeded on commit `325a7a4`, followed by public and hosted
+  security smokes.
 
 ### Status
 

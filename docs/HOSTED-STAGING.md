@@ -168,6 +168,15 @@ GH-0401 merge commit `15c2da2` was automatically published as Render deploy
 headers, Reference App shell and guarded hosted-security smokes all passed. No manual deploy, plan
 change, infrastructure change or new browser accounting endpoint was involved.
 
+GH-0402 feature merge `91e0fcf` was automatically attempted as
+`dep-da6dfcegekts739ch9m0`. The build completed, but Render rejected the deploy after 48.4 seconds
+because the application readiness contract still required exactly 17 migrations while canonical
+staging already contained migration `0018`. No database rollback or infrastructure change was
+performed. Readiness hotfix PR #20 raised the expected baseline to 18 and added explicit checks for
+the Cost Guard tables and reserve/consume/release functions. Merge commit `325a7a4` then deployed
+automatically as `dep-da6djmbncjis738915rg` in 54.4 seconds. Public liveness, readiness,
+HTTPS/security headers, Reference App shell and the hosted security smoke all pass.
+
 ## Rollback
 
 If the first deploy fails, do not change the database to make the process start. Inspect the
