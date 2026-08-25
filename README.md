@@ -265,8 +265,8 @@ metadata drift and a managed schema without a ledger. Except for provisioning th
 
 ## Status
 
-GH-0102, GH-0103, GH-0104, GH-0201, GH-0202, GH-0203, GH-0204, GH-0250, GH-0301, GH-0302, GH-0303 and
-GH-0304 are `DONE`.
+GH-0102, GH-0103, GH-0104, GH-0201, GH-0202, GH-0203, GH-0204, GH-0250, GH-0301, GH-0302, GH-0303,
+GH-0304, GH-0401 and GH-0402 are `DONE`.
 GH-0204 passed local abuse/bundle tests, the exact hosted security smoke and the complete
 authenticated HTTPS acceptance matrix on the single-instance Render staging service. See
 [Implementation status](docs/IMPLEMENTATION_STATUS.md), [Database](docs/DATABASE.md), [Trusted app
@@ -288,5 +288,8 @@ web](docs/REFERENCE-APP-WEB.md), [Hosted staging](docs/HOSTED-STAGING.md), [Audi
 [GH-0401 checkpoint](docs/CHECKPOINT-GH-0401.md),
 [GH-0401 implementation validation](docs/VALIDATION-2026-08-24-GH0401-IMPLEMENTATION.md),
 [GH-0401 release validation](docs/VALIDATION-2026-08-24-GH0401-RELEASE.md),
+[GH-0402 checkpoint](docs/CHECKPOINT-GH-0402.md),
+[GH-0402 implementation validation](docs/VALIDATION-2026-08-24-GH0402-IMPLEMENTATION.md),
+[GH-0402 release validation](docs/VALIDATION-2026-08-24-GH0402-RELEASE.md),
 [GH-0250 checkpoint](docs/CHECKPOINT-GH-0250.md), [Ideas Radar](IDEAS_RADAR.md) and
 [Reconciliation](docs/RECONCILIATION-2026-08-18.md).

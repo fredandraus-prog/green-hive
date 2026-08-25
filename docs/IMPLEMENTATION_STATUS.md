@@ -63,5 +63,8 @@ merge commit `99a1015` proved payment-derived capability decisions, cross-scope 
 webhook single effect. GH-0401 merge commit `15c2da2` was then deployed automatically by Render as
 `dep-da697o3l550s73cd75bg`; its seventeenth-migration staging gate left zero test artifacts, and the
 public readiness plus hosted security smokes passed on the exact HTTPS origin. Migration `0018`
-and the GH-0402 native staging matrix now pass with eighteen ledger rows and zero test artifacts;
-the `0.15.0` application deployment remains gated on this branch's review and merge.
+and the GH-0402 native staging matrix pass with eighteen ledger rows and zero test artifacts. The
+first `0.15.0` Render attempt from feature merge `91e0fcf` correctly failed because application
+readiness still required 17 migrations. Readiness hotfix PR #20 advanced the contract to 18 and
+verifies the Cost Guard tables/functions; merge commit `325a7a4` deployed successfully as
+`dep-da6djmbncjis738915rg`, and the public plus hosted-security smokes pass.
