@@ -69,16 +69,17 @@ fails if a known disposable fixture remains.
 
 1. repeats the database-only preflight;
 2. runs `db:validate`;
-3. applies all canonical pending migrations, currently `0001` through `0018`, using the ledger;
+3. applies all canonical pending migrations, currently `0001` through `0020`, using the ledger;
 4. reapplies the migrator to prove no duplication;
-5. applies the structural `REFERENCE_APP`, sandbox Billing catalog and reviewed Entitlements
-   mapping seeds twice;
+5. applies the structural `REFERENCE_APP`, sandbox Billing catalog, reviewed Entitlements mappings
+   and Reference App job registration seeds twice;
 6. verifies ledger, seed identities, native FKs, RLS, helpers and grants.
 
 `staging:database:test` executes the hosted RLS/database matrix, the 10-scenario Project/Workspace
 Service matrix, the 7-scenario native Billing Service/provider matrix, verified-webhook concurrency,
-the 6-scenario Entitlements matrix, the 5-scenario Usage/Cost matrix and the 5-scenario Atomic Cost
-Guard matrix, including separate-connection concurrent reservation. `staging:auth:test` creates two
+the 6-scenario Entitlements matrix, the 5-scenario Usage/Cost matrix, the 5-scenario Atomic Cost
+Guard matrix and the Jobs/Worker lifecycle matrices, including separate-connection concurrent
+reservation and exclusive job claim. `staging:auth:test` creates two
 uniquely named confirmed
 test accounts, executes the server-side Auth/account matrix, and deletes their projects,
 Usage/Cost, Entitlements, Billing rows, settings, profiles and Auth users in a final cleanup block.
@@ -90,9 +91,9 @@ unrelated Auth users. The only canonical migrations remain under `database/migra
 ## Passed hosted evidence
 
 - project identity and health: confirmed;
-- migrations/ledger: eighteen applied, zero pending, reapplication creates no duplicate;
-- seeds: deterministic `REFERENCE_APP`, sandbox catalog and two reviewed capability mappings,
-  reapplied twice;
+- migrations/ledger: twenty applied, zero pending, reapplication creates no duplicate;
+- seeds: deterministic `REFERENCE_APP`, sandbox catalog, two reviewed capability mappings and
+  Reference App job registration, reapplied twice;
 - database/RLS: 13 passed, 0 failed;
 - Project/Workspace Service: 10 passed, 0 failed;
 - Billing Service/provider: 7 passed, 0 failed;
@@ -100,14 +101,17 @@ unrelated Auth users. The only canonical migrations remain under `database/migra
 - Entitlements grant/revoke/cross-scope matrix: 6 passed, 0 failed;
 - Usage/Cost exact-decimal/idempotency/RLS matrix: 5 passed, 0 failed;
 - Atomic Cost Guard entitlement/reserve/consume/release/concurrency matrix: 5 passed, 0 failed;
+- Jobs registration/enqueue/read/isolation matrix: passed;
+- Worker claim/lease/heartbeat/retry/terminal/recovery matrix: passed;
 - Auth/account core: 8 passed, 0 failed;
 - confirmed signup and isolated owner profiles: passed;
 - profile and owned-project access: passed;
 - `user_metadata` privilege forgery: denied;
 - only controlled `app_metadata.app_code` changes the active app: passed;
 - refresh rotation, logout revocation and stable public errors: passed;
-- final database state: eighteen ledger rows, one structural app, one sandbox product/price, two
-  reviewed capability mappings and zero disposable fixture rows;
+- final database state: twenty ledger rows, one structural app, one sandbox product/price, two
+  reviewed capability mappings, one registered Reference App job type and zero disposable fixture
+  rows;
 - final Auth cleanup: zero `staging-owner-*@example.test` users.
 
 ## Hosted acceptance completion

@@ -25,13 +25,13 @@ Status date: 2026-08-26.
 | GH-0401 | DONE | exact-decimal project budgets, separate append-only usage/cost ledgers, idempotent server writers, limited owner reads, admin inspection and embedded/local/staging/HTTPS gates | none |
 | GH-0402 | DONE | entitlement-first decisions, exact-decimal atomic reserve/consume/release, concurrent no-overspend, RLS, Audit and embedded/local/staging Supabase gates | none |
 | GH-0403 | DONE | registered queue schema, protected idempotent enqueue, entitlement gate, RLS/Audit and unit/embedded/local/staging Supabase gates pass | none |
-| GH-0404 | PARTIAL | migration `0020`, typed Worker service and unit/embedded/local Supabase lifecycle matrices pass | dedicated staging Supabase, CI, Render readiness and release evidence |
-| GH-0501+ | NOT_STARTED | later checkpoints remain outside this slice | start only after GH-0404 promotion |
+| GH-0404 | DONE | migration `0020`, typed Worker service, unit/embedded/local/staging Supabase matrices, CI, Render readiness and published HTTPS acceptance pass | none |
+| GH-0501+ | NOT_STARTED | later checkpoints remain outside this slice | start only in a separately authorized slice |
 
 The local Supabase parity gate passed on PostgreSQL 17.6 with native `auth.users`, `auth.uid()` and
-`auth.jwt()`. The dedicated hosted staging project also passes the nineteen-migration baseline,
+`auth.jwt()`. The dedicated hosted staging project also passes the twenty-migration baseline,
 RLS, Project/Workspace/Billing Services and server-side Auth/account matrices. Hosted test users
-and rows are removed after each run, leaving nineteen ledger records and the structural
+and rows are removed after each run, leaving twenty ledger records and the structural
 `REFERENCE_APP`, sandbox catalog, entitlement mapping and job-registration seeds.
 
 GH-0403 adds registered job types and one tenant-safe PostgreSQL queue. Enqueue revalidates
@@ -78,3 +78,7 @@ first `0.15.0` Render attempt from feature merge `91e0fcf` correctly failed beca
 readiness still required 17 migrations. Readiness hotfix PR #20 advanced the contract to 18 and
 verifies the Cost Guard tables/functions; merge commit `325a7a4` deployed successfully as
 `dep-da6djmbncjis738915rg`, and the public plus hosted-security smokes pass.
+GH-0403 then established the nineteen-migration queue baseline. GH-0404 migration `0020`, the
+complete native Worker matrix and final cleanup pass on dedicated staging. Feature merge
+`fc65e29` deployed successfully as `dep-da7ls0h5efls738rmnpg`; twenty-migration readiness, public,
+security and authenticated HTTPS acceptance all pass.

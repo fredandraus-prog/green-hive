@@ -121,10 +121,10 @@ safeguards.
 
 ## Hosted staging workflow
 
-A dedicated Free-plan Supabase staging project is active in São Paulo. Its nineteen-migration
+A dedicated Free-plan Supabase staging project is active in São Paulo. Its twenty-migration
 database baseline, cross-organization RLS matrix, Project/Workspace Service, Billing,
-Entitlements, Usage/Cost and Atomic Cost Guard gates have passed without changing the production
-candidate or the pre-existing Green Hive project:
+Entitlements, Usage/Cost, Atomic Cost Guard, Jobs and Worker lifecycle gates have passed without
+changing the production candidate or the pre-existing Green Hive project:
 
 ```text
 npm run staging:database:preflight
@@ -275,9 +275,9 @@ metadata drift and a managed schema without a ledger. Except for provisioning th
 ## Status
 
 GH-0102, GH-0103, GH-0104, GH-0201, GH-0202, GH-0203, GH-0204, GH-0250, GH-0301, GH-0302, GH-0303,
-GH-0304, GH-0401, GH-0402 and GH-0403 are `DONE`.
-GH-0404 Worker lifecycle is implemented and locally validated; dedicated staging validation is the
-remaining promotion gate.
+GH-0304, GH-0401, GH-0402, GH-0403 and GH-0404 are `DONE`.
+GH-0404 passed local and dedicated-staging Worker lifecycle matrices, CI, twenty-migration Render
+readiness and the published HTTPS acceptance gates.
 GH-0204 passed local abuse/bundle tests, the exact hosted security smoke and the complete
 authenticated HTTPS acceptance matrix on the single-instance Render staging service. See
 [Implementation status](docs/IMPLEMENTATION_STATUS.md), [Database](docs/DATABASE.md), [Trusted app
@@ -307,5 +307,6 @@ web](docs/REFERENCE-APP-WEB.md), [Hosted staging](docs/HOSTED-STAGING.md), [Audi
 [Jobs](docs/JOBS.md),
 [GH-0404 checkpoint](docs/CHECKPOINT-GH-0404.md),
 [GH-0404 implementation validation](docs/VALIDATION-2026-08-26-GH0404-IMPLEMENTATION.md),
+[GH-0404 release validation](docs/VALIDATION-2026-08-26-GH0404-RELEASE.md),
 [GH-0250 checkpoint](docs/CHECKPOINT-GH-0250.md), [Ideas Radar](IDEAS_RADAR.md) and
 [Reconciliation](docs/RECONCILIATION-2026-08-18.md).

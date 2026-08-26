@@ -16,9 +16,10 @@
 
 ## Acceptance status
 
-Local implementation is complete. GH-0404 remains `PARTIAL` until migration `0020` passes on the
-dedicated Supabase staging project, both GitHub CI checks pass, Render reports the twenty-migration
-readiness contract, and release evidence is recorded.
+GH-0404 is `DONE`. Migration `0020` passed on the dedicated Supabase staging project, both GitHub
+CI checks passed, Render reported the twenty-migration readiness contract, and public, security and
+authenticated HTTPS acceptance gates passed with final cleanup. See the
+[release validation](VALIDATION-2026-08-26-GH0404-RELEASE.md).
 
 ## Boundaries
 

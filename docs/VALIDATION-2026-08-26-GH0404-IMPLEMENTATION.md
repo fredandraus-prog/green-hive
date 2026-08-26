@@ -34,8 +34,10 @@ The Worker matrices cover exclusive concurrent claim, exact lease ownership, hea
 retry delay, retry exhaustion, permanent failure, completion, cancellation, expired-lease
 recovery, authenticated denial and Audit secret exclusion.
 
-## Remaining release gate
+## Release handoff
 
-Dedicated Supabase staging, GitHub CI, Render twenty-migration readiness, final clean verification,
-tag and release ZIP remain pending. Until that evidence is complete, GH-0404 is `PARTIAL` rather
-than `DONE`.
+At the implementation commit, dedicated Supabase staging, GitHub CI, Render twenty-migration
+readiness and published acceptance were still required, so this document correctly recorded
+GH-0404 as `PARTIAL` at that stage. Those external gates subsequently passed and are recorded in
+the [GH-0404 release validation](VALIDATION-2026-08-26-GH0404-RELEASE.md), which promotes the
+checkpoint to `DONE`.

@@ -38,13 +38,16 @@ No unreleased changes.
 - The guarded native local Supabase gate rebuilt and reapplied all twenty migrations and four
   seeds, passed the Worker lifecycle matrix and retained a clean seeded baseline with zero pending
   migrations.
-- Dedicated staging Supabase, CI, Render readiness and published release evidence remain the
-  promotion gate for `DONE`.
+- Dedicated staging applied only migration `0020`, passed the full database/Worker matrix and
+  retained twenty ledger rows, zero pending migrations and zero disposable artifacts.
+- GitHub push and PR checks passed. Render automatically deployed merge `fc65e29` as
+  `dep-da7ls0h5efls738rmnpg` in 50.2 seconds; twenty-migration readiness, public and security smokes
+  and the complete authenticated HTTPS acceptance matrix all passed.
 
 ### Status
 
-- GH-0404 is `PARTIAL` pending the external release gate. Coordinated platform packages advance to
-  `0.17.0`; the Reference App product manifest remains `0.1.0`.
+- GH-0404 is `DONE`. Coordinated platform packages advance to `0.17.0`; the Reference App product
+  manifest remains `0.1.0`.
 
 ## [0.16.0] - 2026-08-26
 
