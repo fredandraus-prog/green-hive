@@ -147,5 +147,6 @@ test('Jobs maps unexpected repository failures to a stable public error', async 
   assert.deepEqual(JOB_ERROR_CODES, [
     'JOB_ACCESS_DENIED', 'JOB_INVALID_INPUT', 'JOB_NOT_FOUND', 'JOB_NOT_REGISTERED',
     'JOB_ENTITLEMENT_REQUIRED', 'JOB_IDEMPOTENCY_CONFLICT', 'JOB_OPERATION_FAILED',
+    'WORKER_INVALID_INPUT', 'WORKER_LEASE_LOST', 'WORKER_OPERATION_FAILED',
   ]);
 });

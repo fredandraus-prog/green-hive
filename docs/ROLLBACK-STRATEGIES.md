@@ -24,6 +24,7 @@ Once real data exists, a reviewed forward correction is normally safer.
 | `0017` | forward-fix Usage/Cost schema and protected writers | export and verify budgets, both accounting ledgers and budget Audit evidence before restoration |
 | `0018` | forward-fix Cost Guard decisions/reservations/functions | export and reconcile decisions, reservations, budgets, cost events and Cost Guard Audit evidence before restoration |
 | `0019` | forward-fix job registrations, queue constraints and enqueue function | export and verify registrations, queued jobs, Audit evidence and migration ledger state before restoration |
+| `0020` | forward-fix Worker lease columns, functions, constraints and Audit transitions | export and verify jobs, ensure no live leases, preserve Audit evidence and migration ledger state before restoration |
 
 If a ledger checksum, filename or rollback description differs, deployment stops. Never edit the
 ledger to hide drift. Restore the canonical migration or introduce a reviewed next-numbered

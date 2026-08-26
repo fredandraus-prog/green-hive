@@ -375,6 +375,19 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'audit.capture_job_queued',
     'audit_jobs_after_insert',
     'JOB_QUEUED',
+    'hive.job_retry_delay_seconds',
+    'hive.claim_next_job',
+    'hive.heartbeat_job',
+    'hive.complete_job',
+    'hive.fail_job',
+    'hive.cancel_job',
+    'hive.recover_expired_job_leases',
+    'audit.capture_job_transition',
+    'audit_jobs_after_transition',
+    'JOB_STARTED',
+    'JOB_RETRY_SCHEDULED',
+    'JOB_COMPLETED',
+    'JOB_CANCELLED',
   ];
   for (const marker of requiredContextMarkers) {
     if (!allSql.includes(marker)) errors.push(`trusted app context is missing marker: ${marker}`);
@@ -533,6 +546,42 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     if (!allSql.includes(jobsMarker)) {
       errors.push(`Jobs foundation is missing marker: ${jobsMarker}`);
     }
+  }
+  for (const workerMarker of [
+    'ADD COLUMN leased_by text',
+    'ADD COLUMN lease_token_sha256 text',
+    'ADD COLUMN lease_expires_at timestamptz',
+    'ADD COLUMN heartbeat_at timestamptz',
+    'FOR UPDATE SKIP LOCKED',
+    "target_failure_kind NOT IN ('TRANSIENT', 'PERMANENT')",
+    "target_retry_policy = 'FIXED' THEN RETURN 30",
+    'LEAST(3600, (5 * power(2::numeric, target_attempt_count - 1))::integer)',
+    "RAISE EXCEPTION 'WORKER_LEASE_LOST'",
+    'GRANT EXECUTE ON FUNCTION hive.claim_next_job(text, integer) TO service_role',
+  ]) {
+    if (!allSql.includes(workerMarker)) {
+      errors.push(`Worker lifecycle is missing marker: ${workerMarker}`);
+    }
+  }
+  for (const workerFunction of [
+    'hive.claim_next_job\\(text,\\s*integer\\)',
+    'hive.heartbeat_job\\(uuid,\\s*text,\\s*text,\\s*integer\\)',
+    'hive.complete_job\\(uuid,\\s*text,\\s*text,\\s*text,\\s*text\\)',
+    'hive.fail_job\\(uuid,\\s*text,\\s*text,\\s*text,\\s*text\\)',
+    'hive.cancel_job\\(uuid,\\s*text,\\s*text\\)',
+    'hive.recover_expired_job_leases\\(integer\\)',
+  ]) {
+    for (const deniedRole of ['PUBLIC', 'authenticated']) {
+      if (!new RegExp(
+        `REVOKE\\s+ALL\\s+ON\\s+FUNCTION\\s+${workerFunction}\\s+FROM\\s+${deniedRole}`,
+        'i',
+      ).test(allSql)) {
+        errors.push(`Worker function ${workerFunction} must be revoked from ${deniedRole}`);
+      }
+    }
+  }
+  if (/GRANT\s+SELECT\s*\([\s\S]{0,800}\b(leased_by|lease_token_sha256|output_sha256|output_reference)\b[\s\S]{0,200}ON\s+hive\.jobs\s+TO\s+authenticated/i.test(allSql)) {
+    errors.push('authenticated must not receive Worker lease or output columns');
   }
   for (const requiredMarker of [
     'app_code text',

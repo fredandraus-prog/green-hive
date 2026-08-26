@@ -245,11 +245,19 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
         ,'hive.consume_cost_reservation(uuid,numeric,text,text,text,timestamp with time zone,jsonb)'
         ,'hive.release_cost_reservation(uuid,jsonb)'
         ,'audit.capture_cost_guard_decision()'
-        ,'hive.enqueue_project_job(uuid,text,text,text,text,integer)'
-        ,'audit.capture_job_queued()'
+       ,'hive.enqueue_project_job(uuid,text,text,text,text,integer)'
+       ,'audit.capture_job_queued()'
+       ,'hive.job_retry_delay_seconds(text,integer)'
+       ,'hive.claim_next_job(text,integer)'
+       ,'hive.heartbeat_job(uuid,text,text,integer)'
+       ,'hive.complete_job(uuid,text,text,text,text)'
+       ,'hive.fail_job(uuid,text,text,text,text)'
+       ,'hive.cancel_job(uuid,text,text)'
+       ,'hive.recover_expired_job_leases(integer)'
+       ,'audit.capture_job_transition()'
      ]) AS names(name)`,
   );
-  assert.equal(helpers.rows.length, 38);
+  assert.equal(helpers.rows.length, 46);
   assert.ok(helpers.rows.every((entry) => entry.helper));
 
   const privileges = await client.query(
@@ -565,7 +573,23 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
          'service_role',
          'hive.enqueue_project_job(uuid,text,text,text,text,integer)',
          'EXECUTE'
-       ) AS service_role_can_enqueue`,
+       ) AS service_role_can_enqueue,
+       has_column_privilege('authenticated', 'hive.jobs', 'lease_token_sha256', 'SELECT')
+         AS authenticated_can_select_lease_token,
+       has_column_privilege('authenticated', 'hive.jobs', 'output_sha256', 'SELECT')
+         AS authenticated_can_select_output_hash,
+       has_function_privilege(
+         'authenticated', 'hive.claim_next_job(text,integer)', 'EXECUTE'
+       ) AS authenticated_can_claim,
+       has_function_privilege(
+         'service_role', 'hive.claim_next_job(text,integer)', 'EXECUTE'
+       ) AS service_role_can_claim,
+       has_function_privilege(
+         'authenticated', 'hive.recover_expired_job_leases(integer)', 'EXECUTE'
+       ) AS authenticated_can_recover,
+       has_function_privilege(
+         'service_role', 'hive.recover_expired_job_leases(integer)', 'EXECUTE'
+       ) AS service_role_can_recover`,
   );
   assert.deepEqual(jobPrivileges.rows[0], {
     registration_table_select: false,
@@ -577,6 +601,12 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     jobs_delete: false,
     authenticated_can_enqueue: false,
     service_role_can_enqueue: true,
+    authenticated_can_select_lease_token: false,
+    authenticated_can_select_output_hash: false,
+    authenticated_can_claim: false,
+    service_role_can_claim: true,
+    authenticated_can_recover: false,
+    service_role_can_recover: true,
   });
 
   const auditTriggers = await client.query(

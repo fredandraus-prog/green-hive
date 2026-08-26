@@ -7,6 +7,45 @@ semantic versioning.
 
 No unreleased changes.
 
+## [0.17.0] - 2026-08-26
+
+### Added
+
+- GH-0404 typed `WorkerService` and PostgreSQL repository for claim, heartbeat, completion,
+  transient/permanent failure, cancellation and expired-lease recovery.
+- Immutable migration `0020` with exclusive `SKIP LOCKED` claims, one-time lease tokens, bounded
+  deterministic backoff and lifecycle constraints.
+- Transactional `JOB_STARTED`, `JOB_RETRY_SCHEDULED`, `JOB_COMPLETED`, `JOB_FAILED` and
+  `JOB_CANCELLED` Audit evidence with minimized metadata.
+
+### Security
+
+- Only `service_role` can execute Worker lifecycle functions. `authenticated` and `PUBLIC` are
+  explicitly revoked and browser clients receive no lease, token-hash or output column grants.
+- Raw lease tokens are returned once and only their SHA-256 digest is persisted. Audit excludes
+  lease identities, input/output references and hashes.
+- Every mutation requires the exact worker identity, token digest and a non-expired lease; stale or
+  forged ownership produces the stable `WORKER_LEASE_LOST` error.
+
+### Scope
+
+- PostgreSQL remains the only queue authority. No Redis, external broker, new Render worker,
+  polling daemon, AI execution or Reference App domain handler is included.
+
+### Validation
+
+- `110/110` unit tests and `19/19` embedded PostgreSQL scenarios pass.
+- The guarded native local Supabase gate rebuilt and reapplied all twenty migrations and four
+  seeds, passed the Worker lifecycle matrix and retained a clean seeded baseline with zero pending
+  migrations.
+- Dedicated staging Supabase, CI, Render readiness and published release evidence remain the
+  promotion gate for `DONE`.
+
+### Status
+
+- GH-0404 is `PARTIAL` pending the external release gate. Coordinated platform packages advance to
+  `0.17.0`; the Reference App product manifest remains `0.1.0`.
+
 ## [0.16.0] - 2026-08-26
 
 ### Added
