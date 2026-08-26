@@ -7,6 +7,42 @@ semantic versioning.
 
 No unreleased changes.
 
+## [0.18.0] - 2026-08-26
+
+### Added
+
+- GH-0501 provider-neutral `AIProvider` interface with separate text and structured generation
+  primitives, stable task/operation/model-class identities and normalized usage metadata.
+- Deterministic `FakeAIProvider` for local development and CI, including configurable safe output
+  and unavailable/timeout/failure scenarios without a network dependency.
+- Strict runtime validation for request shapes, JSON-compatible structured output, provider result
+  metadata and stable sanitized AI provider errors.
+
+### Security
+
+- Application requests cannot select a provider-specific model, provider code, API key or other
+  adapter authority. The fake provider accepts no secret configuration and performs no fetch.
+- Default fake output records only task and operation identities; it does not echo task input.
+- Input and output have bounded technical shapes. Full task/model limits and structured schema
+  enforcement remain owned by the later AI Gateway checkpoint.
+
+### Scope
+
+- No database migration, provider registry, `ai_operations` row, Trust Policy, AI Gateway, Cost
+  Guard/Job integration, real provider call, prompt registry or Reference App AI UI is included.
+
+### Validation
+
+- Six focused provider tests pass for deterministic text/structured output, isolated JSON,
+  forbidden authority fields, stable failures, malformed outputs and zero network calls.
+- Complete clean verification, GitHub CI, existing Render build/readiness and release evidence are
+  still required for promotion.
+
+### Status
+
+- GH-0501 is `PARTIAL — IMPLEMENTATION_PASS`. Coordinated packages advance to `0.18.0`; the
+  Reference App product manifest remains `0.1.0`.
+
 ## [0.17.0] - 2026-08-26
 
 ### Added

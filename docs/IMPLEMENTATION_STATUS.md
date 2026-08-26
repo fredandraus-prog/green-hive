@@ -26,7 +26,8 @@ Status date: 2026-08-26.
 | GH-0402 | DONE | entitlement-first decisions, exact-decimal atomic reserve/consume/release, concurrent no-overspend, RLS, Audit and embedded/local/staging Supabase gates | none |
 | GH-0403 | DONE | registered queue schema, protected idempotent enqueue, entitlement gate, RLS/Audit and unit/embedded/local/staging Supabase gates pass | none |
 | GH-0404 | DONE | migration `0020`, typed Worker service, unit/embedded/local/staging Supabase matrices, CI, Render readiness and published HTTPS acceptance pass | none |
-| GH-0501+ | NOT_STARTED | later checkpoints remain outside this slice | start only in a separately authorized slice |
+| GH-0501 | PARTIAL | provider-neutral text/structured contracts, strict runtime validation and deterministic network-free fake provider tests pass | clean gate, GitHub CI, existing Render build/readiness and release evidence |
+| GH-0502+ | NOT_STARTED | Trust Policy, AI Gateway, real provider and later checkpoints remain outside this slice | start only in separately reviewed slices |
 
 The local Supabase parity gate passed on PostgreSQL 17.6 with native `auth.users`, `auth.uid()` and
 `auth.jwt()`. The dedicated hosted staging project also passes the twenty-migration baseline,
@@ -41,6 +42,12 @@ GH-0404 adds exclusive leases, one-time raw claim tokens with stored hashes only
 bounded retry, completion, failure, cancellation and expired-lease recovery. Browser roles cannot
 execute Worker functions or read lease/output internals. A continuously running worker process,
 Redis and external brokers remain outside this slice.
+
+GH-0501 introduces only the provider adapter boundary and deterministic fake implementation.
+Applications supply an app-prefixed task identity, vendor-neutral model class, bounded task input
+and operation identity. They cannot select a provider/model, send an API key or reuse this contract
+as an authorization source. AI Gateway orchestration, Trust Policy, task/model registry, schema
+validation, Cost Guard/Job integration and real provider execution remain future checkpoints.
 
 The Reference App has a responsive React/Vite shell and a Fastify HTTP adapter. Tokens remain
 outside browser-accessible storage, PKCE recovery avoids URL tokens, and local plus deployed HTTP
