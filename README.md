@@ -297,6 +297,8 @@ web](docs/REFERENCE-APP-WEB.md), [Hosted staging](docs/HOSTED-STAGING.md), [Audi
 [GH-0402 checkpoint](docs/CHECKPOINT-GH-0402.md),
 [GH-0402 implementation validation](docs/VALIDATION-2026-08-24-GH0402-IMPLEMENTATION.md),
 [GH-0402 release validation](docs/VALIDATION-2026-08-24-GH0402-RELEASE.md),
-[GH-0403 checkpoint](docs/CHECKPOINT-GH-0403.md), [Jobs](docs/JOBS.md),
+[GH-0403 checkpoint](docs/CHECKPOINT-GH-0403.md),
+[GH-0403 release validation](docs/VALIDATION-2026-08-26-GH0403-RELEASE.md),
+[Jobs](docs/JOBS.md),
 [GH-0250 checkpoint](docs/CHECKPOINT-GH-0250.md), [Ideas Radar](IDEAS_RADAR.md) and
 [Reconciliation](docs/RECONCILIATION-2026-08-18.md).

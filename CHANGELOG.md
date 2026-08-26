@@ -41,6 +41,12 @@ No unreleased changes.
   runs the native Jobs isolation/idempotency matrix and retains a clean seeded baseline.
 - Dedicated Supabase staging applied only migration `0019`, passed the full native database matrix
   and finished with 19 ledger rows, zero pending migrations and zero disposable test artifacts.
+- Both GitHub CI checks passed for feature PR #22. Render automatically deployed source commit
+  `4678da8` as `dep-da7je3navr4c73am43m0` in 53.9 seconds.
+- Public liveness/readiness, HTTPS/security headers, the Reference App shell, hosted security and
+  the complete authenticated HTTPS acceptance matrix passed. Final staging preflight remained
+  `BASELINE_READY` with 19 applied migrations, zero pending and zero disposable Auth/database
+  artifacts.
 
 ### Status
 

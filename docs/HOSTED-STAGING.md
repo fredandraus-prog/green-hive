@@ -34,8 +34,9 @@ It deliberately has no `preDeployCommand`, `db:migrate` or `db:seed` action.
    `sslmode=verify-full` and the fingerprint-pinned Supabase Root 2021 CA;
 8. provider keys and the database connection exist only in the server process;
 9. cookies are `HttpOnly`, host-only, `SameSite=Lax` and `Secure`;
-10. the database ledger has exactly migrations `0001` through `0015`, the structural
-    `REFERENCE_APP` plus sandbox catalog seeds exist and the tenant/audit/Billing helpers are
+10. the database ledger has exactly migrations `0001` through `0019`, the structural
+    `REFERENCE_APP`, sandbox catalog and Reference App job registration seeds exist, and the
+    tenant/Audit/Billing/Entitlements/Usage/Cost/Jobs helpers required by the current platform are
     present.
 
 `GET /api/health` is a process liveness check. `GET /api/ready` is the Render health check and
@@ -176,6 +177,13 @@ performed. Readiness hotfix PR #20 raised the expected baseline to 18 and added 
 the Cost Guard tables and reserve/consume/release functions. Merge commit `325a7a4` then deployed
 automatically as `dep-da6djmbncjis738915rg` in 54.4 seconds. Public liveness, readiness,
 HTTPS/security headers, Reference App shell and the hosted security smoke all pass.
+
+GH-0403 feature PR #22 passed both GitHub CI checks and merged source commit `4678da8`. Render
+automatically deployed that source as `dep-da7je3navr4c73am43m0` in 53.9 seconds. Public liveness,
+nineteen-migration readiness, HTTPS/security headers, the Reference App shell, hosted security and
+the complete authenticated acceptance matrix all pass. The final staging preflight reports
+`BASELINE_READY`, nineteen applied migrations, zero pending and zero disposable Auth/database
+artifacts.
 
 ## Rollback
 
