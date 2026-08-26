@@ -39,6 +39,7 @@ const packageDependencies = (name) => {
     || name === 'billing'
     || name === 'entitlements'
     || name === 'cost-guard'
+    || name === 'jobs'
   ) {
     return { '@green-hive/core': platformVersion };
   }
@@ -114,6 +115,7 @@ const apps = [
       '@green-hive/core': platformVersion,
       '@green-hive/cost-guard': platformVersion,
       '@green-hive/entitlements': platformVersion,
+      '@green-hive/jobs': platformVersion,
       '@green-hive/projects': platformVersion,
       fastify: '5.12.1',
       pg: '8.23.0',
@@ -128,6 +130,7 @@ const apps = [
       { path: '../../packages/billing' },
       { path: '../../packages/entitlements' },
       { path: '../../packages/cost-guard' },
+      { path: '../../packages/jobs' },
       { path: '../../packages/projects' },
     ],
   },

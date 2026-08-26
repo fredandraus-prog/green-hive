@@ -99,5 +99,6 @@ runNpm('billing:webhook:test:supabase');
 runNpm('entitlements:test:supabase');
 runNpm('usage-cost:test:supabase');
 runNpm('cost-guard:test:supabase');
+runNpm('jobs:test:supabase');
 run(process.execPath, ['scripts/db-smoke-supabase.mjs']);
 console.log('Green Hive local Supabase gate passed; clean migrated and seeded baseline retained.');

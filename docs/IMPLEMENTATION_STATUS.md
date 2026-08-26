@@ -24,13 +24,19 @@ Status date: 2026-08-24.
 | GH-0304 | DONE | manifest-reviewed product mappings, payment-derived grant/revocation snapshots, server-authoritative `can()`, Audit and embedded/local/staging/HTTPS gates | none |
 | GH-0401 | DONE | exact-decimal project budgets, separate append-only usage/cost ledgers, idempotent server writers, limited owner reads, admin inspection and embedded/local/staging/HTTPS gates | none |
 | GH-0402 | DONE | entitlement-first decisions, exact-decimal atomic reserve/consume/release, concurrent no-overspend, RLS, Audit and embedded/local/staging Supabase gates | none |
-| GH-0403+ | NOT_STARTED | Jobs and later checkpoints remain outside this release | implement Jobs foundation next |
+| GH-0403 | DONE | registered queue schema, protected idempotent enqueue, entitlement gate, RLS/Audit and unit/embedded/local/staging Supabase gates pass | none |
+| GH-0404+ | NOT_STARTED | Worker lifecycle and later checkpoints remain outside this slice | implement Worker claim/retry/failure after GH-0403 promotion |
 
 The local Supabase parity gate passed on PostgreSQL 17.6 with native `auth.users`, `auth.uid()` and
-`auth.jwt()`. The dedicated hosted staging project also passes the eighteen-migration baseline,
+`auth.jwt()`. The dedicated hosted staging project also passes the nineteen-migration baseline,
 RLS, Project/Workspace/Billing Services and server-side Auth/account matrices. Hosted test users
-and rows are removed after each run, leaving eighteen ledger records and the structural
-`REFERENCE_APP`, sandbox catalog and entitlement-mapping seeds.
+and rows are removed after each run, leaving nineteen ledger records and the structural
+`REFERENCE_APP`, sandbox catalog, entitlement mapping and job-registration seeds.
+
+GH-0403 adds registered job types and one tenant-safe PostgreSQL queue. Enqueue revalidates
+trusted user/app/workspace/project scope and the required entitlement, stores hashes rather than
+raw payloads/keys, emits one minimized `JOB_QUEUED` event and exposes only sanitized status. Worker
+claim, execution and retry transitions remain GH-0404.
 
 The Reference App has a responsive React/Vite shell and a Fastify HTTP adapter. Tokens remain
 outside browser-accessible storage, PKCE recovery avoids URL tokens, and local plus deployed HTTP

@@ -65,6 +65,30 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     { capability_code: 'REFERENCE_APP_RUN_JOB', active: true },
   ]);
 
+  const jobSeed = await client.query(
+    `SELECT id::text, job_type, handler_owner, required_capability,
+            cost_budget_type, idempotency_strategy, retry_policy,
+            max_attempts, timeout_class, active
+     FROM hive.job_registrations
+     WHERE app_id = $1::uuid
+     ORDER BY job_type`,
+    ['00000000-0000-4000-8000-000000000001'],
+  );
+  assert.deepEqual(jobSeed.rows, [
+    {
+      id: '70000000-0000-4000-8000-000000000001',
+      job_type: 'REFERENCE_APP_FAKE_AI_JOB',
+      handler_owner: 'REFERENCE_APP',
+      required_capability: 'REFERENCE_APP_RUN_JOB',
+      cost_budget_type: 'AI',
+      idempotency_strategy: 'PROJECT_OWNER_KEY',
+      retry_policy: 'EXPONENTIAL_BACKOFF',
+      max_attempts: 3,
+      timeout_class: 'SHORT',
+      active: true,
+    },
+  ]);
+
   const foreignKeys = await client.query(
     `SELECT conname, confrelid::regclass::text AS target
      FROM pg_constraint
@@ -103,6 +127,8 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ,'cost_guard_reservations_budget_scope_fk'
        ,'cost_guard_reservations_decision_fk'
        ,'cost_guard_reservations_cost_event_fk'
+       ,'jobs_project_scope_fk'
+       ,'jobs_registration_scope_fk'
      )
      ORDER BY conname`,
   );
@@ -119,6 +145,8 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     { conname: 'cost_guard_reservations_cost_event_fk', target: 'hive.cost_events' },
     { conname: 'cost_guard_reservations_decision_fk', target: 'hive.cost_guard_decisions' },
     { conname: 'cost_guard_reservations_project_scope_fk', target: 'hive.projects' },
+    { conname: 'jobs_project_scope_fk', target: 'hive.projects' },
+    { conname: 'jobs_registration_scope_fk', target: 'hive.job_registrations' },
     { conname: 'organization_apps_installer_membership_fk', target: 'hive.organization_members' },
     { conname: 'organization_members_user_fk', target: 'auth.users' },
     { conname: 'payment_provider_events_payment_purchase_fk', target: 'hive.payments' },
@@ -169,11 +197,13 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
           ,'cost_events'
           ,'cost_guard_decisions'
           ,'cost_guard_reservations'
+          ,'job_registrations'
+          ,'jobs'
        ))
        OR (pg_namespace.nspname = 'audit' AND relname = 'events')
      ORDER BY schema_name, relname`,
   );
-  assert.equal(rls.rows.length, 21);
+  assert.equal(rls.rows.length, 23);
   assert.ok(rls.rows.every((entry) => entry.relrowsecurity));
 
   const helpers = await client.query(
@@ -215,9 +245,11 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
         ,'hive.consume_cost_reservation(uuid,numeric,text,text,text,timestamp with time zone,jsonb)'
         ,'hive.release_cost_reservation(uuid,jsonb)'
         ,'audit.capture_cost_guard_decision()'
+        ,'hive.enqueue_project_job(uuid,text,text,text,text,integer)'
+        ,'audit.capture_job_queued()'
      ]) AS names(name)`,
   );
-  assert.equal(helpers.rows.length, 36);
+  assert.equal(helpers.rows.length, 38);
   assert.ok(helpers.rows.every((entry) => entry.helper));
 
   const privileges = await client.query(
@@ -511,6 +543,42 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     service_role_can_release: true,
   });
 
+  const jobPrivileges = await client.query(
+    `SELECT
+       has_table_privilege('authenticated', 'hive.job_registrations', 'SELECT')
+         AS registration_table_select,
+       has_any_column_privilege('authenticated', 'hive.job_registrations', 'SELECT')
+         AS registration_column_select,
+       has_table_privilege('authenticated', 'hive.jobs', 'SELECT')
+         AS jobs_table_select,
+       has_any_column_privilege('authenticated', 'hive.jobs', 'SELECT')
+         AS jobs_column_select,
+       has_table_privilege('authenticated', 'hive.jobs', 'INSERT') AS jobs_insert,
+       has_table_privilege('authenticated', 'hive.jobs', 'UPDATE') AS jobs_update,
+       has_table_privilege('authenticated', 'hive.jobs', 'DELETE') AS jobs_delete,
+       has_function_privilege(
+         'authenticated',
+         'hive.enqueue_project_job(uuid,text,text,text,text,integer)',
+         'EXECUTE'
+       ) AS authenticated_can_enqueue,
+       has_function_privilege(
+         'service_role',
+         'hive.enqueue_project_job(uuid,text,text,text,text,integer)',
+         'EXECUTE'
+       ) AS service_role_can_enqueue`,
+  );
+  assert.deepEqual(jobPrivileges.rows[0], {
+    registration_table_select: false,
+    registration_column_select: true,
+    jobs_table_select: false,
+    jobs_column_select: true,
+    jobs_insert: false,
+    jobs_update: false,
+    jobs_delete: false,
+    authenticated_can_enqueue: false,
+    service_role_can_enqueue: true,
+  });
+
   const auditTriggers = await client.query(
     `SELECT tgname
      FROM pg_trigger
@@ -526,16 +594,18 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ,'audit_project_entitlements_after_transition'
        ,'audit_usage_budgets_after_insert'
        ,'audit_cost_guard_decisions_after_insert'
+       ,'audit_jobs_after_insert'
      )
        AND NOT tgisinternal
      ORDER BY tgname`,
   );
-  assert.equal(auditTriggers.rows.length, 11);
+  assert.equal(auditTriggers.rows.length, 12);
 
   return Object.freeze({
     ledgerRows: ledger.rows.length,
     referenceApps: seed.rows.length,
     referenceProducts: billingSeed.rows.length,
     referenceEntitlementCapabilities: entitlementSeed.rows.length,
+    referenceJobRegistrations: jobSeed.rows.length,
   });
 }

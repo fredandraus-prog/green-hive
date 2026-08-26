@@ -24,7 +24,7 @@ try {
   const result = await runGreenHiveDatabaseSmoke(client, repositoryRoot);
 
   console.log(
-    `Supabase smoke passed: ledger=${result.ledgerRows}, REFERENCE_APP=1, sandbox catalog=${result.referenceProducts}, native auth/FKs/RLS/helpers/grants verified.`,
+    `Supabase smoke passed: ledger=${result.ledgerRows}, REFERENCE_APP=1, sandbox catalog=${result.referenceProducts}, job registrations=${result.referenceJobRegistrations}, native auth/FKs/RLS/helpers/grants verified.`,
   );
 } finally {
   await client.end();

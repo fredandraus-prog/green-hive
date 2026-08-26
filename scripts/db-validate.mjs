@@ -29,6 +29,8 @@ const requiredHiveTables = [
   'cost_events',
   'cost_guard_decisions',
   'cost_guard_reservations',
+  'job_registrations',
+  'jobs',
 ];
 const requiredAuditTables = ['events'];
 const forceRlsTables = [
@@ -51,6 +53,8 @@ const forceRlsTables = [
   'cost_events',
   'cost_guard_decisions',
   'cost_guard_reservations',
+  'job_registrations',
+  'jobs',
 ];
 const expectedPolicies = new Map([
   ['apps', ['apps_admin_select']],
@@ -121,6 +125,8 @@ const expectedPolicies = new Map([
   ['cost_events', ['cost_events_platform_select']],
   ['cost_guard_decisions', ['cost_guard_decisions_owner_or_platform_select']],
   ['cost_guard_reservations', ['cost_guard_reservations_owner_or_platform_select']],
+  ['job_registrations', ['job_registrations_current_app_or_platform_select']],
+  ['jobs', ['jobs_owner_or_platform_select']],
 ]);
 const forbiddenHiveDomainTerms = [
   'break_even',
@@ -365,6 +371,10 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'audit.capture_cost_guard_decision',
     'audit_cost_guard_decisions_after_insert',
     'COST_GUARD_DECIDED',
+    'hive.enqueue_project_job',
+    'audit.capture_job_queued',
+    'audit_jobs_after_insert',
+    'JOB_QUEUED',
   ];
   for (const marker of requiredContextMarkers) {
     if (!allSql.includes(marker)) errors.push(`trusted app context is missing marker: ${marker}`);
@@ -400,6 +410,8 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'cost_events',
     'cost_guard_decisions',
     'cost_guard_reservations',
+    'job_registrations',
+    'jobs',
   ]) {
     if (new RegExp(`GRANT\\s+[\\s\\S]{0,120}\\b(INSERT|UPDATE|DELETE)\\b[\\s\\S]{0,120}ON\\s+hive\\.${billingTable}\\b[\\s\\S]{0,80}TO\\s+authenticated\\b`, 'i').test(allSql)) {
       errors.push(`authenticated must not receive direct write privileges on hive.${billingTable}`);
@@ -431,6 +443,7 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'hive.reserve_project_cost\\(\\s*uuid,\\s*uuid,\\s*text,\\s*text,\\s*numeric,\\s*text,\\s*jsonb\\s*\\)',
     'hive.consume_cost_reservation\\(\\s*uuid,\\s*numeric,\\s*text,\\s*text,\\s*text,\\s*timestamptz,\\s*jsonb\\s*\\)',
     'hive.release_cost_reservation\\(\\s*uuid,\\s*jsonb\\s*\\)',
+    'hive.enqueue_project_job\\(\\s*uuid,\\s*text,\\s*text,\\s*text,\\s*text,\\s*integer\\s*\\)',
   ]) {
     const revokePattern = new RegExp(
       `REVOKE\\s+ALL\\s+ON\\s+FUNCTION\\s+${protectedFunction}\\s+FROM\\s+(PUBLIC|authenticated)`,
@@ -503,6 +516,24 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
       errors.push(`atomic Cost Guard contract is missing marker: ${costGuardMarker}`);
     }
   }
+  for (const jobsMarker of [
+    'CREATE TABLE hive.job_registrations',
+    'CREATE TABLE hive.jobs',
+    "status IN ('QUEUED', 'RUNNING', 'RETRYING', 'COMPLETED', 'FAILED', 'CANCELLED')",
+    'jobs_idempotency_unique',
+    'idempotency_key_sha256 text',
+    'request_fingerprint_sha256 text',
+    'JOB_IDEMPOTENCY_CONFLICT',
+    'JOB_ENTITLEMENT_REQUIRED',
+    'selected_registration.required_capability',
+    'REVOKE ALL ON FUNCTION hive.enqueue_project_job(',
+    'Raw payloads remain outside the queue',
+    'Worker claim and lifecycle transitions remain GH-0404',
+  ]) {
+    if (!allSql.includes(jobsMarker)) {
+      errors.push(`Jobs foundation is missing marker: ${jobsMarker}`);
+    }
+  }
   for (const requiredMarker of [
     'app_code text',
     'app_version text',
@@ -554,10 +585,11 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
         '0001_reference_app.sql',
         '0002_reference_app_billing_catalog.sql',
         '0003_reference_app_entitlements.sql',
+        '0004_reference_app_jobs.sql',
       ])
     ) {
       errors.push(
-        'operational seeds must contain only the canonical REFERENCE_APP app, billing catalog and entitlement mapping',
+        'operational seeds must contain only the canonical REFERENCE_APP app, billing catalog, entitlement mapping and job registration',
       );
     }
     if (/auth\.users|OTHER_TEST_APP|10000000-0000-4000-8000/i.test(seed)) {
@@ -619,6 +651,31 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     }
     if (/auth\.users|OTHER_TEST_APP|10000000-0000-4000-8000/i.test(entitlementSeed)) {
       errors.push('test identities leaked into the operational entitlement seed');
+    }
+
+    const jobSeed = await readFile(
+      path.join(repositoryRoot, 'database', 'seeds', '0004_reference_app_jobs.sql'),
+      'utf8',
+    );
+    if (
+      manifest.jobTypes.length !== 1
+      || manifest.jobTypes[0] !== 'REFERENCE_APP_FAKE_AI_JOB'
+    ) {
+      errors.push('REFERENCE_APP job seed differs from the App Manifest job types');
+    }
+    for (const marker of [
+      "'70000000-0000-4000-8000-000000000001'::uuid",
+      "'REFERENCE_APP_FAKE_AI_JOB'",
+      "'REFERENCE_APP_RUN_JOB'",
+      "'EXPONENTIAL_BACKOFF'",
+      "'PROJECT_OWNER_KEY'",
+    ]) {
+      if (!jobSeed.includes(marker)) {
+        errors.push(`REFERENCE_APP job seed is missing canonical marker ${marker}`);
+      }
+    }
+    if (/auth\.users|OTHER_TEST_APP|10000000-0000-4000-8000/i.test(jobSeed)) {
+      errors.push('test identities leaked into the operational job seed');
     }
 
     const fixture = await readFile(

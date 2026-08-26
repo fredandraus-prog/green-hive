@@ -1,4 +1,4 @@
-export const REFERENCE_APP_EXPECTED_MIGRATION_VERSION = 18;
+export const REFERENCE_APP_EXPECTED_MIGRATION_VERSION = 19;
 
 interface ReadinessRow extends Record<string, unknown> {
   readonly migration_count: number;
@@ -17,6 +17,8 @@ interface ReadinessRow extends Record<string, unknown> {
   readonly entitlements_ready: boolean;
   readonly usage_cost_ready: boolean;
   readonly cost_guard_ready: boolean;
+  readonly reference_job_registration_count: number;
+  readonly jobs_ready: boolean;
   readonly app_helper_ready: boolean;
   readonly organization_helper_ready: boolean;
 }
@@ -106,12 +108,24 @@ export function createReferenceAppReadinessCheck(database: ReadinessDatabase): (
            AND to_regprocedure(
              'hive.release_cost_reservation(uuid,jsonb)'
            ) IS NOT NULL AS cost_guard_ready,
+         (SELECT count(*)::integer
+            FROM hive.job_registrations
+           WHERE id = $4::uuid
+             AND app_id = $1::uuid
+             AND job_type = 'REFERENCE_APP_FAKE_AI_JOB'
+             AND active) AS reference_job_registration_count,
+         to_regclass('hive.jobs') IS NOT NULL
+           AND to_regclass('hive.job_registrations') IS NOT NULL
+           AND to_regprocedure(
+             'hive.enqueue_project_job(uuid,text,text,text,text,integer)'
+           ) IS NOT NULL AS jobs_ready,
          to_regprocedure('hive.current_app_code()') IS NOT NULL AS app_helper_ready,
          to_regprocedure('hive.current_organization_id()') IS NOT NULL AS organization_helper_ready`,
       [
         '00000000-0000-4000-8000-000000000001',
         '40000000-0000-4000-8000-000000000001',
         '50000000-0000-4000-8000-000000000001',
+        '70000000-0000-4000-8000-000000000001',
       ],
     );
     const state = result.rows[0];
@@ -133,6 +147,8 @@ export function createReferenceAppReadinessCheck(database: ReadinessDatabase): (
       !state.entitlements_ready ||
       !state.usage_cost_ready ||
       !state.cost_guard_ready ||
+      state.reference_job_registration_count !== 1 ||
+      !state.jobs_ready ||
       !state.app_helper_ready ||
       !state.organization_helper_ready
     ) {

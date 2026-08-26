@@ -38,6 +38,10 @@ No app-domain concepts belong in `hive`.
 - `hive.cost_events`: separate append-only exact-decimal monetary provider/platform costs.
 - `hive.cost_guard_decisions`: append-only entitlement/budget decisions keyed by trusted operation.
 - `hive.cost_guard_reservations`: exact-decimal `RESERVED`, `CONSUMED` or `RELEASED` lifecycle.
+- `hive.job_registrations`: app/manifest-backed handler ownership, capability, retry and timeout
+  contract for every accepted job type.
+- `hive.jobs`: tenant-safe queue state with registration snapshots, opaque input reference,
+  SHA-256 identities, correlation and bounded lifecycle metadata; raw payloads are not stored.
 - `audit.events`: immutable actor/tenant/app/project event metadata with request and correlation
   identifiers, protected by tenant-aware read RLS and no authenticated write grant.
 
@@ -52,6 +56,7 @@ USER -> ORGANIZATION / WORKSPACE -> ORGANIZATION_APP -> PROJECT -> PURCHASE -> P
                                                                     -> USAGE BUDGETS/EVENTS
                                                                      -> COST EVENTS
                                                                     -> COST GUARD DECISIONS/RESERVATIONS
+                                                                    -> REGISTERED JOB QUEUE
 ```
 
 ## Deployment workflow

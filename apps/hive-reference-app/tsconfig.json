@@ -35,6 +35,9 @@
       "path": "../../packages/cost-guard"
     },
     {
+      "path": "../../packages/jobs"
+    },
+    {
       "path": "../../packages/projects"
     }
   ]

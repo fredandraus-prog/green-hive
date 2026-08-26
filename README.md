@@ -20,10 +20,13 @@ project-scoped exact-decimal budgets and separate append-only logical usage and 
 ledgers.
 Version `0.15.0` implements **GH-0402 (Atomic Cost Guard)** with entitlement-aware exact-decimal
 reservation, consume/release reconciliation and a concurrent no-overspend gate.
+Version `0.16.0` implements **GH-0403 (Jobs Foundation)** with registered app job types, a
+tenant-safe idempotent PostgreSQL queue and read-only sanitized status. Worker execution remains
+GH-0404.
 
 The checkpoint is deliberately narrow. The only public Billing ingress is the verified fake-provider
 webhook used to prove the platform contract. Real provider estimation/routing, payment-provider
-adapters, checkout UI, Jobs, AI, Search, Redis, remote storage and consumer-domain functionality
+adapters, checkout UI, Worker execution, AI, Search, Redis, remote storage and consumer-domain functionality
 remain out of scope.
 
 ## What this checkpoint contains
@@ -31,7 +34,7 @@ remain out of scope.
 - the 18 canonical `@green-hive/*` packages, `hive-reference-app` and `hive-admin`;
 - canonical `AppManifestV1`, validator, App Registry and complete `REFERENCE_APP` manifest;
 - schemas `hive`, `audit` and `reference_app`;
-- eighteen immutable migrations and a SHA-256 migration ledger;
+- nineteen immutable migrations and a SHA-256 migration ledger;
 - organizations, memberships and tenant app installations around the global app registry;
 - tenant-scoped `projects` and `project_settings`;
 - production-safe structural seeds containing only `REFERENCE_APP`, its manifest-registered
@@ -60,6 +63,8 @@ remain out of scope.
   evidence and entitlement-aware atomic reserve/consume/release operations;
 - append-only Cost Guard decisions, lifecycle-controlled reservations, stable allow/deny reasons,
   operation-level idempotency and same-transaction monetary cost reconciliation;
+- typed `@green-hive/jobs` enqueue/read contracts, manifest-backed job registration and a
+  tenant-safe PostgreSQL queue that stores hashes and opaque references rather than raw payloads;
 - owner-limited budget/logical-usage reads, admin-only raw monetary-cost inspection and no
   authenticated direct write authority;
 - a responsive React/Vite Reference App with signup, login, recovery, profile and project screens;
@@ -112,7 +117,7 @@ safeguards.
 
 ## Hosted staging workflow
 
-A dedicated Free-plan Supabase staging project is active in São Paulo. Its eighteen-migration
+A dedicated Free-plan Supabase staging project is active in São Paulo. Its nineteen-migration
 database baseline, cross-organization RLS matrix, Project/Workspace Service, Billing,
 Entitlements, Usage/Cost and Atomic Cost Guard gates have passed without changing the production
 candidate or the pre-existing Green Hive project:
@@ -266,7 +271,8 @@ metadata drift and a managed schema without a ledger. Except for provisioning th
 ## Status
 
 GH-0102, GH-0103, GH-0104, GH-0201, GH-0202, GH-0203, GH-0204, GH-0250, GH-0301, GH-0302, GH-0303,
-GH-0304, GH-0401 and GH-0402 are `DONE`.
+GH-0304, GH-0401, GH-0402 and GH-0403 are `DONE`.
+GH-0404 Worker lifecycle has not started.
 GH-0204 passed local abuse/bundle tests, the exact hosted security smoke and the complete
 authenticated HTTPS acceptance matrix on the single-instance Render staging service. See
 [Implementation status](docs/IMPLEMENTATION_STATUS.md), [Database](docs/DATABASE.md), [Trusted app
@@ -291,5 +297,6 @@ web](docs/REFERENCE-APP-WEB.md), [Hosted staging](docs/HOSTED-STAGING.md), [Audi
 [GH-0402 checkpoint](docs/CHECKPOINT-GH-0402.md),
 [GH-0402 implementation validation](docs/VALIDATION-2026-08-24-GH0402-IMPLEMENTATION.md),
 [GH-0402 release validation](docs/VALIDATION-2026-08-24-GH0402-RELEASE.md),
+[GH-0403 checkpoint](docs/CHECKPOINT-GH-0403.md), [Jobs](docs/JOBS.md),
 [GH-0250 checkpoint](docs/CHECKPOINT-GH-0250.md), [Ideas Radar](IDEAS_RADAR.md) and
 [Reconciliation](docs/RECONCILIATION-2026-08-18.md).

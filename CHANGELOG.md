@@ -7,6 +7,47 @@ semantic versioning.
 
 No unreleased changes.
 
+## [0.16.0] - 2026-08-26
+
+### Added
+
+- GH-0403 `@green-hive/jobs` contracts, runtime validation, stable public errors, PostgreSQL
+  repository and server-side enqueue/read service.
+- Immutable migration `0019` with manifest-backed job registrations and a tenant-safe PostgreSQL
+  queue that persists only opaque input references and SHA-256 identities.
+- Exact idempotent enqueue, entitlement gating, bounded priority, registration snapshots,
+  correlation IDs and transactional `JOB_QUEUED` Audit capture.
+
+### Security
+
+- User, app, workspace, project and owner are derived exclusively from trusted server context and
+  revalidated inside the protected enqueue function.
+- Authenticated clients cannot enqueue directly or insert, update or delete queue rows. Owners and
+  read-only platform administrators receive only a sanitized status projection through forced RLS.
+- Raw job payloads and raw idempotency keys are not stored. Audit excludes hashes and input
+  references.
+
+### Scope
+
+- GH-0403 creates only registered `QUEUED` jobs. Claim, execution, retry, completion, failure and
+  cancellation transitions remain explicitly owned by GH-0404 Workers.
+- No Redis, message broker, external provider, AI execution or Reference App domain handler is
+  included.
+
+### Validation
+
+- 107 unit tests and 18 embedded database scenarios pass with the clean verification gate.
+- The guarded local Supabase gate applies/reapplies all 19 migrations, reapplies all four seeds,
+  runs the native Jobs isolation/idempotency matrix and retains a clean seeded baseline.
+- Dedicated Supabase staging applied only migration `0019`, passed the full native database matrix
+  and finished with 19 ledger rows, zero pending migrations and zero disposable test artifacts.
+
+### Status
+
+- GH-0403 is `DONE`; coordinated platform packages advance to `0.16.0` while the Reference App
+  product manifest remains `0.1.0`.
+- GH-0404 Worker claim/retry/failure lifecycle remains not started.
+
 ## [0.15.0] - 2026-08-24
 
 ### Added

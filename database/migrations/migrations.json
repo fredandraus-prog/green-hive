@@ -163,6 +163,15 @@
       "description": "Add entitlement-aware atomic cost reservation, consumption and release decisions.",
       "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_COST_GUARD_LEDGER_EXPORT_RESTORE",
       "rollbackStrategy": "Prefer a forward fix; export and verify decisions, reservations, budgets, cost events and Cost Guard audit evidence before any controlled restoration."
+    },
+    {
+      "version": 19,
+      "file": "0019_create_jobs_foundation.sql",
+      "sha256": "1b9c2484d5ec23b7a77afe5ff364931af966d276f6ceab0a45176f946424fdfe",
+      "checkpoint": "GH-0403",
+      "description": "Create registered app job types and the tenant-safe idempotent database queue foundation.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_JOB_QUEUE_EXPORT_RESTORE",
+      "rollbackStrategy": "Prefer a forward fix; export and verify job registrations, queued jobs, Audit evidence and migration ledger state before any controlled restoration."
     }
   ]
 }
