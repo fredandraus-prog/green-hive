@@ -185,6 +185,14 @@ the complete authenticated acceptance matrix all pass. The final staging preflig
 `BASELINE_READY`, nineteen applied migrations, zero pending and zero disposable Auth/database
 artifacts.
 
+GH-0404 feature PR #24 passed both GitHub CI checks and merged as `fc65e29`. Dedicated staging
+applied only immutable migration `0020`, passed the complete Worker lifecycle matrix and ended
+`BASELINE_READY` with twenty applied migrations, zero pending and zero disposable test artifacts.
+Render automatically published the merge as `dep-da7ls0h5efls738rmnpg` in 50.2 seconds. Public
+liveness/readiness, HTTPS/security headers, the Reference App shell, hosted security and the full
+authenticated acceptance matrix all pass; the final cleanup again left no disposable Auth or
+database artifacts.
+
 ## Rollback
 
 If the first deploy fails, do not change the database to make the process start. Inspect the
