@@ -11,11 +11,13 @@
 - minimized transactional `JOB_QUEUED` Audit evidence;
 - unit, embedded PostgreSQL and guarded native Supabase test suites.
 
-## Acceptance boundary
+## Acceptance result
 
-GH-0403 is complete only when clean verification, local Supabase and dedicated staging Supabase
-parity all pass with nineteen immutable ledger rows and no disposable fixtures. Until those gates
-are recorded, implementation status remains `PARTIAL`.
+GH-0403 is `DONE`. Clean verification, local Supabase, dedicated staging Supabase, GitHub CI,
+Render readiness and the published authenticated HTTPS matrix all passed with nineteen immutable
+ledger rows and no disposable Auth/database fixtures. The exact release identities and provider
+evidence are recorded in
+[GH-0403 release validation](VALIDATION-2026-08-26-GH0403-RELEASE.md).
 
 ## Not included
 
