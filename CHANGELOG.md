@@ -35,12 +35,14 @@ No unreleased changes.
 
 - Six focused provider tests pass for deterministic text/structured output, isolated JSON,
   forbidden authority fields, stable failures, malformed outputs and zero network calls.
-- Complete clean verification, GitHub CI, existing Render build/readiness and release evidence are
-  still required for promotion.
+- Complete clean verification passes with 116 unit tests, 19 embedded database/RLS tests, twenty
+  immutable migrations, the source manifest and zero dependency vulnerabilities.
+- Both GitHub push/PR pipelines pass. Render deploy `dep-da7n4j7lk1mc73892bkg` succeeds and the exact
+  public HTTPS liveness, readiness, security-header and Reference App shell smoke passes.
 
 ### Status
 
-- GH-0501 is `PARTIAL — IMPLEMENTATION_PASS`. Coordinated packages advance to `0.18.0`; the
+- GH-0501 is `DONE — PASS`. Coordinated packages advance to `0.18.0`; the
   Reference App product manifest remains `0.1.0`.
 
 ## [0.17.0] - 2026-08-26
