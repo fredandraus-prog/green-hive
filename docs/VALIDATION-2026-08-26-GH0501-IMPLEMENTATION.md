@@ -34,7 +34,8 @@ REFERENCE_APP product manifest     unchanged; 0.1.0
 The six scenarios cover deterministic text, isolated structured JSON, forbidden authority/secret
 fields, bounded requests, stable failures, malformed/non-JSON provider output and zero fetch calls.
 
-## Remaining release gate
+## Release handoff
 
-The full clean verification, source manifest, GitHub CI, existing Render build/readiness, final tag
-and release ZIP remain pending. Until those gates pass, GH-0501 is `PARTIAL` rather than `DONE`.
+The implementation candidate subsequently passed the full clean verification, source manifest,
+both GitHub CI events and the existing Render build/readiness/public-smoke gate. Release details are
+recorded in `VALIDATION-2026-08-26-GH0501-RELEASE.md`; GH-0501 is promoted to `DONE` there.
