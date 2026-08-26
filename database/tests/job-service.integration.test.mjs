@@ -96,7 +96,7 @@ function hasCode(code) {
   return (error) => error instanceof JobError && error.code === code;
 }
 
-test('GH-0403 registers and enqueues tenant-safe idempotent jobs without worker execution', async () => {
+test('GH-0403 queue remains tenant-safe after the GH-0404 worker lifecycle is installed', async () => {
   const database = new PGlite({ extensions: { pgcrypto } });
   await database.waitReady;
   try {
@@ -208,11 +208,11 @@ test('GH-0403 registers and enqueues tenant-safe idempotent jobs without worker 
          (SELECT count(*)::integer FROM audit.events
            WHERE subject_id = $1::uuid
              AND metadata::text ~* '(input_sha256|input_reference|idempotency|hash)') AS leaked_audit,
-         to_regprocedure('hive.claim_next_job(text)') IS NULL AS no_worker_claim`,
+         to_regprocedure('hive.claim_next_job(text,integer)') IS NOT NULL AS worker_claim_ready`,
       [created.id],
     );
     assert.deepEqual(evidence.rows[0], {
-      jobs: 1, audit_events: 1, leaked_audit: 0, no_worker_claim: true,
+      jobs: 1, audit_events: 1, leaked_audit: 0, worker_claim_ready: true,
     });
   } finally {
     await database.close();

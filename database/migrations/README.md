@@ -21,6 +21,7 @@ The published sequence is immutable:
 17. project-scoped budgets plus separate append-only logical usage and monetary cost ledgers.
 18. entitlement-aware atomic cost decisions, reservations, consumption and release.
 19. manifest-backed job registrations and tenant-safe idempotent database queue foundation.
+20. exclusive Worker leases, heartbeat, deterministic retry, terminal transitions and expired-lease recovery.
 
 Files `0001` through `0006` remain byte-for-byte unchanged. GH-0250 is expressed only through the
 next-numbered migrations `0007` through `0010`. GH-0203 is expressed only through migration
@@ -38,7 +39,9 @@ unchanged.
 GH-0402 is expressed only through migration `0018`; migrations `0001` through `0017` remain
 unchanged. Consumption reconciles one cost event inside the same transaction.
 GH-0403 is expressed only through migration `0019`; migrations `0001` through `0018` remain
-unchanged. Worker claim and lifecycle transitions remain a future next-numbered migration.
+unchanged.
+GH-0404 is expressed only through migration `0020`; migrations `0001` through `0019` remain
+unchanged. Worker processes and external brokers are not introduced by the migration.
 
 Every SQL file begins with parseable migration ID, checkpoint, description and rollback strategy
 metadata. `migrations.json` stores the same description and strategy plus the immutable SHA-256.

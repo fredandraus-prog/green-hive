@@ -1,9 +1,9 @@
-# Jobs foundation
+# Jobs and Worker foundation
 
-GH-0403 introduces Green Hive's PostgreSQL-backed queue boundary without implementing a Worker.
-The database is the canonical first queue because it preserves the same transaction, tenant and
-Audit guarantees already validated by the platform. Redis and external brokers are not required
-for this checkpoint.
+GH-0403 introduced Green Hive's PostgreSQL-backed queue boundary. GH-0404 completes its safe Worker
+lifecycle without adding a continuously running process. The database remains the canonical first
+queue because it preserves the same transaction, tenant and Audit guarantees already validated by
+the platform. Redis and external brokers are not required.
 
 ## Registration
 
@@ -43,9 +43,40 @@ active on both tables.
 `JOB_QUEUED` is appended in the same transaction with job type, status, priority, max attempts and
 timeout class. Audit does not retain input references, hashes, keys or domain content.
 
-## Deliberate GH-0404 boundary
+## Worker lifecycle
 
-Migration `0019` recognizes the canonical lifecycle values `QUEUED`, `RUNNING`, `RETRYING`,
-`COMPLETED`, `FAILED` and `CANCELLED`, but GH-0403 creates only `QUEUED` with `attempt_count = 0`.
-There is no claim, heartbeat, retry, completion, failure or cancellation function. GH-0404 must add
-those transitions in a new immutable migration and test transient/permanent failure behavior.
+Migration `0020` adds server-only functions for claim, heartbeat, completion,
+transient/permanent failure, cancellation and bounded expired-lease recovery. Claims are ordered by
+priority, availability and stable ID, and use `FOR UPDATE SKIP LOCKED`; concurrent workers cannot
+own the same job.
+
+The claimant supplies only a validated worker identity and lease duration. PostgreSQL generates a
+random lease token, returns the raw value once and persists only its SHA-256 digest. Every later
+mutation must match job ID, worker ID and token digest while the lease remains unexpired. A stale,
+forged or already-consumed token produces `WORKER_LEASE_LOST` without revealing database details.
+
+Heartbeats renew leases for 15 through 3,600 seconds. A transient failure schedules `RETRYING` only
+when policy and remaining attempts allow it. `FIXED` waits 30 seconds; `EXPONENTIAL_BACKOFF` waits
+5, 10, 20 seconds and continues doubling with a one-hour cap. `NONE`, permanent failure and attempt
+exhaustion transition to `FAILED`. Recovery uses a bounded `SKIP LOCKED` batch and applies the same
+rules to abandoned `RUNNING` jobs.
+
+Completion may persist only an opaque output reference and/or its SHA-256 identity. Cancellation,
+completion and terminal failure clear lease material. Lifecycle constraints reject partial lease
+states, output on non-completed work and retries beyond `max_attempts`.
+
+## Worker authorization and Audit
+
+Only `service_role` can execute Worker lifecycle functions. `authenticated` and `PUBLIC` are
+explicitly revoked; owners and platform administrators retain their prior sanitized read-only
+projection and cannot select lease, token-hash or output columns.
+
+Status transitions append minimized `JOB_STARTED`, `JOB_RETRY_SCHEDULED`, `JOB_COMPLETED`,
+`JOB_FAILED` and `JOB_CANCELLED` events. Audit records contain status, attempt bounds and a safe
+error code, but never lease identities, input/output references, hashes or raw content.
+
+## Deliberate process boundary
+
+GH-0404 delivers the lifecycle authority as a library and immutable SQL contract. It does not add a
+polling daemon, Render background worker, Redis, an external broker, AI execution, provider calls or
+a Reference App domain handler. Those require explicit later checkpoints and deployment decisions.

@@ -172,6 +172,15 @@
       "description": "Create registered app job types and the tenant-safe idempotent database queue foundation.",
       "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_JOB_QUEUE_EXPORT_RESTORE",
       "rollbackStrategy": "Prefer a forward fix; export and verify job registrations, queued jobs, Audit evidence and migration ledger state before any controlled restoration."
+    },
+    {
+      "version": 20,
+      "file": "0020_create_worker_lifecycle.sql",
+      "sha256": "d93c05452985760731be95d532d4f94a96cd68ab1b07f7283ccc8524985b0a60",
+      "checkpoint": "GH-0404",
+      "description": "Add an exclusive leased worker lifecycle with deterministic retry and expired-lease recovery.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_JOB_WORKER_EXPORT_RESTORE",
+      "rollbackStrategy": "Prefer a forward fix; export and verify jobs, lease-free queue state, Audit evidence and migration ledger state before any controlled restoration."
     }
   ]
 }
