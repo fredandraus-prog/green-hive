@@ -7,6 +7,54 @@ semantic versioning.
 
 No unreleased changes.
 
+## [0.19.0] - 2026-08-26
+
+### Added
+
+- GH-0502 canonical `PUBLIC`, `INTERNAL`, `CONFIDENTIAL` and `HIGHLY_CONFIDENTIAL`
+  classifications with their versioned external-processing defaults.
+- Server-only `TrustPolicyService` for `EXTERNAL_PROVIDER`, `SEARCH_QUERY` and `LOG` decisions,
+  exposing stable allow, sanitize, confirm and deny contracts.
+- Exact canonical policy matrix, fail-closed fallback for every unspecified combination and
+  operation-specific sanitization actions for context, search queries and logs.
+- Controlled provider-specific policy overrides with explicit configuration release identities and
+  confidential-mode conditions.
+
+### Security
+
+- Evaluation accepts no raw prompt, payload or app/provider authority beyond strictly validated
+  server-owned metadata. Signed app context is revalidated and platform administrators cannot reuse
+  the owner evaluation path.
+- `HIGHLY_CONFIDENTIAL` data remains denied by default. A controlled override may only deny or
+  require explicit confirmation, and confirmation requires both an exact provider and confidential
+  mode; silent allow/sanitize overrides are rejected.
+- Unknown policy combinations deny, invalid configuration fails at service composition time and
+  decision results omit actor/app/workspace identities.
+
+### Changed
+
+- The exported `GREEN_HIVE_VERSION` constant is synchronized with the coordinated platform version
+  after remaining stale at `0.14.0` in later releases.
+
+### Scope
+
+- No migration, database policy store, automatic PII/content classifier, generic content
+  transformation, confirmation workflow, Trust/AI Gateway integration, provider call, HTTP route or
+  UI is included.
+
+### Validation
+
+- Six focused tests pass for the canonical matrix, explicit sanitization modes, fail-closed gaps,
+  controlled confirmation, forged/raw input denial and invalid-policy rejection.
+- Complete clean verification passes with 122 unit tests, 19 embedded database/RLS tests, twenty
+  immutable migrations, a 341-file source manifest and zero dependency vulnerabilities.
+- GitHub CI, existing Render build/readiness and release evidence remain required for promotion.
+
+### Status
+
+- GH-0502 is `PARTIAL — IMPLEMENTATION_PASS`. Coordinated packages advance to `0.19.0`; the
+  Reference App product manifest remains `0.1.0`.
+
 ## [0.18.0] - 2026-08-26
 
 ### Added

@@ -40,6 +40,7 @@ const packageDependencies = (name) => {
     || name === 'entitlements'
     || name === 'cost-guard'
     || name === 'jobs'
+    || name === 'trust'
   ) {
     return { '@green-hive/core': platformVersion };
   }
@@ -52,6 +53,7 @@ const packageReferences = (name) =>
     || name === 'billing'
     || name === 'entitlements'
     || name === 'cost-guard'
+    || name === 'trust'
     ? [{ path: '../core' }]
     : [];
 
@@ -101,6 +103,21 @@ for (const name of packageNames) {
     'utf8',
   );
 }
+
+const coreIndexPath = path.join(repositoryRoot, 'packages', 'core', 'src', 'index.ts');
+const coreIndexSource = await readFile(coreIndexPath, 'utf8');
+const versionDeclaration = /export const GREEN_HIVE_VERSION = '[0-9]+\.[0-9]+\.[0-9]+' as const;/;
+if (!versionDeclaration.test(coreIndexSource)) {
+  throw new Error('GREEN_HIVE_VERSION declaration was not found in @green-hive/core');
+}
+await writeFile(
+  coreIndexPath,
+  coreIndexSource.replace(
+    versionDeclaration,
+    `export const GREEN_HIVE_VERSION = '${platformVersion}' as const;`,
+  ),
+  'utf8',
+);
 
 const apps = [
   {
