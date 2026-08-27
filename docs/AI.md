@@ -1,54 +1,68 @@
-# AI provider contract
+# AI Gateway and provider contracts
 
-GH-0501 establishes the provider adapter boundary without implementing the AI Gateway. The public
-package is `@green-hive/ai` and exposes provider-neutral text and structured generation contracts,
-strict runtime validators, stable safe errors and the deterministic `FakeAIProvider`.
+GH-0501 established the provider-neutral adapter. GH-0503 composes that adapter behind the
+server-only `AIGatewayService`, a validated task/model/schema registry, Trust Policy, Entitlements,
+Cost Guard and Usage/Cost accounting.
 
-## Ownership boundary
+## Authority boundary
 
-Green Hive owns the adapter interface and normalized result shape. A consuming application owns
-the semantic task, input construction, prompts, output schema and interpretation. Application code
-supplies a vendor-neutral model class; it cannot choose a provider-specific model or send an API
-key through the provider request.
+Application code supplies only a trusted user/app/workspace context and:
 
-The two primitives are:
+- owned `projectId` and the server-created AI `budgetId`;
+- a unique operation identity;
+- an app-prefixed registered task type;
+- bounded task input and its trusted classification;
+- optional confidential mode for a separately controlled confirmation policy.
+
+It cannot supply `owner_user_id`, `app_id`, provider, provider model, output schema, capability,
+token limits, price, currency, retry policy or sanitizer. The registry rejects unknown and
+inconsistent composition at startup. Routing selects an enabled model by the task's vendor-neutral
+model class and server priority.
+
+## Execution order
 
 ```text
-AIProvider.generateText(request)
-AIProvider.generateStructured(request)
+trusted context + strict input
+  -> registered task and sensitivity ceiling
+  -> server model/provider route
+  -> exact Trust Policy decision and required sanitizer
+  -> bounded token/cost estimate
+  -> metadata-only AI operation start
+  -> entitlement-aware Cost Guard reservation
+  -> provider call with controlled retry
+  -> actual cost consumption + logical token event
+  -> application-owned runtime output-schema validation
+  -> terminal AI operation + minimized Audit event
 ```
 
-Every request contains only:
+Unknown tasks, models and schemas fail closed. `HIGHLY_CONFIDENTIAL` input is denied by the
+canonical Trust matrix. `CONFIDENTIAL` input reaches the provider only after the task registers the
+exact sanitizer named by Trust Policy. Provider retries are limited to three attempts and only
+explicit `UNAVAILABLE`/`TIMEOUT` failures may be retried.
 
-- an app-owned operation identity that contains no prompt content;
-- an app-prefixed registered task type;
-- a vendor-neutral model class;
-- bounded task-specific input;
-- a bounded maximum output-token request;
-- an app-owned output schema identity for structured generation.
+## Accounting and storage
 
-Provider results normalize provider/model identity, `STOP` or `LENGTH`, logical input/output usage
-and either text or JSON-compatible structured data. Runtime output-schema validation is not claimed
-until GH-0503 AI Gateway.
+Model prices are exact decimal strings. The Gateway reserves the worst-case registered output cost,
+then consumes the normalized actual provider usage and records an `AI_TOKENS` usage event. It never
+accepts an amount or capability from caller input.
 
-## Deterministic fake provider
+Migration `0021` creates `hive.ai_operations`. It stores tenant/project scope, task/schema identity,
+provider/model metadata, Trust decision, token counts, exact costs, status, safe error and a SHA-256
+request fingerprint. Raw prompts, task input, provider output, secrets and responses are prohibited.
+Owners and platform administrators have limited read-only RLS views; authenticated clients cannot
+write the table, read the fingerprint or execute lifecycle functions. Only the trusted backend may
+start, complete or fail an operation.
 
-`FakeAIProvider`:
+## Reference App proof
 
-- performs no network request and requires no secret;
-- returns the same output and usage for the same request and configuration;
-- does not echo task input in its default response;
-- deep-copies configured structured JSON so one caller cannot mutate later results;
-- can deterministically simulate unavailable, timeout and generic failure states;
-- exposes only stable safe errors without vendor payloads, prompts, secrets or stack details.
-
-Fake usage is a deterministic whitespace-token approximation for repeatable tests. It is not a
-vendor tokenizer or billable measurement. Real token accounting, model pricing and Cost Guard
-reconciliation belong to GH-0503/GH-0504.
+The product manifest remains `0.1.0` and already declares `REFERENCE_APP_STRUCTURED_ECHO`. Its
+server-owned configuration registers `REFERENCE_APP_ECHO_V1`, the vendor-neutral
+`GENERAL_STRUCTURED` class, the existing `REFERENCE_APP_RUN_JOB` capability, an AI cost budget,
+bounded limits and the deterministic network-free provider. No AI browser route or UI is exposed.
 
 ## Deferred scope
 
-GH-0501 creates no database migration, provider registry, `hive.ai_operations` table, prompt/task
-registry, Trust Policy, routing, fallback, retry orchestration, output-schema engine, Job handler,
-Cost Guard integration, HTTP endpoint, UI or real-provider adapter. No AI operation is exposed to
-the browser.
+GH-0503 adds no real provider, provider secret, prompt catalog, HTTP endpoint, frontend AI feature,
+automatic content classifier, persistent cache, worker handler, Search integration or Redis.
+One controlled real staging provider remains GH-0504. Application prompts and domain workflows
+remain owned by consuming applications, never by the reusable platform Gateway.

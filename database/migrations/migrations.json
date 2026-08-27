@@ -181,6 +181,15 @@
       "description": "Add an exclusive leased worker lifecycle with deterministic retry and expired-lease recovery.",
       "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_JOB_WORKER_EXPORT_RESTORE",
       "rollbackStrategy": "Prefer a forward fix; export and verify jobs, lease-free queue state, Audit evidence and migration ledger state before any controlled restoration."
+    },
+    {
+      "version": 21,
+      "file": "0021_create_ai_gateway_operations.sql",
+      "sha256": "146e8187d4ca743849463303365af902dc2fcddfc1a521bb187d4c4803ceef1d",
+      "checkpoint": "GH-0503",
+      "description": "Create tenant-safe AI Gateway operation metadata with server-only lifecycle writers.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_AI_OPERATION_EXPORT_RESTORE",
+      "rollbackStrategy": "Prefer a forward fix; export and verify AI operation metadata, usage/cost evidence, Audit evidence and migration ledger state before any controlled restoration."
     }
   ]
 }

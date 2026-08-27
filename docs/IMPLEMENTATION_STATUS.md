@@ -1,6 +1,6 @@
 # Implementation status
 
-Status date: 2026-08-26.
+Status date: 2026-08-27.
 
 | Checkpoint | Status | Validation | Remaining gate |
 |---|---|---|---|
@@ -28,12 +28,13 @@ Status date: 2026-08-26.
 | GH-0404 | DONE | migration `0020`, typed Worker service, unit/embedded/local/staging Supabase matrices, CI, Render readiness and published HTTPS acceptance pass | none |
 | GH-0501 | DONE | provider-neutral text/structured contracts, strict runtime validation, deterministic network-free fake provider, clean gate, CI, Render readiness and public HTTPS smoke pass | none |
 | GH-0502 | DONE | canonical data classifications, exact Trust matrix, fail-closed gaps, controlled confirmation, strict tests, clean gate, CI, Render readiness and public HTTPS smoke pass | none |
-| GH-0503+ | NOT_STARTED | AI Gateway, model/schema registry, real provider and later checkpoints remain outside this slice | start only in separately reviewed slices |
+| GH-0503 | IMPLEMENTED — RELEASE_GATE_PENDING | server-owned task/model/schema registry, Trust/Cost Guard enforcement, exact accounting, runtime schema validation and local/staging native Supabase matrices pass | CI, Render readiness and public smoke |
+| GH-0504+ | NOT_STARTED | real provider, Search and later checkpoints remain outside this slice | start only in separately reviewed slices |
 
 The local Supabase parity gate passed on PostgreSQL 17.6 with native `auth.users`, `auth.uid()` and
-`auth.jwt()`. The dedicated hosted staging project also passes the twenty-migration baseline,
+`auth.jwt()`. The dedicated hosted staging project also passes the twenty-one-migration baseline,
 RLS, Project/Workspace/Billing Services and server-side Auth/account matrices. Hosted test users
-and rows are removed after each run, leaving twenty ledger records and the structural
+and rows are removed after each run, leaving twenty-one ledger records and the structural
 `REFERENCE_APP`, sandbox catalog, entitlement mapping and job-registration seeds.
 
 GH-0403 adds registered job types and one tenant-safe PostgreSQL queue. Enqueue revalidates
@@ -55,6 +56,12 @@ never enters evaluation. Canonical policy gaps deny, confidential operations nam
 sanitization action, and highly confidential data remains denied unless an exact controlled policy
 requires confirmation for a specific provider with confidential mode. It does not authorize a
 project, sanitize app semantics, collect confirmation or invoke an external provider.
+
+GH-0503 composes the existing provider, Trust, Entitlements, Cost Guard and Usage/Cost boundaries.
+Callers select only an app-registered task; provider/model/schema/capability/pricing/limits remain
+server-owned. Migration `0021` retains only safe operation metadata and terminal Audit evidence.
+The app-owned structured schema is validated after every provider result. No real provider, secret,
+browser route, prompt catalog, Search integration or Redis is included.
 
 The Reference App has a responsive React/Vite shell and a Fastify HTTP adapter. Tokens remain
 outside browser-accessible storage, PKCE recovery avoids URL tokens, and local plus deployed HTTP

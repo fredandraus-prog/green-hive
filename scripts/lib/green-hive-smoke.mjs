@@ -129,10 +129,12 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ,'cost_guard_reservations_cost_event_fk'
        ,'jobs_project_scope_fk'
        ,'jobs_registration_scope_fk'
+       ,'ai_operations_project_scope_fk'
      )
      ORDER BY conname`,
   );
   assert.deepEqual(foreignKeys.rows, [
+    { conname: 'ai_operations_project_scope_fk', target: 'hive.projects' },
     { conname: 'audit_events_app_fk', target: 'hive.apps' },
     { conname: 'audit_events_organization_fk', target: 'hive.organizations' },
     { conname: 'audit_events_project_scope_fk', target: 'hive.projects' },
@@ -199,11 +201,12 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
           ,'cost_guard_reservations'
           ,'job_registrations'
           ,'jobs'
+          ,'ai_operations'
        ))
        OR (pg_namespace.nspname = 'audit' AND relname = 'events')
      ORDER BY schema_name, relname`,
   );
-  assert.equal(rls.rows.length, 23);
+  assert.equal(rls.rows.length, 24);
   assert.ok(rls.rows.every((entry) => entry.relrowsecurity));
 
   const helpers = await client.query(
@@ -255,9 +258,13 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ,'hive.cancel_job(uuid,text,text)'
        ,'hive.recover_expired_job_leases(integer)'
        ,'audit.capture_job_transition()'
+       ,'hive.start_ai_operation(uuid,text,text,text,text,text,text,text,text,text,text,text,numeric,text)'
+       ,'hive.complete_ai_operation(text,text,integer,integer,numeric)'
+       ,'hive.fail_ai_operation(text,text)'
+       ,'audit.capture_ai_operation_transition()'
      ]) AS names(name)`,
   );
-  assert.equal(helpers.rows.length, 46);
+  assert.equal(helpers.rows.length, 50);
   assert.ok(helpers.rows.every((entry) => entry.helper));
 
   const privileges = await client.query(
@@ -609,6 +616,59 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     service_role_can_recover: true,
   });
 
+  const aiGatewayPrivileges = await client.query(
+    `SELECT
+       has_table_privilege('authenticated', 'hive.ai_operations', 'SELECT')
+         AS operation_table_select,
+       has_any_column_privilege('authenticated', 'hive.ai_operations', 'SELECT')
+         AS operation_column_select,
+       has_table_privilege('authenticated', 'hive.ai_operations', 'INSERT')
+         AS operation_insert,
+       has_table_privilege('authenticated', 'hive.ai_operations', 'UPDATE')
+         AS operation_update,
+       has_table_privilege('authenticated', 'hive.ai_operations', 'DELETE')
+         AS operation_delete,
+       has_column_privilege(
+         'authenticated', 'hive.ai_operations', 'request_fingerprint_sha256', 'SELECT'
+       ) AS authenticated_can_select_fingerprint,
+       has_function_privilege(
+         'authenticated',
+         'hive.start_ai_operation(uuid,text,text,text,text,text,text,text,text,text,text,text,numeric,text)',
+         'EXECUTE'
+       ) AS authenticated_can_start,
+       has_function_privilege(
+         'service_role',
+         'hive.start_ai_operation(uuid,text,text,text,text,text,text,text,text,text,text,text,numeric,text)',
+         'EXECUTE'
+       ) AS service_role_can_start,
+       has_function_privilege(
+         'authenticated', 'hive.complete_ai_operation(text,text,integer,integer,numeric)', 'EXECUTE'
+       ) AS authenticated_can_complete,
+       has_function_privilege(
+         'service_role', 'hive.complete_ai_operation(text,text,integer,integer,numeric)', 'EXECUTE'
+       ) AS service_role_can_complete,
+       has_function_privilege(
+         'authenticated', 'hive.fail_ai_operation(text,text)', 'EXECUTE'
+       ) AS authenticated_can_fail,
+       has_function_privilege(
+         'service_role', 'hive.fail_ai_operation(text,text)', 'EXECUTE'
+       ) AS service_role_can_fail`,
+  );
+  assert.deepEqual(aiGatewayPrivileges.rows[0], {
+    operation_table_select: false,
+    operation_column_select: true,
+    operation_insert: false,
+    operation_update: false,
+    operation_delete: false,
+    authenticated_can_select_fingerprint: false,
+    authenticated_can_start: false,
+    service_role_can_start: true,
+    authenticated_can_complete: false,
+    service_role_can_complete: true,
+    authenticated_can_fail: false,
+    service_role_can_fail: true,
+  });
+
   const auditTriggers = await client.query(
     `SELECT tgname
      FROM pg_trigger
@@ -625,11 +685,12 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ,'audit_usage_budgets_after_insert'
        ,'audit_cost_guard_decisions_after_insert'
        ,'audit_jobs_after_insert'
+       ,'audit_ai_operations_after_transition'
      )
        AND NOT tgisinternal
      ORDER BY tgname`,
   );
-  assert.equal(auditTriggers.rows.length, 12);
+  assert.equal(auditTriggers.rows.length, 13);
 
   return Object.freeze({
     ledgerRows: ledger.rows.length,
