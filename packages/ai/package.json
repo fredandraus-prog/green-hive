@@ -1,6 +1,6 @@
 {
   "name": "@green-hive/ai",
-  "version": "0.19.0",
+  "version": "0.20.0",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
@@ -13,5 +13,10 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "dependencies": {
+    "@green-hive/core": "0.20.0",
+    "@green-hive/cost-guard": "0.20.0",
+    "@green-hive/trust": "0.20.0"
+  }
 }

@@ -28,19 +28,21 @@ recovery. Version `0.18.0` implements **GH-0501 (AI Provider Foundation)** with 
 text/structured generation contracts and a deterministic, network-free `FakeAIProvider` for local
 development and CI. Version `0.19.0` implements **GH-0502 (Trust Policy Foundation)** with canonical
 data classifications, fail-closed policy evaluation, explicit sanitization actions and controlled
-provider-specific confirmation policies.
+provider-specific confirmation policies. Version `0.20.0` implements **GH-0503 (AI Gateway)** with
+server-owned task/model/schema registration, Trust and Cost Guard enforcement, exact Usage/Cost
+evidence, runtime structured-output validation and metadata-only AI operation records.
 
 The checkpoint is deliberately narrow. The only public Billing ingress is the verified fake-provider
-webhook used to prove the platform contract. AI Gateway orchestration, task/model
-registry, structured schema enforcement, Cost Guard/Job integration, a real AI provider, Search,
-Redis, remote storage and consumer-domain functionality remain out of scope.
+webhook used to prove the platform contract. A real AI provider, browser AI endpoint, application
+prompt/workflow catalog, Search, Redis, remote storage and consumer-domain functionality remain out
+of scope.
 
 ## What this checkpoint contains
 
 - the 18 canonical `@green-hive/*` packages, `hive-reference-app` and `hive-admin`;
 - canonical `AppManifestV1`, validator, App Registry and complete `REFERENCE_APP` manifest;
 - schemas `hive`, `audit` and `reference_app`;
-- twenty immutable migrations and a SHA-256 migration ledger;
+- twenty-one immutable migrations and a SHA-256 migration ledger;
 - organizations, memberships and tenant app installations around the global app registry;
 - tenant-scoped `projects` and `project_settings`;
 - production-safe structural seeds containing only `REFERENCE_APP`, its manifest-registered
@@ -77,6 +79,11 @@ Redis, remote storage and consumer-domain functionality remain out of scope.
   with stable errors, normalized usage and no network or vendor secret;
 - server-only Trust Policy classification and decision contracts with canonical allow, sanitize,
   confirm and deny outcomes, provider-specific controlled overrides and fail-closed defaults;
+- a server-only AI Gateway with validated task/model/schema registry, model-class routing, bounded
+  retry, exact Trust sanitizer enforcement, atomic Cost Guard reservation/consumption and logical
+  token evidence;
+- metadata-only `hive.ai_operations`, application-owned runtime output schemas, minimized terminal
+  Audit events, owner/admin read-only RLS and no authenticated lifecycle or fingerprint access;
 - owner-limited budget/logical-usage reads, admin-only raw monetary-cost inspection and no
   authenticated direct write authority;
 - a responsive React/Vite Reference App with signup, login, recovery, profile and project screens;
@@ -129,9 +136,9 @@ safeguards.
 
 ## Hosted staging workflow
 
-A dedicated Free-plan Supabase staging project is active in São Paulo. Its twenty-migration
+A dedicated Free-plan Supabase staging project is active in São Paulo. Its twenty-one-migration
 database baseline, cross-organization RLS matrix, Project/Workspace Service, Billing,
-Entitlements, Usage/Cost, Atomic Cost Guard, Jobs and Worker lifecycle gates have passed without
+Entitlements, Usage/Cost, Atomic Cost Guard, Jobs, Worker and AI Gateway lifecycle gates have passed without
 changing the production candidate or the pre-existing Green Hive project:
 
 ```text
@@ -284,6 +291,8 @@ metadata drift and a managed schema without a ledger. Except for provisioning th
 
 GH-0102, GH-0103, GH-0104, GH-0201, GH-0202, GH-0203, GH-0204, GH-0250, GH-0301, GH-0302, GH-0303,
 GH-0304, GH-0401, GH-0402, GH-0403, GH-0404, GH-0501 and GH-0502 are `DONE`.
+GH-0503 is implemented locally; promotion to `DONE` requires its external Supabase, CI and Render
+release gates.
 GH-0404 passed local and dedicated-staging Worker lifecycle matrices, CI, twenty-migration Render
 readiness and the published HTTPS acceptance gates.
 GH-0501 passed the clean local gate, both GitHub CI events, existing Render build/readiness and the
@@ -328,5 +337,7 @@ web](docs/REFERENCE-APP-WEB.md), [Hosted staging](docs/HOSTED-STAGING.md), [Audi
 [GH-0502 checkpoint](docs/CHECKPOINT-GH-0502.md),
 [GH-0502 implementation validation](docs/VALIDATION-2026-08-26-GH0502-IMPLEMENTATION.md),
 [GH-0502 release validation](docs/VALIDATION-2026-08-26-GH0502-RELEASE.md),
+[GH-0503 checkpoint](docs/CHECKPOINT-GH-0503.md),
+[GH-0503 implementation validation](docs/VALIDATION-2026-08-27-GH0503-IMPLEMENTATION.md),
 [GH-0250 checkpoint](docs/CHECKPOINT-GH-0250.md), [Ideas Radar](IDEAS_RADAR.md) and
 [Reconciliation](docs/RECONCILIATION-2026-08-18.md).

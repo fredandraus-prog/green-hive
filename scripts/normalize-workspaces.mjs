@@ -34,6 +34,13 @@ const packageDependencies = (name) => {
       '@supabase/supabase-js': '2.112.3',
     };
   }
+  if (name === 'ai') {
+    return {
+      '@green-hive/core': platformVersion,
+      '@green-hive/cost-guard': platformVersion,
+      '@green-hive/trust': platformVersion,
+    };
+  }
   if (
     name === 'projects'
     || name === 'billing'
@@ -48,7 +55,13 @@ const packageDependencies = (name) => {
 };
 
 const packageReferences = (name) =>
-  name === 'auth'
+  name === 'ai'
+    ? [
+        { path: '../core' },
+        { path: '../cost-guard' },
+        { path: '../trust' },
+      ]
+    : name === 'auth'
     || name === 'projects'
     || name === 'billing'
     || name === 'entitlements'
@@ -127,6 +140,7 @@ const apps = [
       '@fastify/cookie': '11.1.2',
       '@fastify/static': '10.1.3',
       '@green-hive/auth': platformVersion,
+      '@green-hive/ai': platformVersion,
       '@green-hive/audit': platformVersion,
       '@green-hive/billing': platformVersion,
       '@green-hive/core': platformVersion,
@@ -142,6 +156,7 @@ const apps = [
     web: true,
     references: [
       { path: '../../packages/core' },
+      { path: '../../packages/ai' },
       { path: '../../packages/auth' },
       { path: '../../packages/audit' },
       { path: '../../packages/billing' },

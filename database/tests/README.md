@@ -13,6 +13,10 @@ idempotent/conflicting replay, debit/credit aggregation, server-only writes and 
 GH-0402 adds entitlement denial, exact-decimal reserve/consume/release, duplicate replay,
 conflicting operation identity, bounded actual cost, same-transaction cost evidence, cross-scope
 denial and concurrent no-overspend assertions.
+GH-0403/GH-0404 add registered queue isolation, exclusive claims, hashed lease tokens, heartbeat,
+bounded retry and terminal Worker transitions. GH-0503 composes Trust Policy, Entitlements, Cost
+Guard, provider usage, runtime schemas and metadata-only AI operation/Audit evidence while proving
+cross-user/app denial and read-only browser/admin access.
 
 `npm run db:test:supabase` is the supported local external gate. It requires host
 `127.0.0.1|localhost`, port `54322`, database `postgres`,
@@ -23,7 +27,7 @@ remains supported by `db:test:external`.
 
 `projects:test:supabase` exercises the compiled `@green-hive/projects` service against the same
 native RLS boundary. It inserts only the existing fixed fixtures, removes them in `finally` and
-leaves the eighteen-migration plus structural seed baseline intact.
+leaves the twenty-one-migration plus structural seed baseline intact.
 
 `entitlements:test:supabase` exercises the compiled `@green-hive/entitlements` service against
 native RLS. It proves no grant while pending, two manifest-derived grants after payment, independent
@@ -39,6 +43,11 @@ inspection, cross-user/workspace/app isolation and complete fixture cleanup.
 concurrency gate. It proves that simultaneous estimates cannot reserve beyond one budget, verifies
 entitlement-first denial, idempotent replay, consume/release terminal behavior, same-transaction
 cost evidence, read-only authenticated/admin access and complete fixture cleanup.
+
+`jobs:test:supabase`, `workers:test:supabase` and `ai:test:supabase` verify the registered queue,
+leased Worker lifecycle and the complete metadata-only AI Gateway composition on native Supabase.
+The AI gate proves runtime schema validation, exact Usage/Cost evidence, minimized Audit, hidden
+fingerprints, server-only lifecycle functions and owner/user/app/admin RLS boundaries.
 
 `auth:test:supabase` exercises real Supabase Auth against the loopback-only Auth service. It covers
 signup, login, profile bootstrap/update, Project Service access, cross-user denial, signed app

@@ -7,6 +7,50 @@ semantic versioning.
 
 No unreleased changes.
 
+## [0.20.0] - 2026-08-27
+
+### Added
+
+- GH-0503 server-only `AIGatewayService` with a validated provider/model/task/schema registry and
+  server-priority routing by vendor-neutral model class.
+- Exact Trust Policy enforcement, registered application sanitizer selection, bounded provider
+  retry, entitlement-aware Cost Guard reservation/consumption and logical `AI_TOKENS` evidence.
+- Exact-decimal registered model prices, worst-case cost estimates and actual normalized provider
+  usage reconciliation.
+- Application-owned runtime structured-output validators and one deterministic Reference App
+  `REFERENCE_APP_STRUCTURED_ECHO` composition without network or provider secret.
+- Immutable migration `0021` with metadata-only `hive.ai_operations`, server-only lifecycle
+  functions, read-only RLS and minimized terminal AI Audit events.
+
+### Security
+
+- Caller input cannot select owner/app/workspace authority, provider, model, output schema,
+  capability, token limits, retry policy, cost or currency. Unknown registry composition fails at
+  service construction and unknown tasks/models/schemas fail closed.
+- Confidential external processing requires the exact sanitizer selected by Trust Policy; highly
+  confidential input remains denied by the canonical policy.
+- Raw prompts, inputs, outputs, provider responses and secrets are absent from the operation and
+  Audit stores. Authenticated users cannot read request fingerprints or invoke lifecycle writers.
+
+### Scope
+
+- No real provider, provider secret, AI HTTP/browser route, prompt catalog, domain workflow,
+  automatic classifier, persistent cache, Worker handler, Search integration or Redis is included.
+
+### Validation
+
+- Six focused Gateway tests and the embedded end-to-end composition pass.
+- Complete local unit and embedded database suites pass with 128 unit scenarios, 20 database/RLS
+  scenarios, 21 immutable migrations, 24 RLS-protected tables and zero dependency vulnerabilities.
+- Native local and dedicated-staging Supabase gates pass the 21-migration smoke and complete AI
+  accounting/isolation matrix with zero disposable artifacts. CI, Render and public HTTPS release
+  evidence remains required before promotion to `DONE`.
+
+### Status
+
+- GH-0503 is `IMPLEMENTED — RELEASE_GATE_PENDING`. Coordinated packages advance to `0.20.0`; the
+  Reference App product manifest remains `0.1.0`.
+
 ## [0.19.0] - 2026-08-26
 
 ### Added

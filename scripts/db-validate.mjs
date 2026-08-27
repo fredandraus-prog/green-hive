@@ -31,6 +31,7 @@ const requiredHiveTables = [
   'cost_guard_reservations',
   'job_registrations',
   'jobs',
+  'ai_operations',
 ];
 const requiredAuditTables = ['events'];
 const forceRlsTables = [
@@ -55,6 +56,7 @@ const forceRlsTables = [
   'cost_guard_reservations',
   'job_registrations',
   'jobs',
+  'ai_operations',
 ];
 const expectedPolicies = new Map([
   ['apps', ['apps_admin_select']],
@@ -127,6 +129,7 @@ const expectedPolicies = new Map([
   ['cost_guard_reservations', ['cost_guard_reservations_owner_or_platform_select']],
   ['job_registrations', ['job_registrations_current_app_or_platform_select']],
   ['jobs', ['jobs_owner_or_platform_select']],
+  ['ai_operations', ['ai_operations_owner_or_platform_select']],
 ]);
 const forbiddenHiveDomainTerms = [
   'break_even',

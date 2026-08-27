@@ -1,4 +1,4 @@
-export const REFERENCE_APP_EXPECTED_MIGRATION_VERSION = 20;
+export const REFERENCE_APP_EXPECTED_MIGRATION_VERSION = 21;
 
 interface ReadinessRow extends Record<string, unknown> {
   readonly migration_count: number;
@@ -20,6 +20,7 @@ interface ReadinessRow extends Record<string, unknown> {
   readonly reference_job_registration_count: number;
   readonly jobs_ready: boolean;
   readonly workers_ready: boolean;
+  readonly ai_gateway_ready: boolean;
   readonly app_helper_ready: boolean;
   readonly organization_helper_ready: boolean;
 }
@@ -126,6 +127,16 @@ export function createReferenceAppReadinessCheck(database: ReadinessDatabase): (
            AND to_regprocedure('hive.fail_job(uuid,text,text,text,text)') IS NOT NULL
            AND to_regprocedure('hive.recover_expired_job_leases(integer)') IS NOT NULL
            AS workers_ready,
+         to_regclass('hive.ai_operations') IS NOT NULL
+           AND to_regprocedure(
+             'hive.start_ai_operation(uuid,text,text,text,text,text,text,text,text,text,text,text,numeric,text)'
+           ) IS NOT NULL
+           AND to_regprocedure(
+             'hive.complete_ai_operation(text,text,integer,integer,numeric)'
+           ) IS NOT NULL
+           AND to_regprocedure('hive.fail_ai_operation(text,text)') IS NOT NULL
+           AND to_regprocedure('audit.capture_ai_operation_transition()') IS NOT NULL
+           AS ai_gateway_ready,
          to_regprocedure('hive.current_app_code()') IS NOT NULL AS app_helper_ready,
          to_regprocedure('hive.current_organization_id()') IS NOT NULL AS organization_helper_ready`,
       [
@@ -157,6 +168,7 @@ export function createReferenceAppReadinessCheck(database: ReadinessDatabase): (
       state.reference_job_registration_count !== 1 ||
       !state.jobs_ready ||
       !state.workers_ready ||
+      !state.ai_gateway_ready ||
       !state.app_helper_ready ||
       !state.organization_helper_ready
     ) {
