@@ -5,7 +5,40 @@ semantic versioning.
 
 ## [Unreleased]
 
-No unreleased changes.
+### Added
+
+- GH-0504 `OpenAIResponsesProvider` behind the existing provider-neutral `AIProvider` contract,
+  with fixed endpoint, exact `gpt-4o-mini-2024-07-18` snapshot and both bounded text and strict
+  Structured Outputs paths.
+- Server-owned Reference App OpenAI staging profile with USD pricing, conservative request-overhead
+  reservation, `INTERNAL` sensitivity ceiling, 128/64 task limits and exactly one attempt.
+- Dedicated `npm run ai:real:test:staging` gate proving Trust, Entitlements, Cost Guard, Usage/Cost,
+  operation and Audit evidence around one real provider call on the dedicated Supabase staging DB.
+
+### Security
+
+- The adapter accepts no caller-controlled endpoint, model, schema, price, provider or key; validates
+  the returned model snapshot; disables provider storage and tools; bounds timeout, response bytes
+  and output characters; and maps remote details to stable safe errors.
+- The paid gate is absent from `verify` and CI, loads the key only from a user-bound DPAPI blob,
+  clears process variables, uses a USD `0.0002` ceiling and atomically creates a persistent one-shot
+  attempt marker before the call. No OpenAI secret is added to Render.
+
+### Scope
+
+- No migration, public AI route/UI, prompt catalog, domain workflow, Search integration, Redis,
+  provider key or real paid invocation is included in the implementation commit.
+
+### Validation
+
+- Deterministic provider transport, Gateway accounting/authority and staging-guard tests pass
+  without network access. The complete clean local gate is recorded in the GH-0504 implementation
+  evidence.
+
+### Status
+
+- Platform packages advance to `0.21.0`; the Reference App product manifest remains `0.1.0`.
+  GH-0504 is `PARTIAL — REAL STAGING GATE PENDING` until the controlled paid call succeeds.
 
 ## [0.20.0] - 2026-08-27
 

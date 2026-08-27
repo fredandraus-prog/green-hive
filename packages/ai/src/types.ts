@@ -76,3 +76,57 @@ export interface FakeAIProviderOptions {
   readonly modelCode?: string;
   readonly failureMode?: FakeAIFailureMode;
 }
+
+export interface OpenAIResponsesHttpResponse {
+  readonly ok: boolean;
+  readonly status: number;
+  readonly headers: {
+    get(name: string): string | null;
+  };
+  readonly body?: ReadableStream<Uint8Array> | null;
+  text(): Promise<string>;
+}
+
+export type OpenAIResponsesFetch = (
+  url: string,
+  init: {
+    readonly method: 'POST';
+    readonly headers: Readonly<Record<string, string>>;
+    readonly body: string;
+    readonly signal: AbortSignal;
+  },
+) => Promise<OpenAIResponsesHttpResponse>;
+
+export interface OpenAITextTaskProfile {
+  readonly taskType: string;
+  readonly modelClass: string;
+  readonly outputMode: 'TEXT';
+  /** Server-owned instructions. They are never accepted from a generation request. */
+  readonly instructions: string;
+}
+
+export interface OpenAIStructuredTaskProfile {
+  readonly taskType: string;
+  readonly modelClass: string;
+  readonly outputMode: 'STRUCTURED';
+  /** Server-owned schema identity; callers may only reference this exact registered value. */
+  readonly outputSchemaId: string;
+  readonly schemaName: string;
+  readonly instructions: string;
+  readonly jsonSchema: AIJsonValue;
+}
+
+export type OpenAITaskProfile =
+  | OpenAITextTaskProfile
+  | OpenAIStructuredTaskProfile;
+
+export interface OpenAIResponsesProviderOptions {
+  /** Server-side secret. It is retained only in a private class field. */
+  readonly apiKey: string;
+  /** Injectable transport used by deterministic tests and controlled runtimes. */
+  readonly fetch?: OpenAIResponsesFetch;
+  /** Hard request deadline. It cannot be disabled. */
+  readonly timeoutMs?: number;
+  /** Exact allowlist of server-owned task and schema profiles. */
+  readonly taskProfiles: readonly OpenAITaskProfile[];
+}

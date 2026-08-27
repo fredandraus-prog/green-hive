@@ -30,12 +30,15 @@ development and CI. Version `0.19.0` implements **GH-0502 (Trust Policy Foundati
 data classifications, fail-closed policy evaluation, explicit sanitization actions and controlled
 provider-specific confirmation policies. Version `0.20.0` implements **GH-0503 (AI Gateway)** with
 server-owned task/model/schema registration, Trust and Cost Guard enforcement, exact Usage/Cost
-evidence, runtime structured-output validation and metadata-only AI operation records.
+evidence, runtime structured-output validation and metadata-only AI operation records. Version
+`0.21.0` prepares **GH-0504 (Controlled Real AI Provider)** with a fixed OpenAI Responses adapter,
+pinned `gpt-4o-mini-2024-07-18` snapshot, strict Structured Outputs and a one-shot paid staging
+gate. GH-0504 remains `PARTIAL` until that separately guarded real call passes.
 
 The checkpoint is deliberately narrow. The only public Billing ingress is the verified fake-provider
-webhook used to prove the platform contract. A real AI provider, browser AI endpoint, application
-prompt/workflow catalog, Search, Redis, remote storage and consumer-domain functionality remain out
-of scope.
+webhook used to prove the platform contract. The real AI adapter is server-only and has no Render
+secret, browser endpoint or routine CI execution. Application prompt/workflow catalogs, Search,
+Redis, remote storage and consumer-domain functionality remain out of scope.
 
 ## What this checkpoint contains
 
@@ -84,6 +87,10 @@ of scope.
   token evidence;
 - metadata-only `hive.ai_operations`, application-owned runtime output schemas, minimized terminal
   Audit events, owner/admin read-only RLS and no authenticated lifecycle or fingerprint access;
+- a fixed-endpoint OpenAI Responses adapter with an exact model snapshot, strict server-owned JSON
+  Schema, bounded response/timeout handling, safe normalized errors and no provider retry;
+- a manual one-shot staging gate with a machine-local DPAPI key, USD `0.0002` Cost Guard ceiling,
+  persistent attempt marker and no inclusion in `verify`, CI, Render startup or the public app;
 - owner-limited budget/logical-usage reads, admin-only raw monetary-cost inspection and no
   authenticated direct write authority;
 - a responsive React/Vite Reference App with signup, login, recovery, profile and project screens;
@@ -147,6 +154,16 @@ npm run staging:database:apply
 npm run staging:database:test
 npm run staging:auth:test
 ```
+
+After an isolated OpenAI project key and provider-side spending controls are explicitly prepared,
+GH-0504 has one additional paid command:
+
+```text
+npm run ai:real:test:staging
+```
+
+It is intentionally not part of any routine suite. It creates a non-secret attempt marker before
+crossing the paid boundary and will not retry or silently run a second time.
 
 The Windows wrapper obtains user-bound encrypted credentials from the machine-local Engine
 `.secrets` directory beside this repository, uses the session pooler with official CA verification,
@@ -299,6 +316,8 @@ GH-0502 passed the clean local gate, both GitHub CI events, existing Render buil
 exact public HTTPS smoke without adding a migration or public Trust route.
 GH-0503 passed the clean local and native Supabase gates, the complete dedicated-staging matrix,
 GitHub CI, twenty-one-migration Render readiness and the exact public HTTPS and security smokes.
+GH-0504 is `PARTIAL`: implementation and deterministic local gates pass; the dedicated API key,
+provider-side spending control and one controlled staging call are still required before `DONE`.
 GH-0204 passed local abuse/bundle tests, the exact hosted security smoke and the complete
 authenticated HTTPS acceptance matrix on the single-instance Render staging service. See
 [Implementation status](docs/IMPLEMENTATION_STATUS.md), [Database](docs/DATABASE.md), [Trusted app
@@ -340,5 +359,7 @@ web](docs/REFERENCE-APP-WEB.md), [Hosted staging](docs/HOSTED-STAGING.md), [Audi
 [GH-0503 checkpoint](docs/CHECKPOINT-GH-0503.md),
 [GH-0503 implementation validation](docs/VALIDATION-2026-08-27-GH0503-IMPLEMENTATION.md),
 [GH-0503 release validation](docs/VALIDATION-2026-08-27-GH0503-RELEASE.md),
+[GH-0504 checkpoint](docs/CHECKPOINT-GH-0504.md),
+[GH-0504 implementation validation](docs/VALIDATION-2026-08-27-GH0504-IMPLEMENTATION.md),
 [GH-0250 checkpoint](docs/CHECKPOINT-GH-0250.md), [Ideas Radar](IDEAS_RADAR.md) and
 [Reconciliation](docs/RECONCILIATION-2026-08-18.md).

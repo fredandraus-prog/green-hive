@@ -46,6 +46,10 @@ cost evidence, read-only authenticated/admin access and complete fixture cleanup
 
 `jobs:test:supabase`, `workers:test:supabase` and `ai:test:supabase` verify the registered queue,
 leased Worker lifecycle and the complete metadata-only AI Gateway composition on native Supabase.
+GH-0504 adds `ai-real-provider.staging.integration.test.mjs` as a separate manual paid gate. It is
+not included in `db:test`, `db:test:supabase`, `staging:database:test`, `verify` or CI. The gate uses
+one deterministic operation, one provider attempt, an atomic machine-local attempt marker and
+always removes its database/Auth fixtures.
 The AI gate proves runtime schema validation, exact Usage/Cost evidence, minimized Audit, hidden
 fingerprints, server-only lifecycle functions and owner/user/app/admin RLS boundaries.
 

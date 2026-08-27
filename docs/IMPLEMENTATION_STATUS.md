@@ -29,7 +29,8 @@ Status date: 2026-08-27.
 | GH-0501 | DONE | provider-neutral text/structured contracts, strict runtime validation, deterministic network-free fake provider, clean gate, CI, Render readiness and public HTTPS smoke pass | none |
 | GH-0502 | DONE | canonical data classifications, exact Trust matrix, fail-closed gaps, controlled confirmation, strict tests, clean gate, CI, Render readiness and public HTTPS smoke pass | none |
 | GH-0503 | DONE | server-owned task/model/schema registry, Trust/Cost Guard enforcement, exact accounting, runtime schema validation, local/staging native Supabase matrices, CI, Render readiness and public HTTPS/security smokes pass | none |
-| GH-0504+ | NOT_STARTED | real provider, Search and later checkpoints remain outside this slice | start only in separately reviewed slices |
+| GH-0504 | PARTIAL | fixed OpenAI Responses adapter, exact snapshot, strict schema, conservative cost reservation and one-shot staging runner pass deterministic local gates | dedicated key, provider-side spending control and one controlled real staging call |
+| GH-0601+ | NOT_STARTED | Search and later checkpoints remain outside this slice | start only in separately reviewed slices |
 
 The local Supabase parity gate passed on PostgreSQL 17.6 with native `auth.users`, `auth.uid()` and
 `auth.jwt()`. The dedicated hosted staging project also passes the twenty-one-migration baseline,
@@ -62,6 +63,13 @@ Callers select only an app-registered task; provider/model/schema/capability/pri
 server-owned. Migration `0021` retains only safe operation metadata and terminal Audit evidence.
 The app-owned structured schema is validated after every provider result. No real provider, secret,
 browser route, prompt catalog, Search integration or Redis is included.
+
+GH-0504 adds a fixed OpenAI Responses adapter and an allowlisted Reference App staging profile. The
+remote endpoint and `gpt-4o-mini-2024-07-18` snapshot, prices, schema, limits and retry policy are
+server-owned. A conservative 1,024-token request allowance is added only to the Cost Guard estimate;
+actual cost remains based on provider-reported use. The paid gate is manual, one-shot and absent
+from CI/Render. It has not run because no dedicated API key has been installed, so the checkpoint
+cannot yet be promoted to `DONE`.
 
 The Reference App has a responsive React/Vite shell and a Fastify HTTP adapter. Tokens remain
 outside browser-accessible storage, PKCE recovery avoids URL tokens, and local plus deployed HTTP

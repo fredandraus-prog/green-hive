@@ -71,6 +71,12 @@ export interface AIModelRegistration {
   readonly priority: number;
   readonly maxInputTokens: number;
   readonly maxOutputTokens: number;
+  /**
+   * Conservative server-owned allowance for provider instructions, structured-output
+   * schemas and other request framing that is absent from the caller input. It is used
+   * only while reserving cost; actual cost always uses provider-reported usage.
+   */
+  readonly inputTokenOverhead: number;
   /** Exact decimal cost per one thousand normalized tokens. */
   readonly inputCostPerThousandTokens: string;
   readonly outputCostPerThousandTokens: string;

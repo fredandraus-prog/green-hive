@@ -1,11 +1,11 @@
 # Dedicated Supabase staging gate
 
-Status: `DATABASE_RLS_PROJECT_AUTH_BILLING_ENTITLEMENTS_COST_GUARD_PASS - RENDER_HEALTHY_HTTPS`.
+Status: `DATABASE_RLS_PROJECT_AUTH_BILLING_ENTITLEMENTS_COST_GUARD_AI_GATEWAY_PASS - REAL_AI_PENDING`.
 
 The Green Hive staging environment is an isolated hosted Supabase project. It is used only to
-validate canonical migrations, RLS, Project Service, Auth/account, Billing, verified webhooks and
-Entitlements, Usage/Cost and Atomic Cost Guard behavior before a public application deployment. It
-is not production and it is not a second migration source.
+validate canonical migrations, RLS, Project Service, Auth/account, Billing, verified webhooks,
+Entitlements, Usage/Cost, Atomic Cost Guard and AI Gateway behavior before a public application
+deployment. It is not production and it is not a second migration source.
 
 ## Confirmed environment
 
@@ -36,6 +36,8 @@ Official references:
 - <https://supabase.com/docs/guides/platform/ssl-enforcement>
 - <https://supabase.com/docs/guides/database/connecting-to-postgres>
 - <https://supabase.com/docs/guides/getting-started/api-keys>
+- <https://developers.openai.com/api/docs/models/gpt-4o-mini>
+- <https://developers.openai.com/api/docs/guides/structured-outputs>
 
 ## Secret boundary
 
@@ -49,6 +51,11 @@ committed at `config/supabase-root-2021-ca.crt`, fingerprint-pinned by tests and
 guarded Windows staging wrapper and the hosted Node process through `NODE_EXTRA_CA_CERTS`. The
 server uses the new publishable/secret key format; local Supabase remains compatible with legacy
 JWT-shaped anon/service-role keys.
+
+GH-0504 does not add a provider key to Render or the repository. Its optional paid gate expects a
+separate user-bound DPAPI blob at
+`Engine/.secrets/green-hive-staging-openai-api-key.dpapi`. The value is loaded only for that command
+and removed from the process environment in `finally`.
 
 ## Guarded commands
 
@@ -88,10 +95,29 @@ These commands never run `supabase db reset --linked`, never drop a remote schem
 unrelated Auth users. The only canonical migrations remain under `database/migrations`;
 `supabase/migrations` is disabled.
 
+## Controlled real AI command
+
+`npm run ai:real:test:staging` is a separate paid gate and is never called by `verify`, CI,
+`staging:database:test` or Render. Do not run it until all of the following have been reviewed:
+
+1. a dedicated OpenAI project/API key exists only for this staging proof;
+2. provider-side spending and rate controls are set as low as the provider permits;
+3. the current official price for the exact `gpt-4o-mini-2024-07-18` snapshot still matches the
+   registered USD 0.15 input / USD 0.60 output per million tokens;
+4. the DPAPI blob exists at the exact machine-local path above;
+5. no prior `green-hive-gh0504-real-provider-attempt-v0.21.0.json` marker exists.
+
+The runner verifies the dedicated Supabase target and the complete migration ledger, prepares only
+disposable fixtures, reserves at most USD `0.0002`, executes the registered `INTERNAL` structured
+task with `maxAttempts: 1`, verifies operation/usage/cost/Audit evidence and cleans the fixtures in
+`finally`. Immediately before the provider boundary it creates the marker atomically. The marker
+contains no secret or prompt and is deliberately retained after success or failure, so a second
+attempt requires explicit investigation and authorization rather than an automatic rerun.
+
 ## Passed hosted evidence
 
 - project identity and health: confirmed;
-- migrations/ledger: twenty applied, zero pending, reapplication creates no duplicate;
+- migrations/ledger: twenty-one applied, zero pending, reapplication creates no duplicate;
 - seeds: deterministic `REFERENCE_APP`, sandbox catalog, two reviewed capability mappings and
   Reference App job registration, reapplied twice;
 - database/RLS: 13 passed, 0 failed;
@@ -103,13 +129,15 @@ unrelated Auth users. The only canonical migrations remain under `database/migra
 - Atomic Cost Guard entitlement/reserve/consume/release/concurrency matrix: 5 passed, 0 failed;
 - Jobs registration/enqueue/read/isolation matrix: passed;
 - Worker claim/lease/heartbeat/retry/terminal/recovery matrix: passed;
+- deterministic AI Gateway accounting/isolation matrix: passed;
+- controlled real OpenAI staging task: pending dedicated key and spending control;
 - Auth/account core: 8 passed, 0 failed;
 - confirmed signup and isolated owner profiles: passed;
 - profile and owned-project access: passed;
 - `user_metadata` privilege forgery: denied;
 - only controlled `app_metadata.app_code` changes the active app: passed;
 - refresh rotation, logout revocation and stable public errors: passed;
-- final database state: twenty ledger rows, one structural app, one sandbox product/price, two
+- final database state: twenty-one ledger rows, one structural app, one sandbox product/price, two
   reviewed capability mappings, one registered Reference App job type and zero disposable fixture
   rows;
 - final Auth cleanup: zero `staging-owner-*@example.test` users.
