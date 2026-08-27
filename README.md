@@ -290,15 +290,15 @@ metadata drift and a managed schema without a ledger. Except for provisioning th
 ## Status
 
 GH-0102, GH-0103, GH-0104, GH-0201, GH-0202, GH-0203, GH-0204, GH-0250, GH-0301, GH-0302, GH-0303,
-GH-0304, GH-0401, GH-0402, GH-0403, GH-0404, GH-0501 and GH-0502 are `DONE`.
-GH-0503 is implemented locally; promotion to `DONE` requires its external Supabase, CI and Render
-release gates.
+GH-0304, GH-0401, GH-0402, GH-0403, GH-0404, GH-0501, GH-0502 and GH-0503 are `DONE`.
 GH-0404 passed local and dedicated-staging Worker lifecycle matrices, CI, twenty-migration Render
 readiness and the published HTTPS acceptance gates.
 GH-0501 passed the clean local gate, both GitHub CI events, existing Render build/readiness and the
 exact public HTTPS smoke without adding a migration or public AI route.
 GH-0502 passed the clean local gate, both GitHub CI events, existing Render build/readiness and the
 exact public HTTPS smoke without adding a migration or public Trust route.
+GH-0503 passed the clean local and native Supabase gates, the complete dedicated-staging matrix,
+GitHub CI, twenty-one-migration Render readiness and the exact public HTTPS and security smokes.
 GH-0204 passed local abuse/bundle tests, the exact hosted security smoke and the complete
 authenticated HTTPS acceptance matrix on the single-instance Render staging service. See
 [Implementation status](docs/IMPLEMENTATION_STATUS.md), [Database](docs/DATABASE.md), [Trusted app
@@ -339,5 +339,6 @@ web](docs/REFERENCE-APP-WEB.md), [Hosted staging](docs/HOSTED-STAGING.md), [Audi
 [GH-0502 release validation](docs/VALIDATION-2026-08-26-GH0502-RELEASE.md),
 [GH-0503 checkpoint](docs/CHECKPOINT-GH-0503.md),
 [GH-0503 implementation validation](docs/VALIDATION-2026-08-27-GH0503-IMPLEMENTATION.md),
+[GH-0503 release validation](docs/VALIDATION-2026-08-27-GH0503-RELEASE.md),
 [GH-0250 checkpoint](docs/CHECKPOINT-GH-0250.md), [Ideas Radar](IDEAS_RADAR.md) and
 [Reconciliation](docs/RECONCILIATION-2026-08-18.md).

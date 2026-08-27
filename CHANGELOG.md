@@ -43,13 +43,15 @@ No unreleased changes.
 - Complete local unit and embedded database suites pass with 128 unit scenarios, 20 database/RLS
   scenarios, 21 immutable migrations, 24 RLS-protected tables and zero dependency vulnerabilities.
 - Native local and dedicated-staging Supabase gates pass the 21-migration smoke and complete AI
-  accounting/isolation matrix with zero disposable artifacts. CI, Render and public HTTPS release
-  evidence remains required before promotion to `DONE`.
+  accounting/isolation matrix with zero disposable artifacts.
+- Feature push, pull-request and merged-`main` GitHub CI pass. Render deploy
+  `dep-da7vg695efls73908bcg` serves merge `80f2b3d` with twenty-one-migration readiness; the exact
+  public HTTPS and hosted-security smokes pass.
 
 ### Status
 
-- GH-0503 is `IMPLEMENTED — RELEASE_GATE_PENDING`. Coordinated packages advance to `0.20.0`; the
-  Reference App product manifest remains `0.1.0`.
+- GH-0503 is `DONE`. Coordinated packages advance to `0.20.0`; the Reference App product manifest
+  remains `0.1.0`.
 
 ## [0.19.0] - 2026-08-26
 

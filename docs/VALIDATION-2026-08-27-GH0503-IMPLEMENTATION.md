@@ -47,5 +47,5 @@ cross-user/app denial, read-only owner/admin behavior and no authenticated direc
 
 The first remote matrix attempt reached a transient failure in the pre-existing concurrent webhook
 test. Cleanup was confirmed at zero artifacts; an unchanged controlled rerun passed every external
-matrix including GH-0503. CI, deployment, public smoke, final manifest and extracted ZIP
-verification remain release gates. GH-0503 is not promoted to `DONE` by this evidence alone.
+matrix including GH-0503. The remaining CI, deployment and public acceptance gates are recorded in
+[the release validation](VALIDATION-2026-08-27-GH0503-RELEASE.md), which promotes GH-0503 to `DONE`.

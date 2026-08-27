@@ -16,10 +16,11 @@
 
 ## Acceptance status
 
-The implementation candidate passes its focused unit suite, complete embedded PostgreSQL matrix
-and native local/dedicated-staging Supabase gates. Migration `0021` is applied remotely with 21
-ledger rows and no disposable artifacts. GH-0503 remains `IMPLEMENTED — RELEASE_GATE_PENDING`
-until both GitHub CI events, Render readiness and the exact public HTTPS smoke pass.
+GH-0503 is `DONE`. Its focused unit suite, complete embedded PostgreSQL matrix and native
+local/dedicated-staging Supabase gates pass. Migration `0021` is applied remotely with 21 ledger
+rows and no disposable artifacts. Feature push, pull-request and merged-`main` GitHub CI pass;
+Render deploy `dep-da7vg695efls73908bcg` serves merge `80f2b3d` with database-backed readiness,
+and the exact public HTTPS and hosted-security smokes pass.
 
 ## Boundaries
 
