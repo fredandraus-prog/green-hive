@@ -28,7 +28,7 @@ Status date: 2026-08-27.
 | GH-0404 | DONE | migration `0020`, typed Worker service, unit/embedded/local/staging Supabase matrices, CI, Render readiness and published HTTPS acceptance pass | none |
 | GH-0501 | DONE | provider-neutral text/structured contracts, strict runtime validation, deterministic network-free fake provider, clean gate, CI, Render readiness and public HTTPS smoke pass | none |
 | GH-0502 | DONE | canonical data classifications, exact Trust matrix, fail-closed gaps, controlled confirmation, strict tests, clean gate, CI, Render readiness and public HTTPS smoke pass | none |
-| GH-0503 | IMPLEMENTED — RELEASE_GATE_PENDING | server-owned task/model/schema registry, Trust/Cost Guard enforcement, exact accounting, runtime schema validation and local/staging native Supabase matrices pass | CI, Render readiness and public smoke |
+| GH-0503 | DONE | server-owned task/model/schema registry, Trust/Cost Guard enforcement, exact accounting, runtime schema validation, local/staging native Supabase matrices, CI, Render readiness and public HTTPS/security smokes pass | none |
 | GH-0504+ | NOT_STARTED | real provider, Search and later checkpoints remain outside this slice | start only in separately reviewed slices |
 
 The local Supabase parity gate passed on PostgreSQL 17.6 with native `auth.users`, `auth.uid()` and
@@ -109,3 +109,7 @@ HTTPS liveness, security-header and Reference App shell smoke all pass.
 GH-0502 also adds no migration or public Trust route. Feature merge `71292d4` deployed successfully
 as `dep-da7pq8m417fc738gccdg`; the unchanged twenty-migration readiness contract and the exact public
 HTTPS liveness, security-header and Reference App shell smoke all pass.
+GH-0503 applies immutable migration `0021` and the full AI Gateway matrix on dedicated staging,
+leaving twenty-one ledger rows and zero disposable artifacts. Feature merge `80f2b3d` deployed
+successfully as `dep-da7vg695efls73908bcg`; the twenty-one-migration readiness contract, exact
+public HTTPS smoke and hosted-security smoke all pass.
