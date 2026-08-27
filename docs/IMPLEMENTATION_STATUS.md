@@ -27,7 +27,8 @@ Status date: 2026-08-26.
 | GH-0403 | DONE | registered queue schema, protected idempotent enqueue, entitlement gate, RLS/Audit and unit/embedded/local/staging Supabase gates pass | none |
 | GH-0404 | DONE | migration `0020`, typed Worker service, unit/embedded/local/staging Supabase matrices, CI, Render readiness and published HTTPS acceptance pass | none |
 | GH-0501 | DONE | provider-neutral text/structured contracts, strict runtime validation, deterministic network-free fake provider, clean gate, CI, Render readiness and public HTTPS smoke pass | none |
-| GH-0502+ | NOT_STARTED | Trust Policy, AI Gateway, real provider and later checkpoints remain outside this slice | start only in separately reviewed slices |
+| GH-0502 | PARTIAL | canonical data classifications, exact Trust matrix, fail-closed gaps, controlled confirmation and strict context/configuration tests pass | clean gate, GitHub CI, existing Render build/readiness and release evidence |
+| GH-0503+ | NOT_STARTED | AI Gateway, model/schema registry, real provider and later checkpoints remain outside this slice | start only in separately reviewed slices |
 
 The local Supabase parity gate passed on PostgreSQL 17.6 with native `auth.users`, `auth.uid()` and
 `auth.jwt()`. The dedicated hosted staging project also passes the twenty-migration baseline,
@@ -48,6 +49,12 @@ Applications supply an app-prefixed task identity, vendor-neutral model class, b
 and operation identity. They cannot select a provider/model, send an API key or reuse this contract
 as an authorization source. AI Gateway orchestration, Trust Policy, task/model registry, schema
 validation, Cost Guard/Job integration and real provider execution remain future checkpoints.
+
+GH-0502 adds a server-only classification and policy-decision boundary. Raw prompt/payload content
+never enters evaluation. Canonical policy gaps deny, confidential operations name the required
+sanitization action, and highly confidential data remains denied unless an exact controlled policy
+requires confirmation for a specific provider with confidential mode. It does not authorize a
+project, sanitize app semantics, collect confirmation or invoke an external provider.
 
 The Reference App has a responsive React/Vite shell and a Fastify HTTP adapter. Tokens remain
 outside browser-accessible storage, PKCE recovery avoids URL tokens, and local plus deployed HTTP

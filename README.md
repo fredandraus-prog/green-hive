@@ -26,10 +26,12 @@ GH-0404. Version `0.17.0` implements **GH-0404 (Worker Foundation)** with exclus
 heartbeat, deterministic retry, completion, permanent failure, cancellation and expired-lease
 recovery. Version `0.18.0` implements **GH-0501 (AI Provider Foundation)** with provider-neutral
 text/structured generation contracts and a deterministic, network-free `FakeAIProvider` for local
-development and CI.
+development and CI. Version `0.19.0` implements **GH-0502 (Trust Policy Foundation)** with canonical
+data classifications, fail-closed policy evaluation, explicit sanitization actions and controlled
+provider-specific confirmation policies.
 
 The checkpoint is deliberately narrow. The only public Billing ingress is the verified fake-provider
-webhook used to prove the platform contract. AI Gateway orchestration, Trust Policy, task/model
+webhook used to prove the platform contract. AI Gateway orchestration, task/model
 registry, structured schema enforcement, Cost Guard/Job integration, a real AI provider, Search,
 Redis, remote storage and consumer-domain functionality remain out of scope.
 
@@ -73,6 +75,8 @@ Redis, remote storage and consumer-domain functionality remain out of scope.
   heartbeat renewal, deterministic bounded retry, terminal transitions and abandoned-lease recovery;
 - provider-neutral `AIProvider` text/structured primitives plus a deterministic `FakeAIProvider`
   with stable errors, normalized usage and no network or vendor secret;
+- server-only Trust Policy classification and decision contracts with canonical allow, sanitize,
+  confirm and deny outcomes, provider-specific controlled overrides and fail-closed defaults;
 - owner-limited budget/logical-usage reads, admin-only raw monetary-cost inspection and no
   authenticated direct write authority;
 - a responsive React/Vite Reference App with signup, login, recovery, profile and project screens;
@@ -284,6 +288,8 @@ GH-0404 passed local and dedicated-staging Worker lifecycle matrices, CI, twenty
 readiness and the published HTTPS acceptance gates.
 GH-0501 passed the clean local gate, both GitHub CI events, existing Render build/readiness and the
 exact public HTTPS smoke without adding a migration or public AI route.
+GH-0502 is implemented and locally validated; GitHub CI and the existing Render build/readiness
+gate remain before promotion to `DONE`.
 GH-0204 passed local abuse/bundle tests, the exact hosted security smoke and the complete
 authenticated HTTPS acceptance matrix on the single-instance Render staging service. See
 [Implementation status](docs/IMPLEMENTATION_STATUS.md), [Database](docs/DATABASE.md), [Trusted app
@@ -318,5 +324,8 @@ web](docs/REFERENCE-APP-WEB.md), [Hosted staging](docs/HOSTED-STAGING.md), [Audi
 [GH-0501 checkpoint](docs/CHECKPOINT-GH-0501.md),
 [GH-0501 implementation validation](docs/VALIDATION-2026-08-26-GH0501-IMPLEMENTATION.md),
 [GH-0501 release validation](docs/VALIDATION-2026-08-26-GH0501-RELEASE.md),
+[Trust Policy](docs/TRUST-POLICY.md),
+[GH-0502 checkpoint](docs/CHECKPOINT-GH-0502.md),
+[GH-0502 implementation validation](docs/VALIDATION-2026-08-26-GH0502-IMPLEMENTATION.md),
 [GH-0250 checkpoint](docs/CHECKPOINT-GH-0250.md), [Ideas Radar](IDEAS_RADAR.md) and
 [Reconciliation](docs/RECONCILIATION-2026-08-18.md).
