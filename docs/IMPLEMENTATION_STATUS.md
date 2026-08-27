@@ -27,7 +27,7 @@ Status date: 2026-08-26.
 | GH-0403 | DONE | registered queue schema, protected idempotent enqueue, entitlement gate, RLS/Audit and unit/embedded/local/staging Supabase gates pass | none |
 | GH-0404 | DONE | migration `0020`, typed Worker service, unit/embedded/local/staging Supabase matrices, CI, Render readiness and published HTTPS acceptance pass | none |
 | GH-0501 | DONE | provider-neutral text/structured contracts, strict runtime validation, deterministic network-free fake provider, clean gate, CI, Render readiness and public HTTPS smoke pass | none |
-| GH-0502 | PARTIAL | canonical data classifications, exact Trust matrix, fail-closed gaps, controlled confirmation and strict context/configuration tests pass | clean gate, GitHub CI, existing Render build/readiness and release evidence |
+| GH-0502 | DONE | canonical data classifications, exact Trust matrix, fail-closed gaps, controlled confirmation, strict tests, clean gate, CI, Render readiness and public HTTPS smoke pass | none |
 | GH-0503+ | NOT_STARTED | AI Gateway, model/schema registry, real provider and later checkpoints remain outside this slice | start only in separately reviewed slices |
 
 The local Supabase parity gate passed on PostgreSQL 17.6 with native `auth.users`, `auth.uid()` and
@@ -98,4 +98,7 @@ complete native Worker matrix and final cleanup pass on dedicated staging. Featu
 security and authenticated HTTPS acceptance all pass.
 GH-0501 adds no migration or public AI route. Feature merge `4c3faf5` deployed successfully as
 `dep-da7n4j7lk1mc73892bkg`; the unchanged twenty-migration readiness contract and the exact public
+HTTPS liveness, security-header and Reference App shell smoke all pass.
+GH-0502 also adds no migration or public Trust route. Feature merge `71292d4` deployed successfully
+as `dep-da7pq8m417fc738gccdg`; the unchanged twenty-migration readiness contract and the exact public
 HTTPS liveness, security-header and Reference App shell smoke all pass.

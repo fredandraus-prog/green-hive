@@ -39,7 +39,8 @@ The six tests cover all canonical external classifications, search/log sanitizat
 policy gaps, exact provider/confidential confirmation, administrator/raw/forged input denial,
 overly permissive configuration rejection and stable public constants/errors.
 
-## Remaining release gate
+## Release handoff
 
-GitHub CI, existing Render build/readiness, final tag and release ZIP remain pending. Until those
-gates pass, GH-0502 is `PARTIAL` rather than `DONE`.
+The implementation candidate subsequently passed both GitHub CI events and the existing Render
+build/readiness/public-smoke gate. Release details are recorded in
+`VALIDATION-2026-08-26-GH0502-RELEASE.md`; GH-0502 is promoted to `DONE` there.

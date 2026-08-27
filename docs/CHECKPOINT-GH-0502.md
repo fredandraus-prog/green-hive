@@ -14,10 +14,10 @@
 
 ## Acceptance status
 
-Local implementation, focused tests and the complete clean gate pass. GH-0502 remains `PARTIAL`
-until GitHub push/PR checks, existing Render build/readiness and release evidence pass. No dedicated
-Supabase mutation or matrix is required because the checkpoint adds no migration, seed, database
-policy store or hosted route.
+GH-0502 is `DONE`. Local implementation, focused tests, the complete clean gate, both GitHub
+push/PR pipelines, existing Render build/readiness and the exact public HTTPS smoke pass. No
+dedicated Supabase mutation or matrix was required because the checkpoint adds no migration, seed,
+database policy store or hosted route; all twenty published migrations remain unchanged.
 
 ## Boundaries
 
