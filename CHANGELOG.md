@@ -48,11 +48,12 @@ No unreleased changes.
   controlled confirmation, forged/raw input denial and invalid-policy rejection.
 - Complete clean verification passes with 122 unit tests, 19 embedded database/RLS tests, twenty
   immutable migrations, a 341-file source manifest and zero dependency vulnerabilities.
-- GitHub CI, existing Render build/readiness and release evidence remain required for promotion.
+- Both GitHub push/PR pipelines pass. Render deploy `dep-da7pq8m417fc738gccdg` succeeds and the exact
+  public HTTPS liveness, readiness, security-header and Reference App shell smoke passes.
 
 ### Status
 
-- GH-0502 is `PARTIAL — IMPLEMENTATION_PASS`. Coordinated packages advance to `0.19.0`; the
+- GH-0502 is `DONE — PASS`. Coordinated packages advance to `0.19.0`; the
   Reference App product manifest remains `0.1.0`.
 
 ## [0.18.0] - 2026-08-26
