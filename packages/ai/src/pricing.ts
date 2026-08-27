@@ -35,8 +35,20 @@ export function estimateGatewayCost(
   inputTokens: number,
   maximumOutputTokens: number,
 ): string {
+  const reservedInputTokens = inputTokens + model.inputTokenOverhead;
+  if (
+    !Number.isSafeInteger(inputTokens)
+    || inputTokens < 0
+    || !Number.isSafeInteger(maximumOutputTokens)
+    || maximumOutputTokens < 0
+    || !Number.isSafeInteger(model.inputTokenOverhead)
+    || model.inputTokenOverhead < 0
+    || !Number.isSafeInteger(reservedInputTokens)
+  ) {
+    throw new AIGatewayError('AI_GATEWAY_CONFIGURATION_INVALID');
+  }
   return normalizedPositiveCost(
-    tokenCost(inputTokens, model.inputCostPerThousandTokens)
+    tokenCost(reservedInputTokens, model.inputCostPerThousandTokens)
       + tokenCost(maximumOutputTokens, model.outputCostPerThousandTokens),
   );
 }

@@ -11,8 +11,11 @@ import {
 import { TrustPolicyService } from '../../packages/trust/dist/index.js';
 import {
   REFERENCE_APP_AI_SCHEMA_ID,
+  REFERENCE_APP_AI_SUCCESS_RESULT,
   REFERENCE_APP_AI_TASK_TYPE,
+  REFERENCE_APP_OPENAI_STAGING_CONFIGURATION_RELEASE,
   createReferenceAppAIConfiguration,
+  createReferenceAppOpenAIStagingConfiguration,
 } from '../../apps/hive-reference-app/dist/index.js';
 
 const USER_ID = '10000000-0000-4000-8000-000000000001';
@@ -92,10 +95,7 @@ test('GH-0503 routes a registered structured task and records bounded usage and 
   assert.equal(result.outputMode, 'STRUCTURED');
   assert.equal(result.outputSchemaId, REFERENCE_APP_AI_SCHEMA_ID);
   assert.deepEqual(result.value, {
-    result: 'FAKE_AI_SUCCESS',
-    taskType: REFERENCE_APP_AI_TASK_TYPE,
-    operationId: 'ai-gateway-operation-0001',
-    schemaId: REFERENCE_APP_AI_SCHEMA_ID,
+    result: REFERENCE_APP_AI_SUCCESS_RESULT,
   });
   assert.equal(result.providerCode, 'GREEN_HIVE_FAKE_AI');
   assert.equal(result.modelCode, 'FAKE_DETERMINISTIC_V1');
@@ -126,10 +126,7 @@ test('confidential input is minimized by the exact Trust Policy sanitizer before
         providerCode: this.providerCode,
         modelCode: 'FAKE_DETERMINISTIC_V1',
         value: {
-          result: 'FAKE_AI_SUCCESS',
-          taskType: request.taskType,
-          operationId: request.operationId,
-          schemaId: request.outputSchemaId,
+          result: REFERENCE_APP_AI_SUCCESS_RESULT,
         },
         finishReason: 'STOP',
         usage: { inputTokens: 2, outputTokens: 1 },
@@ -162,6 +159,28 @@ test('application-owned runtime schema rejects malformed structured output with 
   }]);
   assert.equal(evidence.consumes.length, 1, 'provider work remains accounted for');
   assert.equal(evidence.releases.length, 1, 'release is attempted but cannot undo consumed cost');
+});
+
+test('Gateway rejects structured identity fields that disagree with its server-owned request', async () => {
+  const provider = new FakeAIProvider({
+    structuredOutput: {
+      result: 'FAKE_AI_SUCCESS',
+      taskType: REFERENCE_APP_AI_TASK_TYPE,
+      operationId: 'forged-operation-identifier-0001',
+      schemaId: REFERENCE_APP_AI_SCHEMA_ID,
+    },
+  });
+  const { evidence, ports } = dependencies();
+  const gateway = new AIGatewayService(createReferenceAppAIConfiguration(provider), ports);
+  await assert.rejects(
+    gateway.execute(context, input({ operationId: 'ai-gateway-identity-mismatch-0001' })),
+    hasCode('AI_GATEWAY_OUTPUT_SCHEMA_INVALID'),
+  );
+  assert.equal(evidence.consumes.length, 1, 'provider usage remains accounted for');
+  assert.deepEqual(evidence.failures, [{
+    operationId: 'ai-gateway-identity-mismatch-0001',
+    errorCode: 'AI_GATEWAY_OUTPUT_SCHEMA_INVALID',
+  }]);
 });
 
 test('client input cannot forge tenant, provider, model, schema, capability or cost authority', async () => {
@@ -204,6 +223,7 @@ test('registry validates composition, routes by server priority and uses exact d
     ],
   });
   assert.equal(registry.route(registry.task(REFERENCE_APP_AI_TASK_TYPE)).model.modelCode, 'FAKE_DETERMINISTIC_V1');
+  assert.equal(configuration.models[0].inputTokenOverhead, 0);
   assert.equal(estimateGatewayCost(configuration.models[0], 4, 256), '0.000516');
   assert.equal(actualGatewayCost(configuration.models[0], { inputTokens: 4, outputTokens: 1 }), '0.000006');
   assert.throws(
@@ -214,6 +234,66 @@ test('registry validates composition, routes by server priority and uses exact d
     () => new AIGatewayRegistry({
       ...configuration,
       tasks: [{ ...configuration.tasks[0], preferredModelClass: 'UNAVAILABLE_CLASS' }],
+    }),
+    hasCode('AI_GATEWAY_CONFIGURATION_INVALID'),
+  );
+  for (const inputTokenOverhead of [undefined, -1, 16_385]) {
+    assert.throws(
+      () => new AIGatewayRegistry({
+        ...configuration,
+        models: [{ ...configuration.models[0], inputTokenOverhead }],
+      }),
+      hasCode('AI_GATEWAY_CONFIGURATION_INVALID'),
+    );
+  }
+  assert.throws(
+    () => new AIGatewayRegistry({
+      ...configuration,
+      models: [{
+        ...configuration.models[0],
+        maxInputTokens: configuration.tasks[0].maxInputTokensInternal,
+        inputTokenOverhead: 1,
+      }],
+    }),
+    hasCode('AI_GATEWAY_CONFIGURATION_INVALID'),
+  );
+});
+
+test('OpenAI staging composition fixes model, price, limits, overhead and retry authority server-side', () => {
+  const configuration = createReferenceAppOpenAIStagingConfiguration(
+    'test-only-provider-credential-000000000001',
+  );
+  assert.equal(configuration.configurationRelease, REFERENCE_APP_OPENAI_STAGING_CONFIGURATION_RELEASE);
+  assert.deepEqual(configuration.models[0], {
+    modelClass: 'GENERAL_STRUCTURED',
+    providerCode: 'OPENAI',
+    modelCode: 'OPENAI_GPT_4O_MINI_2024_07_18',
+    enabled: true,
+    priority: 100,
+    maxInputTokens: 65_536,
+    maxOutputTokens: 8_192,
+    inputTokenOverhead: 1_024,
+    inputCostPerThousandTokens: '0.00015',
+    outputCostPerThousandTokens: '0.00060',
+    currency: 'USD',
+  });
+  assert.equal(configuration.tasks[0].maxInputTokensInternal, 128);
+  assert.equal(configuration.tasks[0].maxOutputTokensInternal, 64);
+  assert.equal(configuration.tasks[0].sensitivityMax, 'INTERNAL');
+  assert.deepEqual(configuration.tasks[0].retryPolicy, {
+    maxAttempts: 1,
+    retryableProviderErrors: [],
+  });
+  assert.equal(estimateGatewayCost(configuration.models[0], 4, 64), '0.0001926');
+  assert.equal(
+    actualGatewayCost(configuration.models[0], { inputTokens: 4, outputTokens: 1 }),
+    '0.0000012',
+    'actual provider usage excludes the reservation-only overhead',
+  );
+  assert.throws(
+    () => createReferenceAppAIConfiguration({
+      provider: new FakeAIProvider(),
+      profile: 'OPENAI_STAGING',
     }),
     hasCode('AI_GATEWAY_CONFIGURATION_INVALID'),
   );

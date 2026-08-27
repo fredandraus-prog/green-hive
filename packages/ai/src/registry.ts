@@ -13,6 +13,7 @@ const RELEASE = /^[A-Z][A-Z0-9_.:-]{2,127}$/;
 const MODEL_CODE = /^[A-Z][A-Z0-9_.:-]{2,127}$/;
 const DECIMAL = /^(?:0|[1-9][0-9]{0,15})(?:\.[0-9]{1,8})?$/;
 const CURRENCIES = /^[A-Z]{3}$/;
+const MAX_INPUT_TOKEN_OVERHEAD = 16_384;
 const CLASSIFICATION_ORDER: Readonly<Record<DataClassification, number>> = Object.freeze({
   PUBLIC: 0,
   INTERNAL: 1,
@@ -85,6 +86,10 @@ function validateModel(model: AIModelRegistration): AIModelRegistration {
     || !Number.isInteger(model.maxOutputTokens)
     || model.maxOutputTokens < 1
     || model.maxOutputTokens > 8_192
+    || !Number.isInteger(model.inputTokenOverhead)
+    || model.inputTokenOverhead < 0
+    || model.inputTokenOverhead > MAX_INPUT_TOKEN_OVERHEAD
+    || model.inputTokenOverhead >= model.maxInputTokens
     || !DECIMAL.test(model.inputCostPerThousandTokens)
     || !DECIMAL.test(model.outputCostPerThousandTokens)
     || !CURRENCIES.test(model.currency)
@@ -132,7 +137,7 @@ export class AIGatewayRegistry {
       const eligible = models.some((model) => (
         model.enabled
         && model.modelClass === task.preferredModelClass
-        && model.maxInputTokens >= task.maxInputTokensInternal
+        && model.maxInputTokens >= task.maxInputTokensInternal + model.inputTokenOverhead
         && model.maxOutputTokens >= task.maxOutputTokensInternal
       ));
       if (!eligible) invalid();
@@ -155,7 +160,7 @@ export class AIGatewayRegistry {
       .filter((candidate) => (
         candidate.enabled
         && candidate.modelClass === task.preferredModelClass
-        && candidate.maxInputTokens >= task.maxInputTokensInternal
+        && candidate.maxInputTokens >= task.maxInputTokensInternal + candidate.inputTokenOverhead
         && candidate.maxOutputTokens >= task.maxOutputTokensInternal
       ))
       .sort((left, right) => left.priority - right.priority)[0];

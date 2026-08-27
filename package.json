@@ -1,9 +1,9 @@
 {
   "name": "green-hive",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "private": true,
   "type": "module",
-  "description": "Green Hive platform monorepo - GH-0503 AI Gateway Foundation",
+  "description": "Green Hive platform monorepo - GH-0504 controlled real AI provider",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -38,6 +38,7 @@
     "jobs:test:supabase": "npm run build:types --silent && node --test --test-reporter=spec database/tests/job-service.supabase.integration.test.mjs",
     "workers:test:supabase": "npm run build:types --silent && node --test --test-reporter=spec database/tests/worker-service.supabase.integration.test.mjs",
     "ai:test:supabase": "npm run build:types --silent && node --test --test-reporter=spec database/tests/ai-gateway-service.supabase.integration.test.mjs",
+    "ai:real:test:staging": "pwsh -NoProfile -File scripts/staging-database-windows.ps1 ai-real-test",
     "auth:test:supabase": "node scripts/auth-test-supabase.mjs",
     "web:test:supabase": "node scripts/web-test-supabase.mjs",
     "verify:supabase": "npm run db:test:supabase && npm run auth:test:supabase && npm run web:test:supabase",

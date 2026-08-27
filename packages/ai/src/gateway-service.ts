@@ -69,6 +69,26 @@ function gatewayProviderError(error: unknown): AIGatewayError {
   return new AIGatewayError('AI_GATEWAY_OPERATION_FAILED');
 }
 
+function validateStructuredIdentity(
+  value: unknown,
+  operationId: string,
+  taskType: string,
+  schemaId: string,
+): void {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return;
+  const record = value as Record<string, unknown>;
+  const expected: Readonly<Record<string, string>> = {
+    operationId,
+    taskType,
+    schemaId,
+  };
+  for (const [key, expectedValue] of Object.entries(expected)) {
+    if (Object.prototype.hasOwnProperty.call(record, key) && record[key] !== expectedValue) {
+      throw new AIGatewayError('AI_GATEWAY_OUTPUT_SCHEMA_INVALID');
+    }
+  }
+}
+
 export class AIGatewayService {
   readonly #registry: AIGatewayRegistry;
   readonly #dependencies: AIGatewayDependencies;
@@ -305,8 +325,15 @@ export class AIGatewayService {
     }
     if (task.outputMode === 'STRUCTURED' && providerResult.outputMode === 'STRUCTURED' && task.outputSchemaId) {
       try {
+        validateStructuredIdentity(
+          providerResult.value,
+          operationId,
+          task.taskType,
+          task.outputSchemaId,
+        );
         const schema = this.#registry.schema(task.outputSchemaId);
         const value = validateAIJsonValue(schema.validate(validateAIJsonValue(providerResult.value)));
+        validateStructuredIdentity(value, operationId, task.taskType, task.outputSchemaId);
         return Object.freeze({
           outputMode: 'STRUCTURED',
           ...base,

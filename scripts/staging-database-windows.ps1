@@ -1,5 +1,5 @@
 param(
-  [ValidateSet('preflight', 'apply', 'test', 'auth-test', 'hosted-acceptance')]
+  [ValidateSet('preflight', 'apply', 'test', 'auth-test', 'hosted-acceptance', 'ai-real-test')]
   [string]$Operation = 'preflight'
 )
 
@@ -18,6 +18,8 @@ $secretPath = Join-Path $engineRoot '.secrets\green-hive-staging-db-password.dpa
 $publishableKeyPath = Join-Path $engineRoot '.secrets\green-hive-staging-publishable-key.dpapi'
 $serviceRoleKeyPath = Join-Path $engineRoot '.secrets\green-hive-staging-secret-key.dpapi'
 $webhookSecretPath = Join-Path $engineRoot '.secrets\green-hive-staging-webhook-secret.dpapi'
+$openAISecretPath = Join-Path $engineRoot '.secrets\green-hive-staging-openai-api-key.dpapi'
+$openAIAttemptPath = Join-Path $engineRoot '.secrets\green-hive-gh0504-real-provider-attempt-v0.21.0.json'
 $certificatePath = Join-Path $repositoryRoot 'config\supabase-root-2021-ca.crt'
 
 foreach ($requiredPath in @(
@@ -36,6 +38,14 @@ foreach ($requiredPath in @(
 
 if ($Operation -eq 'hosted-acceptance' -and -not (Test-Path -LiteralPath $webhookSecretPath)) {
   throw "Required hosted webhook secret is unavailable: $webhookSecretPath"
+}
+
+if ($Operation -eq 'ai-real-test' -and -not (Test-Path -LiteralPath $openAISecretPath)) {
+  throw "Required real AI provider secret is unavailable: $openAISecretPath"
+}
+
+if ($Operation -eq 'ai-real-test' -and (Test-Path -LiteralPath $openAIAttemptPath)) {
+  throw "The one-shot GH-0504 real AI attempt is already recorded: $openAIAttemptPath"
 }
 
 $configuration = Get-Content -LiteralPath $configurationPath -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -80,7 +90,20 @@ try {
   $env:GREEN_HIVE_STAGING_DATABASE_URL = $databaseUrl
   $env:NODE_EXTRA_CA_CERTS = $certificatePath
 
-  if ($Operation -eq 'auth-test' -or $Operation -eq 'hosted-acceptance') {
+  if ($Operation -eq 'ai-real-test') {
+    $openAIKey = Unprotect-DpapiText $openAISecretPath
+    $env:GREEN_HIVE_TEST_DATABASE_URL = $databaseUrl
+    $env:GREEN_HIVE_TEST_TARGET = 'SUPABASE_STAGING'
+    $env:GREEN_HIVE_TEST_CONFIRM = 'GREEN_HIVE_DEDICATED_STAGING'
+    $env:GREEN_HIVE_TEST_PREPARED = 'SUPABASE_STAGING_BASELINE_READY'
+    $env:GREEN_HIVE_OPENAI_API_KEY = $openAIKey
+    $env:GREEN_HIVE_STAGING_AI_CONFIRM = 'MAKE_ONE_REAL_PROVIDER_CALL'
+    $env:GREEN_HIVE_STAGING_AI_ATTEMPT_PATH = $openAIAttemptPath
+    & npm run build --silent
+    if ($LASTEXITCODE -eq 0) {
+      & node --test --test-reporter=spec database/tests/ai-real-provider.staging.integration.test.mjs
+    }
+  } elseif ($Operation -eq 'auth-test' -or $Operation -eq 'hosted-acceptance') {
     $publishableKey = Unprotect-DpapiText $publishableKeyPath
     $serviceRoleKey = Unprotect-DpapiText $serviceRoleKeyPath
     $env:GREEN_HIVE_TEST_DATABASE_URL = $databaseUrl
@@ -156,7 +179,7 @@ try {
     [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($passwordPointer)
   }
   Remove-Variable plainPassword,databaseUrl,escapedPassword -ErrorAction SilentlyContinue
-  Remove-Variable publishableKey,serviceRoleKey,webhookSecret -ErrorAction SilentlyContinue
+  Remove-Variable publishableKey,serviceRoleKey,webhookSecret,openAIKey -ErrorAction SilentlyContinue
   Remove-Item Env:GREEN_HIVE_STAGING_PROJECT_REF -ErrorAction SilentlyContinue
   Remove-Item Env:GREEN_HIVE_STAGING_PROJECT_NAME -ErrorAction SilentlyContinue
   Remove-Item Env:GREEN_HIVE_STAGING_REGION -ErrorAction SilentlyContinue
@@ -176,4 +199,7 @@ try {
   Remove-Item Env:GREEN_HIVE_AUTH_RECOVERY_REDIRECT -ErrorAction SilentlyContinue
   Remove-Item Env:GREEN_HIVE_HOSTED_APP_ORIGIN -ErrorAction SilentlyContinue
   Remove-Item Env:GREEN_HIVE_HOSTED_TEST_CONFIRM -ErrorAction SilentlyContinue
+  Remove-Item Env:GREEN_HIVE_OPENAI_API_KEY -ErrorAction SilentlyContinue
+  Remove-Item Env:GREEN_HIVE_STAGING_AI_CONFIRM -ErrorAction SilentlyContinue
+  Remove-Item Env:GREEN_HIVE_STAGING_AI_ATTEMPT_PATH -ErrorAction SilentlyContinue
 }
