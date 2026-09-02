@@ -73,6 +73,16 @@ for (const file of await walk(repositoryRoot)) {
   ) {
     errors.push(`${relativePath}: server-only configuration crosses into browser source`);
   }
+  if (
+    relativePath === 'packages/search/src/fake-provider.ts'
+    && (
+      /(?:from\s+|import\s*\()\s*['"](?!\.)[^'"]+['"]/.test(content)
+      || /(?:from\s+|import\s*\()\s*['"](?:node:)?(?:http|https|http2|net|tls|dns|dgram|child_process)['"]/.test(content)
+      || /\b(?:fetch|WebSocket|XMLHttpRequest)\s*\(/.test(content)
+    )
+  ) {
+    errors.push(`${relativePath}: deterministic fake Search provider must remain network-free`);
+  }
   if (/C:\\Users\\|\/Users\/[^/]+\/|\/home\/[^/]+\//.test(content)) {
     errors.push(`${relativePath}: absolute user path must not enter release source`);
   }

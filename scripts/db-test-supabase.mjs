@@ -102,5 +102,6 @@ runNpm('cost-guard:test:supabase');
 runNpm('jobs:test:supabase');
 runNpm('workers:test:supabase');
 runNpm('ai:test:supabase');
+runNpm('search:test:supabase');
 run(process.execPath, ['scripts/db-smoke-supabase.mjs']);
 console.log('Green Hive local Supabase gate passed; clean migrated and seeded baseline retained.');

@@ -7,6 +7,14 @@ semantic versioning.
 
 ### Added
 
+- GH-0505 provider-neutral `SearchProvider` contract, deterministic `FakeSearchProvider` and
+  server-only Search Gateway composition with registered search authority, Trust Policy and Cost
+  Guard enforcement.
+- Immutable migration `0022` with metadata-only `hive.search_operations`, service-role-only public
+  lifecycle entrypoints, a private success-transition helper, owner/admin read-only RLS and
+  minimized terminal Audit evidence.
+- Literal app-namespace enforcement, exact operation/reservation estimate matching and atomic
+  failure finalization that releases the reservation and records terminal evidence together.
 - GH-0504 `OpenAIResponsesProvider` behind the existing provider-neutral `AIProvider` contract,
   with fixed endpoint, exact `gpt-4o-mini-2024-07-18` snapshot and both bounded text and strict
   Structured Outputs paths.
@@ -17,6 +25,11 @@ semantic versioning.
 
 ### Security
 
+- Search lifecycle persistence and Audit contain no query, URL, snippet or raw result.
+  `FakeSearchProvider` needs no network, provider account, API key or external charge.
+- Both accounted success and accounted failure lock the same scoped operation/reservation pair;
+  browser roles cannot call lifecycle functions, and an unreserved failure cannot bypass an
+  existing reservation.
 - The adapter accepts no caller-controlled endpoint, model, schema, price, provider or key; validates
   the returned model snapshot; disables provider storage and tools; bounds timeout, response bytes
   and output characters; and maps remote details to stable safe errors.
@@ -26,19 +39,34 @@ semantic versioning.
 
 ### Scope
 
-- No migration, public AI route/UI, prompt catalog, domain workflow, Search integration, Redis,
-  provider key or real paid invocation is included in the implementation commit.
+- GH-0505 includes no real Search provider, network retrieval, crawler, persistent result cache,
+  Redis, public Search route/UI or consumer-domain workflow.
+- GH-0504 includes no public AI route/UI, prompt catalog, provider key or real paid invocation. Its
+  controlled paid gate has not run.
+
+### Changed
+
+- Coordinated platform packages advance to `0.22.0`; the `REFERENCE_APP` product manifest remains
+  `0.1.0`.
+- Transitive `fast-uri` lockfile resolutions advance to `3.1.7` and `4.1.4`.
 
 ### Validation
 
+- `npm ci` passes with 149 packages and zero audit vulnerabilities. `npm run verify` passes 160 unit
+  tests and 21 embedded database scenarios; `db:validate` confirms 22 immutable migrations and 25
+  RLS-protected tables.
+- The complete native local Supabase gate passes, including the Search matrix (`1/1`), and restores
+  a clean structural baseline. CI, dedicated staging Supabase, Render/HTTPS and release-evidence
+  gates remain pending for GH-0505.
 - Deterministic provider transport, Gateway accounting/authority and staging-guard tests pass
   without network access. The complete clean local gate is recorded in the GH-0504 implementation
   evidence.
 
 ### Status
 
-- Platform packages advance to `0.21.0`; the Reference App product manifest remains `0.1.0`.
-  GH-0504 is `PARTIAL — REAL STAGING GATE PENDING` until the controlled paid call succeeds.
+- GH-0505 is `PARTIAL/PASS_LOCAL`; its next gate is CI, dedicated staging Supabase, Render/HTTPS and
+  release evidence.
+- GH-0504 remains `PARTIAL — REAL STAGING GATE PENDING` until the controlled paid call succeeds.
 
 ## [0.20.0] - 2026-08-27
 

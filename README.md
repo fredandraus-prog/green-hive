@@ -34,18 +34,23 @@ evidence, runtime structured-output validation and metadata-only AI operation re
 `0.21.0` prepares **GH-0504 (Controlled Real AI Provider)** with a fixed OpenAI Responses adapter,
 pinned `gpt-4o-mini-2024-07-18` snapshot, strict Structured Outputs and a one-shot paid staging
 gate. GH-0504 remains `PARTIAL` until that separately guarded real call passes.
+Version `0.22.0` implements the local foundation of **GH-0505 (Search Gateway)** with a
+provider-neutral contract, deterministic `FakeSearchProvider`, Trust/Cost Guard enforcement and
+metadata-only operation evidence. GH-0505 remains `PARTIAL/PASS_LOCAL` until CI, dedicated staging
+Supabase, Render/HTTPS and release-evidence gates pass.
 
 The checkpoint is deliberately narrow. The only public Billing ingress is the verified fake-provider
 webhook used to prove the platform contract. The real AI adapter is server-only and has no Render
-secret, browser endpoint or routine CI execution. Application prompt/workflow catalogs, Search,
-Redis, remote storage and consumer-domain functionality remain out of scope.
+secret, browser endpoint or routine CI execution. Real Search providers, network retrieval,
+crawling, a persistent Search-result cache, Redis, remote storage and consumer-domain functionality
+remain out of scope.
 
 ## What this checkpoint contains
 
 - the 18 canonical `@green-hive/*` packages, `hive-reference-app` and `hive-admin`;
 - canonical `AppManifestV1`, validator, App Registry and complete `REFERENCE_APP` manifest;
 - schemas `hive`, `audit` and `reference_app`;
-- twenty-one immutable migrations and a SHA-256 migration ledger;
+- twenty-two immutable migrations and a SHA-256 migration ledger;
 - organizations, memberships and tenant app installations around the global app registry;
 - tenant-scoped `projects` and `project_settings`;
 - production-safe structural seeds containing only `REFERENCE_APP`, its manifest-registered
@@ -91,6 +96,14 @@ Redis, remote storage and consumer-domain functionality remain out of scope.
   Schema, bounded response/timeout handling, safe normalized errors and no provider retry;
 - a manual one-shot staging gate with a machine-local DPAPI key, USD `0.0002` Cost Guard ceiling,
   persistent attempt marker and no inclusion in `verify`, CI, Render startup or the public app;
+- provider-neutral `SearchProvider` contracts and a deterministic `FakeSearchProvider` that needs no
+  network, provider account, API key or external charge;
+- a server-only Search Gateway with registered search authority, Trust and Cost Guard decisions,
+  exact request/result accounting, literal app namespaces, atomically paired success/failure cost
+  transitions and metadata-only `hive.search_operations` lifecycle evidence;
+- immutable migration `0022`, owner/admin read-only Search RLS, service-role-only public lifecycle
+  entrypoints, a private success-transition helper and minimized terminal Audit events that retain
+  no query, URL, snippet or raw result;
 - owner-limited budget/logical-usage reads, admin-only raw monetary-cost inspection and no
   authenticated direct write authority;
 - a responsive React/Vite Reference App with signup, login, recovery, profile and project screens;
@@ -112,6 +125,12 @@ npm run verify
 
 `verify` removes generated outputs, checks formatting and platform boundaries, type-checks, builds
 all workspaces, validates migration integrity and runs the embedded RLS matrix.
+
+The observed `0.22.0` local gate passes: `npm ci` installs 149 packages with zero audit
+vulnerabilities; `npm run verify` passes 160 unit tests and 21 embedded database scenarios;
+`npm run db:validate` validates 22 immutable migrations and 25 RLS-protected tables; and the full
+native `npm run db:test:supabase` gate passes its Search matrix (`1/1`) before restoring a clean
+structural baseline.
 
 Database deployment requires a dedicated connection:
 
@@ -147,6 +166,9 @@ A dedicated Free-plan Supabase staging project is active in São Paulo. Its twen
 database baseline, cross-organization RLS matrix, Project/Workspace Service, Billing,
 Entitlements, Usage/Cost, Atomic Cost Guard, Jobs, Worker and AI Gateway lifecycle gates have passed without
 changing the production candidate or the pre-existing Green Hive project:
+
+This is the currently published baseline. Migration `0022` and the GH-0505 Search matrix have not
+yet been applied to or validated against dedicated staging.
 
 ```text
 npm run staging:database:preflight
@@ -318,6 +340,9 @@ GH-0503 passed the clean local and native Supabase gates, the complete dedicated
 GitHub CI, twenty-one-migration Render readiness and the exact public HTTPS and security smokes.
 GH-0504 is `PARTIAL`: implementation and deterministic local gates pass; the dedicated API key,
 provider-side spending control and one controlled staging call are still required before `DONE`.
+GH-0505 is `PARTIAL/PASS_LOCAL`: the Search Gateway, deterministic Fake Search, migration `0022`,
+clean verification and complete local Supabase gate pass. CI, dedicated staging Supabase, updated
+Render/HTTPS readiness and smoke gates, and release evidence remain pending.
 GH-0204 passed local abuse/bundle tests, the exact hosted security smoke and the complete
 authenticated HTTPS acceptance matrix on the single-instance Render staging service. See
 [Implementation status](docs/IMPLEMENTATION_STATUS.md), [Database](docs/DATABASE.md), [Trusted app
@@ -361,5 +386,8 @@ web](docs/REFERENCE-APP-WEB.md), [Hosted staging](docs/HOSTED-STAGING.md), [Audi
 [GH-0503 release validation](docs/VALIDATION-2026-08-27-GH0503-RELEASE.md),
 [GH-0504 checkpoint](docs/CHECKPOINT-GH-0504.md),
 [GH-0504 implementation validation](docs/VALIDATION-2026-08-27-GH0504-IMPLEMENTATION.md),
+[Search Gateway](docs/SEARCH.md),
+[GH-0505 checkpoint](docs/CHECKPOINT-GH-0505.md),
+[GH-0505 local validation](docs/VALIDATION-2026-09-02-GH0505-IMPLEMENTATION.md),
 [GH-0250 checkpoint](docs/CHECKPOINT-GH-0250.md), [Ideas Radar](IDEAS_RADAR.md) and
 [Reconciliation](docs/RECONCILIATION-2026-08-18.md).

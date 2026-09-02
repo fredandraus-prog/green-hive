@@ -1,6 +1,9 @@
 # Implementation status
 
-Status date: 2026-08-27.
+Status date: 2026-09-02.
+
+Current coordinated platform version: `0.22.0`. The `REFERENCE_APP` product manifest remains
+`0.1.0`.
 
 | Checkpoint | Status | Validation | Remaining gate |
 |---|---|---|---|
@@ -30,13 +33,20 @@ Status date: 2026-08-27.
 | GH-0502 | DONE | canonical data classifications, exact Trust matrix, fail-closed gaps, controlled confirmation, strict tests, clean gate, CI, Render readiness and public HTTPS smoke pass | none |
 | GH-0503 | DONE | server-owned task/model/schema registry, Trust/Cost Guard enforcement, exact accounting, runtime schema validation, local/staging native Supabase matrices, CI, Render readiness and public HTTPS/security smokes pass | none |
 | GH-0504 | PARTIAL | fixed OpenAI Responses adapter, exact snapshot, strict schema, conservative cost reservation and one-shot staging runner pass deterministic local gates | dedicated key, provider-side spending control and one controlled real staging call |
-| GH-0601+ | NOT_STARTED | Search and later checkpoints remain outside this slice | start only in separately reviewed slices |
+| GH-0505 | PARTIAL/PASS_LOCAL | provider-neutral Search Gateway, deterministic zero-network fake, metadata-only migration `0022`, clean verification and full local Supabase Search matrix pass | CI, dedicated staging Supabase, Render/HTTPS and release evidence |
+| GH-0601+ | NOT_STARTED | Files and later checkpoints remain outside this slice | start only in separately reviewed slices |
 
 The local Supabase parity gate passed on PostgreSQL 17.6 with native `auth.users`, `auth.uid()` and
 `auth.jwt()`. The dedicated hosted staging project also passes the twenty-one-migration baseline,
 RLS, Project/Workspace/Billing Services and server-side Auth/account matrices. Hosted test users
 and rows are removed after each run, leaving twenty-one ledger records and the structural
 `REFERENCE_APP`, sandbox catalog, entitlement mapping and job-registration seeds.
+
+The GH-0505 local baseline is newer than that published environment: `npm ci` passes with 149
+packages and zero audit vulnerabilities; `npm run verify` passes 160 unit tests and 21 embedded
+database scenarios; and `db:validate` confirms 22 immutable migrations and 25 RLS-protected tables.
+The complete native local Supabase gate also passes the Search matrix (`1/1`) and restores a clean
+structural baseline. Migration `0022` and Search have not yet run on dedicated staging or Render.
 
 GH-0403 adds registered job types and one tenant-safe PostgreSQL queue. Enqueue revalidates
 trusted user/app/workspace/project scope and the required entitlement, stores hashes rather than
@@ -70,6 +80,18 @@ server-owned. A conservative 1,024-token request allowance is added only to the 
 actual cost remains based on provider-reported use. The paid gate is manual, one-shot and absent
 from CI/Render. It has not run because no dedicated API key has been installed, so the checkpoint
 cannot yet be promoted to `DONE`.
+
+GH-0505 adds a provider-neutral Search contract, deterministic `FakeSearchProvider` and server-only
+Gateway composition. The fake needs no network, provider account, API key or external charge.
+Registered server authority selects the provider and limits; Trust and Cost Guard decisions precede
+execution; exact request/result accounting follows it. Migration `0022` uses literal app namespaces,
+requires an exact operation/reservation estimate match and retains only safe operation metadata.
+Accounted success and failure are atomic; only start, unreserved failure, accounted completion and
+accounted failure are exposed to the service role, the direct success-transition helper stays
+private, and owner/admin reads are limited by RLS.
+Terminal Audit evidence and operation rows contain no query, URL, snippet or raw result. See
+[Search Gateway](SEARCH.md), [GH-0505 checkpoint](CHECKPOINT-GH-0505.md) and
+[GH-0505 local validation](VALIDATION-2026-09-02-GH0505-IMPLEMENTATION.md).
 
 The Reference App has a responsive React/Vite shell and a Fastify HTTP adapter. Tokens remain
 outside browser-accessible storage, PKCE recovery avoids URL tokens, and local plus deployed HTTP

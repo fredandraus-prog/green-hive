@@ -34,7 +34,7 @@ const packageDependencies = (name) => {
       '@supabase/supabase-js': '2.112.3',
     };
   }
-  if (name === 'ai') {
+  if (name === 'ai' || name === 'search') {
     return {
       '@green-hive/core': platformVersion,
       '@green-hive/cost-guard': platformVersion,
@@ -55,7 +55,7 @@ const packageDependencies = (name) => {
 };
 
 const packageReferences = (name) =>
-  name === 'ai'
+  name === 'ai' || name === 'search'
     ? [
         { path: '../core' },
         { path: '../cost-guard' },

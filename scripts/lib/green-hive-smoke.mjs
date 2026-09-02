@@ -130,6 +130,7 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ,'jobs_project_scope_fk'
        ,'jobs_registration_scope_fk'
        ,'ai_operations_project_scope_fk'
+       ,'search_operations_project_scope_fk'
      )
      ORDER BY conname`,
   );
@@ -168,6 +169,7 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     { conname: 'purchases_price_product_app_fk', target: 'hive.prices' },
     { conname: 'purchases_product_app_fk', target: 'hive.products' },
     { conname: 'purchases_project_scope_fk', target: 'hive.projects' },
+    { conname: 'search_operations_project_scope_fk', target: 'hive.projects' },
     { conname: 'usage_budgets_project_scope_fk', target: 'hive.projects' },
     { conname: 'usage_events_budget_scope_fk', target: 'hive.usage_budgets' },
     { conname: 'usage_events_project_scope_fk', target: 'hive.projects' },
@@ -202,11 +204,12 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
           ,'job_registrations'
           ,'jobs'
           ,'ai_operations'
+          ,'search_operations'
        ))
        OR (pg_namespace.nspname = 'audit' AND relname = 'events')
      ORDER BY schema_name, relname`,
   );
-  assert.equal(rls.rows.length, 24);
+  assert.equal(rls.rows.length, 25);
   assert.ok(rls.rows.every((entry) => entry.relrowsecurity));
 
   const helpers = await client.query(
@@ -262,9 +265,15 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ,'hive.complete_ai_operation(text,text,integer,integer,numeric)'
        ,'hive.fail_ai_operation(text,text)'
        ,'audit.capture_ai_operation_transition()'
+        ,'hive.start_search_operation(uuid,text,text,text,text,text,text,text,text,integer,text,text,numeric,text)'
+        ,'hive.complete_search_operation(text,integer,integer,numeric,text)'
+        ,'hive.complete_search_operation_accounted(text,uuid,integer,integer,numeric,text)'
+        ,'hive.fail_search_operation(text,text)'
+        ,'hive.fail_search_operation_accounted(text,uuid,text)'
+       ,'audit.capture_search_operation_transition()'
      ]) AS names(name)`,
   );
-  assert.equal(helpers.rows.length, 50);
+  assert.equal(helpers.rows.length, 56);
   assert.ok(helpers.rows.every((entry) => entry.helper));
 
   const privileges = await client.query(
@@ -669,6 +678,115 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     service_role_can_fail: true,
   });
 
+  const searchGatewayPrivileges = await client.query(
+    `SELECT
+       has_table_privilege('authenticated', 'hive.search_operations', 'SELECT')
+         AS operation_table_select,
+       has_any_column_privilege('authenticated', 'hive.search_operations', 'SELECT')
+         AS operation_column_select,
+       has_table_privilege('authenticated', 'hive.search_operations', 'INSERT')
+         AS operation_insert,
+       has_table_privilege('authenticated', 'hive.search_operations', 'UPDATE')
+         AS operation_update,
+       has_table_privilege('authenticated', 'hive.search_operations', 'DELETE')
+         AS operation_delete,
+       has_column_privilege(
+         'authenticated', 'hive.search_operations', 'request_fingerprint_sha256', 'SELECT'
+       ) AS authenticated_can_select_fingerprint,
+       has_function_privilege(
+         'authenticated',
+         'hive.start_search_operation(uuid,text,text,text,text,text,text,text,text,integer,text,text,numeric,text)',
+         'EXECUTE'
+       ) AS authenticated_can_start,
+       has_function_privilege(
+         'service_role',
+         'hive.start_search_operation(uuid,text,text,text,text,text,text,text,text,integer,text,text,numeric,text)',
+         'EXECUTE'
+       ) AS service_role_can_start,
+       has_function_privilege(
+         'authenticated',
+         'hive.complete_search_operation(text,integer,integer,numeric,text)',
+         'EXECUTE'
+       ) AS authenticated_can_complete_simple,
+       has_function_privilege(
+         'service_role',
+         'hive.complete_search_operation(text,integer,integer,numeric,text)',
+         'EXECUTE'
+       ) AS service_role_can_complete_simple,
+       has_function_privilege(
+         'authenticated',
+         'hive.complete_search_operation_accounted(text,uuid,integer,integer,numeric,text)',
+         'EXECUTE'
+       ) AS authenticated_can_complete_accounted,
+       has_function_privilege(
+         'service_role',
+         'hive.complete_search_operation_accounted(text,uuid,integer,integer,numeric,text)',
+         'EXECUTE'
+       ) AS service_role_can_complete_accounted,
+       has_function_privilege(
+         'authenticated', 'hive.fail_search_operation(text,text)', 'EXECUTE'
+       ) AS authenticated_can_fail,
+       has_function_privilege(
+         'service_role', 'hive.fail_search_operation(text,text)', 'EXECUTE'
+       ) AS service_role_can_fail,
+       has_function_privilege(
+         'authenticated',
+         'hive.fail_search_operation_accounted(text,uuid,text)',
+         'EXECUTE'
+       ) AS authenticated_can_fail_accounted,
+       has_function_privilege(
+         'service_role',
+         'hive.fail_search_operation_accounted(text,uuid,text)',
+         'EXECUTE'
+       ) AS service_role_can_fail_accounted`,
+  );
+  assert.deepEqual(searchGatewayPrivileges.rows[0], {
+    operation_table_select: false,
+    operation_column_select: true,
+    operation_insert: false,
+    operation_update: false,
+    operation_delete: false,
+    authenticated_can_select_fingerprint: false,
+    authenticated_can_start: false,
+    service_role_can_start: true,
+    authenticated_can_complete_simple: false,
+    service_role_can_complete_simple: false,
+    authenticated_can_complete_accounted: false,
+    service_role_can_complete_accounted: true,
+    authenticated_can_fail: false,
+    service_role_can_fail: true,
+    authenticated_can_fail_accounted: false,
+    service_role_can_fail_accounted: true,
+  });
+
+  const searchPolicies = await client.query(
+    `SELECT policyname, cmd
+     FROM pg_policies
+     WHERE schemaname = 'hive' AND tablename = 'search_operations'
+     ORDER BY policyname`,
+  );
+  assert.deepEqual(searchPolicies.rows, [
+    { policyname: 'search_operations_owner_or_platform_select', cmd: 'SELECT' },
+  ]);
+
+  const searchAuditConstraints = await client.query(
+    `SELECT conname, pg_get_constraintdef(oid) AS definition
+     FROM pg_constraint
+     WHERE conrelid = 'audit.events'::regclass
+       AND conname IN (
+         'audit_events_event_code_check',
+         'audit_events_subject_type_check'
+       )
+     ORDER BY conname`,
+  );
+  assert.equal(searchAuditConstraints.rows.length, 2);
+  const searchAuditDefinition = searchAuditConstraints.rows
+    .map((entry) => entry.definition)
+    .join(' ');
+  assert.match(searchAuditDefinition, /SEARCH_OPERATION_COMPLETED/);
+  assert.match(searchAuditDefinition, /SEARCH_OPERATION_FAILED/);
+  assert.match(searchAuditDefinition, /SEARCH_OPERATION/);
+
   const auditTriggers = await client.query(
     `SELECT tgname
      FROM pg_trigger
@@ -686,11 +804,12 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ,'audit_cost_guard_decisions_after_insert'
        ,'audit_jobs_after_insert'
        ,'audit_ai_operations_after_transition'
+       ,'audit_search_operations_after_transition'
      )
        AND NOT tgisinternal
      ORDER BY tgname`,
   );
-  assert.equal(auditTriggers.rows.length, 13);
+  assert.equal(auditTriggers.rows.length, 14);
 
   return Object.freeze({
     ledgerRows: ledger.rows.length,

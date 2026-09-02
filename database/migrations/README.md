@@ -23,6 +23,7 @@ The published sequence is immutable:
 19. manifest-backed job registrations and tenant-safe idempotent database queue foundation.
 20. exclusive Worker leases, heartbeat, deterministic retry, terminal transitions and expired-lease recovery.
 21. AI Gateway operation metadata, server-only lifecycle writers, RLS and minimized Audit transitions.
+22. Search Gateway operation metadata, server-only lifecycle writers, RLS and minimized terminal Audit transitions.
 
 Files `0001` through `0006` remain byte-for-byte unchanged. GH-0250 is expressed only through the
 next-numbered migrations `0007` through `0010`. GH-0203 is expressed only through migration
@@ -46,6 +47,25 @@ unchanged. Worker processes and external brokers are not introduced by the migra
 GH-0503 is expressed only through migration `0021`; migrations `0001` through `0020` remain
 unchanged. Raw prompts, inputs and outputs are not persisted, and no provider or browser route is
 introduced by the migration.
+GH-0505 is expressed only through migration `0022`; migrations `0001` through `0021` remain
+unchanged. `hive.search_operations` stores trusted tenant identity, classifications, Trust/Cost
+metadata, bounded counters, cache state and safe errors only. It never stores a query, URL, snippet
+or result body. Owners and platform administrators receive RLS-filtered metadata reads, while only
+`service_role` may execute the start, accounted-completion, accounted-failure and unreserved-failure
+functions. The lower-level
+`hive.complete_search_operation(...)` transition helper is used internally by
+`hive.complete_search_operation_accounted(...)`; direct execution is withheld from `PUBLIC`,
+`authenticated` and `service_role`. Accounted completion locks and reconciles the pending operation
+and reservation, consumes the reservation, records retry-aware logical usage and marks the
+operation successful in one transaction. Accounted failure uses
+`hive.fail_search_operation_accounted(text, uuid, text)` to release the reservation and record the
+failed operation/Audit transition in one transaction. Both accounted functions require exact
+equality between reservation `estimated_amount` and operation `estimated_cost`; the simple failure
+function accepts only an operation with no matching reservation. App-prefixed Search and capability
+identifiers are checked by literal comparison with the complete app code plus `_`, preserving app
+codes that themselves contain underscores. Terminal transitions append metadata-only
+success/failure Audit events. No real Search provider, network fetcher or paid call is introduced by
+this migration.
 
 Every SQL file begins with parseable migration ID, checkpoint, description and rollback strategy
 metadata. `migrations.json` stores the same description and strategy plus the immutable SHA-256.

@@ -30,6 +30,9 @@
       "@green-hive/ai": [
         "packages/ai/src/index.ts"
       ],
+      "@green-hive/search": [
+        "packages/search/src/index.ts"
+      ],
       "@green-hive/trust": [
         "packages/trust/src/index.ts"
       ],
