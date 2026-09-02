@@ -3,7 +3,7 @@
 All notable Green Hive changes are recorded here. Internal platform packages use coordinated
 semantic versioning.
 
-## [Unreleased]
+## [0.22.0] - 2026-09-02
 
 ### Added
 
@@ -56,16 +56,25 @@ semantic versioning.
   tests and 21 embedded database scenarios; `db:validate` confirms 22 immutable migrations and 25
   RLS-protected tables.
 - The complete native local Supabase gate passes, including the Search matrix (`1/1`), and restores
-  a clean structural baseline. CI, dedicated staging Supabase, Render/HTTPS and release-evidence
-  gates remain pending for GH-0505.
+  a clean structural baseline. Dedicated Supabase staging also passes the complete unchanged matrix,
+  including Search (`1/1`), and ends with 22 ledger entries, zero pending migrations and zero
+  disposable fixtures.
+- Feature push run `33674102364` (job `100394516607`), pull-request run `33674109163` (job
+  `100394739457`) and merged-`main` run `33674780092` pass. PR #33 merged as `37c7752`; GitHub marks
+  that revision deployed and active in `main - green-hive-staging` at 2026-09-02 16:42 -03.
+- The exact hosted application passes `hosted:smoke` and reports
+  `HOSTED_SECURITY_SMOKE_PASS`. The Render dashboard session expired before its provider-specific
+  deploy ID could be recorded, so no deploy ID is inferred.
+- The first full staging attempt encountered an intermittent failure in the pre-existing concurrent
+  Billing webhook scenario. A complete unchanged rerun passed that scenario and every matrix; the
+  final clean state and Search-specific evidence show no migration `0022` regression.
 - Deterministic provider transport, Gateway accounting/authority and staging-guard tests pass
-  without network access. The complete clean local gate is recorded in the GH-0504 implementation
+  without network access. The complete clean local gate is recorded in the GH-0505 implementation
   evidence.
 
 ### Status
 
-- GH-0505 is `PARTIAL/PASS_LOCAL`; its next gate is CI, dedicated staging Supabase, Render/HTTPS and
-  release evidence.
+- GH-0505 is `DONE`; local, CI, dedicated-staging, Render/HTTPS and release-evidence gates pass.
 - GH-0504 remains `PARTIAL — REAL STAGING GATE PENDING` until the controlled paid call succeeds.
 
 ## [0.20.0] - 2026-08-27

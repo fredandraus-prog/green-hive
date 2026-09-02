@@ -34,10 +34,10 @@ It deliberately has no `preDeployCommand`, `db:migrate` or `db:seed` action.
    `sslmode=verify-full` and the fingerprint-pinned Supabase Root 2021 CA;
 8. provider keys and the database connection exist only in the server process;
 9. cookies are `HttpOnly`, host-only, `SameSite=Lax` and `Secure`;
-10. the database ledger has exactly migrations `0001` through `0020`, the structural
+10. the database ledger has exactly migrations `0001` through `0022`, the structural
     `REFERENCE_APP`, sandbox catalog and Reference App job registration seeds exist, and the
-    tenant/Audit/Billing/Entitlements/Usage/Cost/Jobs/Worker helpers required by the current platform are
-    present.
+    tenant/Audit/Billing/Entitlements/Usage/Cost/Jobs/Worker/AI/Search helpers required by the
+    current platform are present.
 
 `GET /api/health` is a process liveness check. `GET /api/ready` is the Render health check and
 returns `503` without internal details when the database contract is unavailable.
@@ -192,6 +192,13 @@ Render automatically published the merge as `dep-da7ls0h5efls738rmnpg` in 50.2 s
 liveness/readiness, HTTPS/security headers, the Reference App shell, hosted security and the full
 authenticated acceptance matrix all pass; the final cleanup again left no disposable Auth or
 database artifacts.
+
+GH-0505 feature PR #33 passed feature and pull-request CI and merged as `37c7752`. Dedicated
+staging contains immutable migration `0022`, passes the complete unchanged database matrix plus
+Search (`1/1`), and ends with 22 ledger rows, zero pending migrations and zero disposable fixtures.
+GitHub marks the merge deployed and active in `main - green-hive-staging` at 2026-09-02 16:42 -03;
+the exact public and hosted-security smokes pass. The Render dashboard session expired before its
+provider-specific deploy ID could be recorded, so no deploy ID is inferred.
 
 ## Rollback
 

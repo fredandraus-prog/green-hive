@@ -33,20 +33,20 @@ Current coordinated platform version: `0.22.0`. The `REFERENCE_APP` product mani
 | GH-0502 | DONE | canonical data classifications, exact Trust matrix, fail-closed gaps, controlled confirmation, strict tests, clean gate, CI, Render readiness and public HTTPS smoke pass | none |
 | GH-0503 | DONE | server-owned task/model/schema registry, Trust/Cost Guard enforcement, exact accounting, runtime schema validation, local/staging native Supabase matrices, CI, Render readiness and public HTTPS/security smokes pass | none |
 | GH-0504 | PARTIAL | fixed OpenAI Responses adapter, exact snapshot, strict schema, conservative cost reservation and one-shot staging runner pass deterministic local gates | dedicated key, provider-side spending control and one controlled real staging call |
-| GH-0505 | PARTIAL/PASS_LOCAL | provider-neutral Search Gateway, deterministic zero-network fake, metadata-only migration `0022`, clean verification and full local Supabase Search matrix pass | CI, dedicated staging Supabase, Render/HTTPS and release evidence |
+| GH-0505 | DONE | provider-neutral Search Gateway, deterministic zero-network fake, atomic accounting, metadata-only migration `0022`, local/staging Supabase, CI and deployed HTTPS/security gates pass | none |
 | GH-0601+ | NOT_STARTED | Files and later checkpoints remain outside this slice | start only in separately reviewed slices |
 
 The local Supabase parity gate passed on PostgreSQL 17.6 with native `auth.users`, `auth.uid()` and
-`auth.jwt()`. The dedicated hosted staging project also passes the twenty-one-migration baseline,
-RLS, Project/Workspace/Billing Services and server-side Auth/account matrices. Hosted test users
-and rows are removed after each run, leaving twenty-one ledger records and the structural
-`REFERENCE_APP`, sandbox catalog, entitlement mapping and job-registration seeds.
+`auth.jwt()`. The dedicated hosted staging project passes the twenty-two-migration baseline, RLS,
+Project/Workspace/Billing Services, AI/Search Gateways and server-side Auth/account matrices.
+Hosted test users and rows are removed after each run, leaving 22 ledger records, zero pending
+migrations, zero disposable fixtures and only the reviewed structural seeds.
 
-The GH-0505 local baseline is newer than that published environment: `npm ci` passes with 149
-packages and zero audit vulnerabilities; `npm run verify` passes 160 unit tests and 21 embedded
-database scenarios; and `db:validate` confirms 22 immutable migrations and 25 RLS-protected tables.
-The complete native local Supabase gate also passes the Search matrix (`1/1`) and restores a clean
-structural baseline. Migration `0022` and Search have not yet run on dedicated staging or Render.
+The GH-0505 clean gate passes: `npm ci` installs 149 packages with zero audit vulnerabilities;
+`npm run verify` passes 160 unit tests and 21 embedded database scenarios; and `db:validate`
+confirms 22 immutable migrations and 25 RLS-protected tables. Native local and dedicated-staging
+Supabase gates pass the Search matrix (`1/1`). The authenticated staging matrix passes `8/8`, and
+the exact deployed HTTPS application passes public and security smokes.
 
 GH-0403 adds registered job types and one tenant-safe PostgreSQL queue. Enqueue revalidates
 trusted user/app/workspace/project scope and the required entitlement, stores hashes rather than
@@ -91,7 +91,8 @@ accounted failure are exposed to the service role, the direct success-transition
 private, and owner/admin reads are limited by RLS.
 Terminal Audit evidence and operation rows contain no query, URL, snippet or raw result. See
 [Search Gateway](SEARCH.md), [GH-0505 checkpoint](CHECKPOINT-GH-0505.md) and
-[GH-0505 local validation](VALIDATION-2026-09-02-GH0505-IMPLEMENTATION.md).
+[GH-0505 implementation validation](VALIDATION-2026-09-02-GH0505-IMPLEMENTATION.md), followed by
+[GH-0505 release validation](VALIDATION-2026-09-02-GH0505-RELEASE.md).
 
 The Reference App has a responsive React/Vite shell and a Fastify HTTP adapter. Tokens remain
 outside browser-accessible storage, PKCE recovery avoids URL tokens, and local plus deployed HTTP
@@ -143,3 +144,9 @@ GH-0503 applies immutable migration `0021` and the full AI Gateway matrix on ded
 leaving twenty-one ledger rows and zero disposable artifacts. Feature merge `80f2b3d` deployed
 successfully as `dep-da7vg695efls73908bcg`; the twenty-one-migration readiness contract, exact
 public HTTPS smoke and hosted-security smoke all pass.
+GH-0505 applies immutable migration `0022` and the deterministic Search Gateway matrix on dedicated
+staging, leaving 22 ledger rows, zero pending migrations and zero disposable fixtures. PR #33 merged
+as `37c7752`; feature, pull-request and merged-`main` CI pass, GitHub marks the merge deployed and
+active in `main - green-hive-staging`, and the exact public HTTPS plus hosted-security smokes pass.
+The Render dashboard session expired before the provider-specific deploy ID could be recorded, so
+the documentation preserves the observed GitHub environment identity without inventing one.

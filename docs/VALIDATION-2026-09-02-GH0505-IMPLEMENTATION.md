@@ -1,6 +1,6 @@
 # GH-0505 implementation validation — 2026-09-02
 
-Status: `PASS_LOCAL — CI, DEDICATED STAGING, RENDER AND RELEASE EVIDENCE PENDING`.
+Status: `PASS_LOCAL AT IMPLEMENTATION GATE — SUBSEQUENT RELEASE GATES PASS`.
 
 This document records the observed local implementation evidence for GH-0505. The deterministic,
 embedded and native local Supabase gates are complete. It does not claim that CI, dedicated staging,
@@ -52,7 +52,7 @@ Operation, Usage/Cost and Audit persistence must omit raw and sanitized queries,
 snippets, full result objects, provider response bodies and secrets. The SHA-256 query fingerprint
 is operational identity evidence, not recoverable query storage.
 
-## Validation ledger
+## Implementation-time validation ledger
 
 | Gate | Required evidence | Current result |
 |---|---|---|
@@ -87,7 +87,9 @@ GH-0504 honestly as `PARTIAL` without blocking this independent checkpoint.
 
 ## Release handoff
 
-There is no release handoff yet. GH-0505 remains `PARTIAL/PASS_LOCAL`. A later
-release-evidence document may promote it to `DONE` only after the implementation, free validation
-gates, CI, existing Render Free smoke, final manifest and extracted ZIP have all been observed and
-recorded. GH-0504 must remain separately visible as pending its controlled paid gate.
+The subsequent feature/pull-request/main CI, dedicated Supabase staging, Render environment and
+public HTTPS/security gates passed. Those exact observed identities are recorded in
+[the release validation](VALIDATION-2026-09-02-GH0505-RELEASE.md), which promotes GH-0505 to
+`DONE`. Final release-manifest regeneration, extracted source-only ZIP validation and tagging remain
+the release branch's distribution handoff. GH-0504 remains separately visible as pending its
+controlled paid gate.

@@ -1,8 +1,8 @@
 # Search provider and gateway contracts
 
-Status: `GH-0505 PARTIAL — IMPLEMENTATION IN PROGRESS`.
+Status: `GH-0505 DONE — DETERMINISTIC FREE PROVIDER AND DEPLOYED ACCEPTANCE PASS`.
 
-GH-0505 is implementing the first reusable Green Hive Search boundary. The slice combines a
+GH-0505 implements the first reusable Green Hive Search boundary. The slice combines a
 provider-neutral contract, a deterministic fake provider, server-owned gateway composition and
 tenant-safe operation metadata. It must be fully usable in development and CI without a network
 request, provider account, API key, payment method or paid credit.
@@ -114,7 +114,7 @@ count.
 
 ## Migration `0022` and operation metadata
 
-The planned immutable migration `0022` creates `hive.search_operations` and its server-only
+The immutable migration `0022` creates `hive.search_operations` and its server-only
 lifecycle writers. The row stores only bounded operational evidence:
 
 - organization, app, project and owner scope;

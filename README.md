@@ -34,10 +34,10 @@ evidence, runtime structured-output validation and metadata-only AI operation re
 `0.21.0` prepares **GH-0504 (Controlled Real AI Provider)** with a fixed OpenAI Responses adapter,
 pinned `gpt-4o-mini-2024-07-18` snapshot, strict Structured Outputs and a one-shot paid staging
 gate. GH-0504 remains `PARTIAL` until that separately guarded real call passes.
-Version `0.22.0` implements the local foundation of **GH-0505 (Search Gateway)** with a
-provider-neutral contract, deterministic `FakeSearchProvider`, Trust/Cost Guard enforcement and
-metadata-only operation evidence. GH-0505 remains `PARTIAL/PASS_LOCAL` until CI, dedicated staging
-Supabase, Render/HTTPS and release-evidence gates pass.
+Version `0.22.0` completes **GH-0505 (Search Gateway)** with a provider-neutral contract,
+deterministic `FakeSearchProvider`, Trust/Cost Guard enforcement and metadata-only operation
+evidence. Its local, native Supabase, dedicated-staging, GitHub CI and deployed Render HTTPS gates
+pass without a Search account, API key, external provider request or charge.
 
 The checkpoint is deliberately narrow. The only public Billing ingress is the verified fake-provider
 webhook used to prove the platform contract. The real AI adapter is server-only and has no Render
@@ -162,13 +162,12 @@ safeguards.
 
 ## Hosted staging workflow
 
-A dedicated Free-plan Supabase staging project is active in São Paulo. Its twenty-one-migration
+A dedicated Free-plan Supabase staging project is active in São Paulo. Its twenty-two-migration
 database baseline, cross-organization RLS matrix, Project/Workspace Service, Billing,
-Entitlements, Usage/Cost, Atomic Cost Guard, Jobs, Worker and AI Gateway lifecycle gates have passed without
-changing the production candidate or the pre-existing Green Hive project:
-
-This is the currently published baseline. Migration `0022` and the GH-0505 Search matrix have not
-yet been applied to or validated against dedicated staging.
+Entitlements, Usage/Cost, Atomic Cost Guard, Jobs, Worker, AI Gateway and deterministic Search
+Gateway lifecycle gates pass without changing the pre-existing Green Hive project. Migration
+`0022` is recorded with its canonical checksum, zero migrations remain pending and the final
+cleanup leaves zero disposable fixtures.
 
 ```text
 npm run staging:database:preflight
@@ -329,7 +328,7 @@ metadata drift and a managed schema without a ledger. Except for provisioning th
 ## Status
 
 GH-0102, GH-0103, GH-0104, GH-0201, GH-0202, GH-0203, GH-0204, GH-0250, GH-0301, GH-0302, GH-0303,
-GH-0304, GH-0401, GH-0402, GH-0403, GH-0404, GH-0501, GH-0502 and GH-0503 are `DONE`.
+GH-0304, GH-0401, GH-0402, GH-0403, GH-0404, GH-0501, GH-0502, GH-0503 and GH-0505 are `DONE`.
 GH-0404 passed local and dedicated-staging Worker lifecycle matrices, CI, twenty-migration Render
 readiness and the published HTTPS acceptance gates.
 GH-0501 passed the clean local gate, both GitHub CI events, existing Render build/readiness and the
@@ -340,9 +339,10 @@ GH-0503 passed the clean local and native Supabase gates, the complete dedicated
 GitHub CI, twenty-one-migration Render readiness and the exact public HTTPS and security smokes.
 GH-0504 is `PARTIAL`: implementation and deterministic local gates pass; the dedicated API key,
 provider-side spending control and one controlled staging call are still required before `DONE`.
-GH-0505 is `PARTIAL/PASS_LOCAL`: the Search Gateway, deterministic Fake Search, migration `0022`,
-clean verification and complete local Supabase gate pass. CI, dedicated staging Supabase, updated
-Render/HTTPS readiness and smoke gates, and release evidence remain pending.
+GH-0505 is `DONE`: the Search Gateway, deterministic Fake Search, migration `0022`, clean
+verification and complete local/dedicated-staging Supabase gates pass. Feature, pull-request and
+merged-`main` CI pass; merge `37c7752` is active in the `green-hive-staging` environment, and the
+exact public HTTPS and hosted-security smokes pass.
 GH-0204 passed local abuse/bundle tests, the exact hosted security smoke and the complete
 authenticated HTTPS acceptance matrix on the single-instance Render staging service. See
 [Implementation status](docs/IMPLEMENTATION_STATUS.md), [Database](docs/DATABASE.md), [Trusted app
@@ -388,6 +388,7 @@ web](docs/REFERENCE-APP-WEB.md), [Hosted staging](docs/HOSTED-STAGING.md), [Audi
 [GH-0504 implementation validation](docs/VALIDATION-2026-08-27-GH0504-IMPLEMENTATION.md),
 [Search Gateway](docs/SEARCH.md),
 [GH-0505 checkpoint](docs/CHECKPOINT-GH-0505.md),
-[GH-0505 local validation](docs/VALIDATION-2026-09-02-GH0505-IMPLEMENTATION.md),
+[GH-0505 implementation validation](docs/VALIDATION-2026-09-02-GH0505-IMPLEMENTATION.md),
+[GH-0505 release validation](docs/VALIDATION-2026-09-02-GH0505-RELEASE.md),
 [GH-0250 checkpoint](docs/CHECKPOINT-GH-0250.md), [Ideas Radar](IDEAS_RADAR.md) and
 [Reconciliation](docs/RECONCILIATION-2026-08-18.md).
