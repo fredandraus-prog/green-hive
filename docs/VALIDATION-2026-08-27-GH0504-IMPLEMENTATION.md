@@ -86,5 +86,6 @@ the passing rerun.
 To close GH-0504, an operator must create a dedicated provider key and minimal provider-side spending
 controls, store the key as the documented Windows-user-bound DPAPI blob, recheck official snapshot
 pricing and authorize one execution of `npm run ai:real:test:staging`. Only a successful real call and
-its clean evidence permit `DONE`, release manifest/ZIP generation, merge/tag and final deployment
-validation for `0.21.0`.
+its clean evidence permit `DONE`; that evidence must be incorporated into the then-current platform
+release, manifest, ZIP, merge/tag and deployment validation. Because independent checkpoints may
+advance first, closing GH-0504 does not require creating a retrospective `v0.21.0` tag.

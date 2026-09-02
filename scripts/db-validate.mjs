@@ -32,6 +32,7 @@ const requiredHiveTables = [
   'job_registrations',
   'jobs',
   'ai_operations',
+  'search_operations',
 ];
 const requiredAuditTables = ['events'];
 const forceRlsTables = [
@@ -57,6 +58,7 @@ const forceRlsTables = [
   'job_registrations',
   'jobs',
   'ai_operations',
+  'search_operations',
 ];
 const expectedPolicies = new Map([
   ['apps', ['apps_admin_select']],
@@ -130,6 +132,7 @@ const expectedPolicies = new Map([
   ['job_registrations', ['job_registrations_current_app_or_platform_select']],
   ['jobs', ['jobs_owner_or_platform_select']],
   ['ai_operations', ['ai_operations_owner_or_platform_select']],
+  ['search_operations', ['search_operations_owner_or_platform_select']],
 ]);
 const forbiddenHiveDomainTerms = [
   'break_even',
@@ -391,6 +394,13 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'JOB_RETRY_SCHEDULED',
     'JOB_COMPLETED',
     'JOB_CANCELLED',
+    'hive.start_search_operation',
+    'hive.complete_search_operation',
+    'hive.fail_search_operation',
+    'audit.capture_search_operation_transition',
+    'audit_search_operations_after_transition',
+    'SEARCH_OPERATION_COMPLETED',
+    'SEARCH_OPERATION_FAILED',
   ];
   for (const marker of requiredContextMarkers) {
     if (!allSql.includes(marker)) errors.push(`trusted app context is missing marker: ${marker}`);
@@ -428,6 +438,7 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'cost_guard_reservations',
     'job_registrations',
     'jobs',
+    'search_operations',
   ]) {
     if (new RegExp(`GRANT\\s+[\\s\\S]{0,120}\\b(INSERT|UPDATE|DELETE)\\b[\\s\\S]{0,120}ON\\s+hive\\.${billingTable}\\b[\\s\\S]{0,80}TO\\s+authenticated\\b`, 'i').test(allSql)) {
       errors.push(`authenticated must not receive direct write privileges on hive.${billingTable}`);
@@ -585,6 +596,100 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
   }
   if (/GRANT\s+SELECT\s*\([\s\S]{0,800}\b(leased_by|lease_token_sha256|output_sha256|output_reference)\b[\s\S]{0,200}ON\s+hive\.jobs\s+TO\s+authenticated/i.test(allSql)) {
     errors.push('authenticated must not receive Worker lease or output columns');
+  }
+  for (const searchMarker of [
+    'CREATE TABLE hive.search_operations',
+    'search_operations_project_scope_fk',
+    'search_operations_scope_operation_unique',
+    "cache_status IN ('NOT_APPLICABLE', 'MISS', 'HIT')",
+    "status IN ('PENDING', 'SUCCEEDED', 'FAILED')",
+    'hive.start_search_operation',
+    'hive.complete_search_operation',
+    'hive.complete_search_operation_accounted',
+    'hive.fail_search_operation',
+    'hive.fail_search_operation_accounted',
+    'max_results BETWEEN 1 AND 50',
+    'target_max_results NOT BETWEEN 1 AND 50',
+    'request_count BETWEEN 1 AND 3',
+    'target_request_count NOT BETWEEN 1 AND 3',
+    'target_provider_request_count NOT BETWEEN 1 AND 3',
+    'estimated_cost > 0',
+    'actual_cost > 0',
+    'target_estimated_cost <= 0',
+    'target_actual_cost <= 0',
+    'selected_reservation.estimated_amount IS DISTINCT FROM selected_operation.estimated_cost',
+    "target_cache_status IS DISTINCT FROM 'NOT_APPLICABLE'",
+    'target_cache_status IS DISTINCT FROM selected_operation.cache_status',
+    "target_sanitization_mode = 'ABSTRACT_QUERY'",
+    "'SEARCH_REQUESTS'",
+    "'REQUESTS'",
+    'audit.capture_search_operation_transition',
+    'audit_search_operations_after_transition',
+    'SEARCH_OPERATION_COMPLETED',
+    'SEARCH_OPERATION_FAILED',
+    "'SEARCH_OPERATION'",
+    'raw queries, URLs, snippets and results are prohibited',
+  ]) {
+    if (!allSql.includes(searchMarker)) {
+      errors.push(`Search Gateway operation contract is missing marker: ${searchMarker}`);
+    }
+  }
+  const searchTableSql = /CREATE TABLE hive\.search_operations\s*\(([\s\S]*?)\n\);/i.exec(allSql)?.[1] ?? '';
+  if (!searchTableSql) {
+    errors.push('Search Gateway operation table definition cannot be inspected');
+  } else if (
+    /\b(query|query_text|raw_query|url|source_url|snippet|result|results|content|payload)\s+(text|varchar|character|jsonb?|bytea)\b/i.test(searchTableSql)
+  ) {
+    errors.push('hive.search_operations must not persist raw query, URL, snippet, content or result data');
+  }
+  for (const scopedCode of ['search_type', 'capability_code']) {
+    if (!new RegExp(
+      `pg_catalog\\.left\\(\\s*target_${scopedCode},\\s*pg_catalog\\.char_length\\(hive\\.current_app_code\\(\\)\\)\\s*\\+\\s*1\\s*\\)\\s+IS\\s+DISTINCT\\s+FROM\\s+hive\\.current_app_code\\(\\)\\s*\\|\\|\\s*'_'`,
+      'i',
+    ).test(allSql)) {
+      errors.push(`Search Gateway ${scopedCode} must use a literal trusted app-code prefix`);
+    }
+  }
+  const searchServiceFunctions = [
+    'hive.start_search_operation\\(\\s*uuid,\\s*text,\\s*text,\\s*text,\\s*text,\\s*text,\\s*text,\\s*text,\\s*text,\\s*integer,\\s*text,\\s*text,\\s*numeric,\\s*text\\s*\\)',
+    'hive.complete_search_operation_accounted\\(\\s*text,\\s*uuid,\\s*integer,\\s*integer,\\s*numeric,\\s*text\\s*\\)',
+    'hive.fail_search_operation\\(\\s*text,\\s*text\\s*\\)',
+    'hive.fail_search_operation_accounted\\(\\s*text,\\s*uuid,\\s*text\\s*\\)',
+  ];
+  for (const searchFunction of searchServiceFunctions) {
+    for (const deniedRole of ['PUBLIC', 'authenticated']) {
+      if (!new RegExp(
+        `REVOKE\\s+ALL\\s+ON\\s+FUNCTION\\s+${searchFunction}\\s+FROM\\s+${deniedRole}`,
+        'i',
+      ).test(allSql)) {
+        errors.push(`Search Gateway function ${searchFunction} must be revoked from ${deniedRole}`);
+      }
+    }
+    if (!new RegExp(
+      `GRANT\\s+EXECUTE\\s+ON\\s+FUNCTION\\s+${searchFunction}\\s+TO\\s+service_role`,
+      'i',
+    ).test(allSql)) {
+      errors.push(`Search Gateway function ${searchFunction} must be granted only to service_role`);
+    }
+  }
+  const privateSearchComplete =
+    'hive.complete_search_operation\\(\\s*text,\\s*integer,\\s*integer,\\s*numeric,\\s*text\\s*\\)';
+  for (const deniedRole of ['PUBLIC', 'authenticated', 'service_role']) {
+    if (!new RegExp(
+      `REVOKE\\s+ALL\\s+ON\\s+FUNCTION\\s+${privateSearchComplete}\\s+FROM\\s+${deniedRole}`,
+      'i',
+    ).test(allSql)) {
+      errors.push(`Search Gateway private completion helper must be revoked from ${deniedRole}`);
+    }
+    if (new RegExp(
+      `GRANT\\s+EXECUTE\\s+ON\\s+FUNCTION\\s+${privateSearchComplete}\\s+TO\\s+${deniedRole}`,
+      'i',
+    ).test(allSql)) {
+      errors.push(`Search Gateway private completion helper must not be granted to ${deniedRole}`);
+    }
+  }
+  if (/GRANT\s+SELECT\s*\([\s\S]{0,1000}\brequest_fingerprint_sha256\b[\s\S]{0,300}ON\s+hive\.search_operations\s+TO\s+authenticated/i.test(allSql)) {
+    errors.push('authenticated must not receive the Search Gateway request fingerprint');
   }
   for (const requiredMarker of [
     'app_code text',

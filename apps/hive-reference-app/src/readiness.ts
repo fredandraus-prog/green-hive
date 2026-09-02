@@ -1,4 +1,4 @@
-export const REFERENCE_APP_EXPECTED_MIGRATION_VERSION = 21;
+export const REFERENCE_APP_EXPECTED_MIGRATION_VERSION = 22;
 
 interface ReadinessRow extends Record<string, unknown> {
   readonly migration_count: number;
@@ -21,6 +21,7 @@ interface ReadinessRow extends Record<string, unknown> {
   readonly jobs_ready: boolean;
   readonly workers_ready: boolean;
   readonly ai_gateway_ready: boolean;
+  readonly search_gateway_ready: boolean;
   readonly app_helper_ready: boolean;
   readonly organization_helper_ready: boolean;
 }
@@ -137,6 +138,22 @@ export function createReferenceAppReadinessCheck(database: ReadinessDatabase): (
            AND to_regprocedure('hive.fail_ai_operation(text,text)') IS NOT NULL
            AND to_regprocedure('audit.capture_ai_operation_transition()') IS NOT NULL
            AS ai_gateway_ready,
+         to_regclass('hive.search_operations') IS NOT NULL
+           AND to_regprocedure(
+             'hive.start_search_operation(uuid,text,text,text,text,text,text,text,text,integer,text,text,numeric,text)'
+           ) IS NOT NULL
+           AND to_regprocedure(
+             'hive.complete_search_operation(text,integer,integer,numeric,text)'
+           ) IS NOT NULL
+           AND to_regprocedure(
+             'hive.complete_search_operation_accounted(text,uuid,integer,integer,numeric,text)'
+           ) IS NOT NULL
+           AND to_regprocedure('hive.fail_search_operation(text,text)') IS NOT NULL
+           AND to_regprocedure(
+             'hive.fail_search_operation_accounted(text,uuid,text)'
+           ) IS NOT NULL
+           AND to_regprocedure('audit.capture_search_operation_transition()') IS NOT NULL
+           AS search_gateway_ready,
          to_regprocedure('hive.current_app_code()') IS NOT NULL AS app_helper_ready,
          to_regprocedure('hive.current_organization_id()') IS NOT NULL AS organization_helper_ready`,
       [
@@ -169,6 +186,7 @@ export function createReferenceAppReadinessCheck(database: ReadinessDatabase): (
       !state.jobs_ready ||
       !state.workers_ready ||
       !state.ai_gateway_ready ||
+      !state.search_gateway_ready ||
       !state.app_helper_ready ||
       !state.organization_helper_ready
     ) {

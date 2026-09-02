@@ -67,7 +67,9 @@ GH-0504 can move to `DONE` only when all of the following are true:
 6. prompt, response and key material are absent from stored evidence;
 7. disposable database/Auth fixtures are zero after cleanup;
 8. CI, Render readiness and public HTTPS/security smokes remain green;
-9. release evidence, manifest, ZIP and tag for platform `0.21.0` are completed.
+9. the successful gate is incorporated into the then-current platform release evidence, manifest,
+   ZIP and tag. No retrospective `v0.21.0` tag is required after later independent slices advance
+   the coordinated platform version.
 
 ## Current result and deferred scope
 
