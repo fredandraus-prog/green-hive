@@ -1,11 +1,12 @@
 # Dedicated Supabase staging gate
 
-Status: `DATABASE_RLS_PROJECT_AUTH_BILLING_ENTITLEMENTS_COST_GUARD_AI_GATEWAY_PASS - REAL_AI_PENDING`.
+Status: `DATABASE_RLS_PROJECT_AUTH_BILLING_ENTITLEMENTS_COST_GUARD_AI_SEARCH_GATEWAY_PASS - REAL_AI_PENDING`.
 
 The Green Hive staging environment is an isolated hosted Supabase project. It is used only to
 validate canonical migrations, RLS, Project Service, Auth/account, Billing, verified webhooks,
-Entitlements, Usage/Cost, Atomic Cost Guard and AI Gateway behavior before a public application
-deployment. It is not production and it is not a second migration source.
+Entitlements, Usage/Cost, Atomic Cost Guard, AI Gateway and deterministic Search Gateway behavior
+before a public application deployment. It is not production and it is not a second migration
+source.
 
 ## Confirmed environment
 
@@ -76,7 +77,7 @@ fails if a known disposable fixture remains.
 
 1. repeats the database-only preflight;
 2. runs `db:validate`;
-3. applies all canonical pending migrations, currently `0001` through `0020`, using the ledger;
+3. applies all canonical pending migrations, currently `0001` through `0022`, using the ledger;
 4. reapplies the migrator to prove no duplication;
 5. applies the structural `REFERENCE_APP`, sandbox Billing catalog, reviewed Entitlements mappings
    and Reference App job registration seeds twice;
@@ -85,8 +86,9 @@ fails if a known disposable fixture remains.
 `staging:database:test` executes the hosted RLS/database matrix, the 10-scenario Project/Workspace
 Service matrix, the 7-scenario native Billing Service/provider matrix, verified-webhook concurrency,
 the 6-scenario Entitlements matrix, the 5-scenario Usage/Cost matrix, the 5-scenario Atomic Cost
-Guard matrix and the Jobs/Worker lifecycle matrices, including separate-connection concurrent
-reservation and exclusive job claim. `staging:auth:test` creates two
+Guard matrix and the Jobs/Worker plus deterministic AI/Search Gateway lifecycle matrices,
+including separate-connection concurrent reservation and exclusive job claim.
+`staging:auth:test` creates two
 uniquely named confirmed
 test accounts, executes the server-side Auth/account matrix, and deletes their projects,
 Usage/Cost, Entitlements, Billing rows, settings, profiles and Auth users in a final cleanup block.
@@ -117,7 +119,7 @@ attempt requires explicit investigation and authorization rather than an automat
 ## Passed hosted evidence
 
 - project identity and health: confirmed;
-- migrations/ledger: twenty-one applied, zero pending, reapplication creates no duplicate;
+- migrations/ledger: twenty-two applied, zero pending, reapplication creates no duplicate;
 - seeds: deterministic `REFERENCE_APP`, sandbox catalog, two reviewed capability mappings and
   Reference App job registration, reapplied twice;
 - database/RLS: 13 passed, 0 failed;
@@ -130,6 +132,7 @@ attempt requires explicit investigation and authorization rather than an automat
 - Jobs registration/enqueue/read/isolation matrix: passed;
 - Worker claim/lease/heartbeat/retry/terminal/recovery matrix: passed;
 - deterministic AI Gateway accounting/isolation matrix: passed;
+- deterministic Search Gateway accounting/isolation matrix: 1 passed, 0 failed;
 - controlled real OpenAI staging task: pending dedicated key and spending control;
 - Auth/account core: 8 passed, 0 failed;
 - confirmed signup and isolated owner profiles: passed;
@@ -137,7 +140,7 @@ attempt requires explicit investigation and authorization rather than an automat
 - `user_metadata` privilege forgery: denied;
 - only controlled `app_metadata.app_code` changes the active app: passed;
 - refresh rotation, logout revocation and stable public errors: passed;
-- final database state: twenty-one ledger rows, one structural app, one sandbox product/price, two
+- final database state: twenty-two ledger rows, one structural app, one sandbox product/price, two
   reviewed capability mappings, one registered Reference App job type and zero disposable fixture
   rows;
 - final Auth cleanup: zero `staging-owner-*@example.test` users.

@@ -1,6 +1,6 @@
 # GH-0505 — Search Provider and deterministic fake Search Gateway
 
-Status: `PARTIAL — IMPLEMENTATION IN PROGRESS; NO ACCEPTANCE GATE RECORDED`.
+Status: `DONE — FREE LOCAL, CI, DEDICATED-STAGING AND RENDER/HTTPS GATES PASS`.
 
 ## Objective
 
@@ -14,7 +14,7 @@ separately `PARTIAL` until its controlled real AI staging gate can be funded and
 
 ## Implementation scope
 
-The in-progress slice is limited to:
+The delivered slice is limited to:
 
 - provider-neutral `SearchProvider.search(SearchProviderRequest)` and normalized result contracts;
 - deterministic `FakeSearchProvider` with controlled safe failures and zero network access;
@@ -38,7 +38,7 @@ HTML, an authorization input or persisted operation/Audit metadata.
 
 ## Migration and storage boundary
 
-Migration `0022` is planned to create `hive.search_operations`, server-only start, accounted
+Migration `0022` creates `hive.search_operations`, server-only start, accounted
 success/failure and unreserved-failure functions, a private lower-level completion helper, terminal
 Audit capture and tenant-aware read-only RLS. Accounted success and failure require the matching
 reservation estimate to equal the operation estimate. The simple failure writer refuses any
@@ -61,9 +61,9 @@ results`. Every retry counts as another physical provider call. Those values are
 spending. The fake path makes no network call and its cache state is always `NOT_APPLICABLE`;
 GH-0505 does not implement a cache.
 
-## Acceptance evidence required for `DONE`
+## Acceptance evidence
 
-GH-0505 can move from `PARTIAL` to `DONE` only after evidence demonstrates all of the following:
+GH-0505 moved to `DONE` after evidence demonstrated all of the following:
 
 1. provider, gateway, registry, operation and error contracts pass strict runtime validation;
 2. identical fake requests produce deterministic, deeply isolated normalized results;
@@ -82,15 +82,24 @@ GH-0505 can move from `PARTIAL` to `DONE` only after evidence demonstrates all o
 10. cross-user, cross-organization, cross-app, forged-scope, browser-write and physical-delete paths
     remain denied;
 11. query/result/provider bodies and secrets are absent from operation, Usage/Cost and Audit stores;
-12. clean install, focused tests, full `verify`, database validation, dependency audit and release
-    manifest verification pass;
+12. clean install, focused tests, full `verify`, database validation, dependency audit and the
+    feature-gate release manifest verification pass;
 13. feature push, pull-request and merged-main CI pass, followed by the existing Render Free
     readiness and public HTTPS/security smokes;
-14. honest release evidence, final source manifest, extracted source-only ZIP and tag for platform
-    `0.22.0` are completed.
+14. honest release evidence for platform `0.22.0` records exact observed identities and explicitly
+    leaves any unavailable provider-specific deploy identity unknown.
 
-No item in this list may be marked as passed in advance. The paid GH-0504 command is explicitly not
-part of the GH-0505 acceptance gate.
+The clean gate passed 160 unit tests and 21 embedded database scenarios. Native local and dedicated
+staging both passed the Search matrix (`1/1`); staging ended with 22 ledger rows, zero pending
+migrations and zero disposable fixtures. Feature push, pull-request and merged-`main` CI passed;
+PR #33 merged as `37c7752`; GitHub marks that revision active in the staging environment; and the
+public HTTPS plus hosted-security smokes passed. The exact evidence is recorded in
+[the release validation](VALIDATION-2026-09-02-GH0505-RELEASE.md).
+
+The paid GH-0504 command is explicitly not part of the GH-0505 acceptance gate and was not run.
+Regenerating the final source manifest, validating the extracted source-only ZIP and creating the
+`v0.22.0` tag are release-distribution steps performed after this documentation is finalized; they
+must not be claimed until separately observed.
 
 ## Deferred scope
 
