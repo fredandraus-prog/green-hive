@@ -27,6 +27,7 @@ Once real data exists, a reviewed forward correction is normally safer.
 | `0020` | forward-fix Worker lease columns, functions, constraints and Audit transitions | export and verify jobs, ensure no live leases, preserve Audit evidence and migration ledger state before restoration |
 | `0021` | forward-fix AI operation constraints, functions, RLS and Audit transitions | export and reconcile operation metadata, Usage/Cost evidence, Audit evidence and migration ledger state before restoration |
 | `0022` | forward-fix Search operation constraints, functions, RLS and Audit transitions | export and reconcile Search operation metadata, Cost Guard reservations, Usage/Cost evidence, Audit evidence and migration ledger state before restoration |
+| `0023` | forward-fix private file metadata, lifecycle writers, RLS and grants | export and reconcile file metadata, private object inventory and migration ledger before controlled restoration |
 
 If a ledger checksum, filename or rollback description differs, deployment stops. Never edit the
 ledger to hide drift. Restore the canonical migration or introduce a reviewed next-numbered

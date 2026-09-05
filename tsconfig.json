@@ -38,6 +38,9 @@
       ],
       "@green-hive/cost-guard": [
         "packages/cost-guard/src/index.ts"
+      ],
+      "@green-hive/files": [
+        "packages/files/src/index.ts"
       ]
     },
     "types": [

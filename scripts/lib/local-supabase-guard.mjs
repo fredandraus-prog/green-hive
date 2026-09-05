@@ -163,8 +163,14 @@ export async function cleanupGreenHiveUserData(client, userIds) {
         to_regclass('hive.cost_guard_reservations')::text AS cost_guard_reservations,
         to_regclass('hive.ai_operations')::text AS ai_operations,
         to_regclass('hive.search_operations')::text AS search_operations,
+        to_regclass('hive.files')::text AS files,
         to_regclass('hive.jobs')::text AS jobs`,
   );
+  if (billingTables.rows[0]?.files === 'hive.files') {
+    await client.query('DELETE FROM hive.files WHERE owner_user_id = ANY($1::uuid[])', [
+      userIds,
+    ]);
+  }
   if (billingTables.rows[0]?.search_operations === 'hive.search_operations') {
     await client.query('DELETE FROM hive.search_operations WHERE owner_user_id = ANY($1::uuid[])', [
       userIds,

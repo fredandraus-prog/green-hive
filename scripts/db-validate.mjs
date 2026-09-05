@@ -33,6 +33,7 @@ const requiredHiveTables = [
   'jobs',
   'ai_operations',
   'search_operations',
+  'files',
 ];
 const requiredAuditTables = ['events'];
 const forceRlsTables = [
@@ -59,6 +60,7 @@ const forceRlsTables = [
   'jobs',
   'ai_operations',
   'search_operations',
+  'files',
 ];
 const expectedPolicies = new Map([
   ['apps', ['apps_admin_select']],
@@ -133,6 +135,7 @@ const expectedPolicies = new Map([
   ['jobs', ['jobs_owner_or_platform_select']],
   ['ai_operations', ['ai_operations_owner_or_platform_select']],
   ['search_operations', ['search_operations_owner_or_platform_select']],
+  ['files', ['files_owner_select']],
 ]);
 const forbiddenHiveDomainTerms = [
   'break_even',
@@ -690,6 +693,90 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
   }
   if (/GRANT\s+SELECT\s*\([\s\S]{0,1000}\brequest_fingerprint_sha256\b[\s\S]{0,300}ON\s+hive\.search_operations\s+TO\s+authenticated/i.test(allSql)) {
     errors.push('authenticated must not receive the Search Gateway request fingerprint');
+  }
+  for (const fileMarker of [
+    'CREATE TABLE hive.files',
+    'files_project_scope_fk',
+    'files_idempotency_unique',
+    'files_storage_identity_unique',
+    "status IN ('PROCESSING', 'READY', 'DELETED')",
+    'idempotency_key_sha256 text',
+    'request_fingerprint_sha256 text',
+    'original_filename text',
+    'media_type text',
+    'byte_size bigint',
+    'sensitivity text',
+    'storage_provider text',
+    'storage_bucket text',
+    'storage_key text',
+    'content_sha256 text',
+    'object_version text',
+    'required_capability text',
+    'hive.can_project_capability',
+    'hive.prepare_generated_file',
+    'hive.complete_generated_file',
+    'hive.abort_generated_file',
+    'hive.soft_delete_file',
+    'files_owner_select',
+    'REVOKE ALL ON hive.files FROM PUBLIC',
+    'physical references remain server-only',
+  ]) {
+    if (!allSql.includes(fileMarker)) {
+      errors.push(`Private Files contract is missing marker: ${fileMarker}`);
+    }
+  }
+  const filesTableSql = /CREATE TABLE hive\.files\s*\(([\s\S]*?)\n\);/i.exec(allSql)?.[1] ?? '';
+  if (!filesTableSql) {
+    errors.push('Private Files table definition cannot be inspected');
+  } else if (/\b(content|content_bytes|body|payload|file_data)\s+(text|varchar|character|jsonb?|bytea)\b/i.test(filesTableSql)) {
+    errors.push('hive.files must not persist file bytes or raw generated content');
+  }
+  const fileServiceFunctions = [
+    'hive.prepare_generated_file\\(\\s*uuid,\\s*text,\\s*text,\\s*text,\\s*text,\\s*bigint,\\s*text,\\s*text,\\s*text,\\s*text,\\s*text\\s*\\)',
+    'hive.complete_generated_file\\(\\s*uuid,\\s*text\\s*\\)',
+    'hive.abort_generated_file\\(\\s*uuid\\s*\\)',
+    'hive.soft_delete_file\\(\\s*uuid\\s*\\)',
+  ];
+  for (const fileFunction of fileServiceFunctions) {
+    for (const deniedRole of ['PUBLIC', 'authenticated']) {
+      if (!new RegExp(
+        `REVOKE\\s+ALL\\s+ON\\s+FUNCTION\\s+${fileFunction}\\s+FROM\\s+${deniedRole}`,
+        'i',
+      ).test(allSql)) {
+        errors.push(`Private Files function ${fileFunction} must be revoked from ${deniedRole}`);
+      }
+    }
+    if (!new RegExp(
+      `GRANT\\s+EXECUTE\\s+ON\\s+FUNCTION\\s+${fileFunction}\\s+TO\\s+service_role`,
+      'i',
+    ).test(allSql)) {
+      errors.push(`Private Files function ${fileFunction} must be granted only to service_role`);
+    }
+  }
+  const filesOwnerGrant = /GRANT\s+SELECT\s*\(([^;]{1,1600}?)\)\s+ON\s+hive\.files\s+TO\s+authenticated/i.exec(allSql)?.[1];
+  if (!filesOwnerGrant) {
+    errors.push('authenticated must receive a bounded safe-column grant on hive.files');
+  } else {
+    for (const privateColumn of [
+      'idempotency_key_sha256',
+      'request_fingerprint_sha256',
+      'storage_provider',
+      'storage_bucket',
+      'storage_key',
+      'content_sha256',
+      'object_version',
+      'required_capability',
+    ]) {
+      if (new RegExp(`\\b${privateColumn}\\b`, 'i').test(filesOwnerGrant)) {
+        errors.push(`authenticated must not receive the Private Files column ${privateColumn}`);
+      }
+    }
+  }
+  const filesPolicySql = /CREATE POLICY files_owner_select[\s\S]*?USING\s*\(([\s\S]{1,1400}?)\);/i.exec(allSql)?.[1];
+  if (!filesPolicySql) {
+    errors.push('Private Files owner-only policy cannot be inspected');
+  } else if (/hive\.is_platform_admin\s*\(/i.test(filesPolicySql)) {
+    errors.push('Private Files owner policy must not grant implicit platform-admin access');
   }
   for (const requiredMarker of [
     'app_code text',

@@ -3,6 +3,49 @@
 All notable Green Hive changes are recorded here. Internal platform packages use coordinated
 semantic versioning.
 
+## [0.23.0] - 2026-09-05
+
+### Added
+
+- GH-0601 `@green-hive/files` contracts, server-only File Service and deterministic private fake
+  storage for generated artifacts; all consumer-controlled tenant, storage, lifecycle and
+  integrity authority is rejected.
+- Immutable migration `0023` with `hive.files`, opaque generated object keys, composite project
+  scope, hashed idempotency/integrity evidence, logical deletion and server-only lifecycle writers.
+- Owner-only safe-column RLS, no platform-admin file-read path, no authenticated direct write or
+  lifecycle-function execution grants, and a strict injected Supabase private-storage adapter.
+- Unit, embedded PostgreSQL-compatible and guarded native local-Supabase file lifecycle/RLS tests.
+
+### Security
+
+- Browser-visible file metadata excludes object provider, bucket, key, object version, content hash,
+  capability and idempotency fingerprints. Filenames remain metadata and can never become paths.
+- The storage adapter supports private configured buckets only and exposes neither public nor signed
+  URL operations. No real Storage credential, bucket or external object write was added.
+- File lifecycle produces no `FILE_EXPORTED` Audit evidence: export/delivery belongs to GH-0602.
+
+### Scope
+
+- No browser upload, arbitrary user file, public/signed download, real bucket activation, malware
+  scan, rendering, CDN/cache delivery or external charge is included.
+
+### Changed
+
+- Coordinated platform packages advance to `0.23.0`; the `REFERENCE_APP` product manifest remains
+  `0.1.0`.
+
+### Validation
+
+- `db:validate` confirms 23 immutable migrations and 26 RLS-protected tables. Focused unit,
+  embedded File Service and guarded native local-Supabase gates pass; the local clean baseline
+  smoke reports ledger `23`, structural seed, native Auth, FKs, RLS helpers and grants.
+
+### Status
+
+- GH-0601 is `DONE` for the metadata/private-service boundary. Private object-storage activation
+  and authorized expiring delivery remain separate operational/GH-0602 work.
+- GH-0504 remains `PARTIAL — REAL STAGING GATE PENDING`; its paid test remains unexecuted.
+
 ## [0.22.0] - 2026-09-02
 
 ### Added
