@@ -9,6 +9,8 @@ export interface FileServiceConfiguration {
   readonly storageBucket: string;
   readonly maxBytes: number;
   readonly allowedMediaTypes: readonly string[];
+  /** Fixed server-owned lifetime for download grants; callers cannot select it. */
+  readonly downloadTtlSeconds: number;
 }
 
 export interface ValidatedStoreGeneratedFileInput {
@@ -83,6 +85,11 @@ export interface FileRepository {
     context: TrustedOrganizationContext,
     fileId: string,
   ): Promise<boolean>;
+  recordExport(
+    context: TrustedOrganizationContext,
+    projectId: string,
+    fileId: string,
+  ): Promise<void>;
 }
 
 export interface FileCapabilityAuthorizer {
@@ -112,6 +119,17 @@ export interface DeletePrivateFileInput extends PrivateStorageLocator {
   readonly objectVersion: string;
 }
 
+export interface CreateSignedPrivateDownloadInput extends PrivateStorageLocator {
+  readonly objectVersion: string;
+  readonly downloadFilename: string;
+  readonly expiresInSeconds: number;
+}
+
+/** Storage-provider response. This stays server-only until FileService returns its bounded grant. */
+export interface PrivateSignedDownload {
+  readonly url: string;
+}
+
 export interface PrivateStoredObject extends PrivateStorageLocator {
   readonly objectVersion: string;
   readonly mediaType: string;
@@ -119,12 +137,13 @@ export interface PrivateStoredObject extends PrivateStorageLocator {
   readonly contentSha256: string;
 }
 
-/** Server-side provider. It deliberately has no public-URL or signed-URL operation. */
+/** Server-side provider. It deliberately has no permanent public-URL operation. */
 export interface PrivateStorageProvider {
   readonly providerCode: string;
   putPrivate(input: PutPrivateFileInput): Promise<PrivateStoredObject>;
   headPrivate(input: HeadPrivateFileInput): Promise<PrivateStoredObject | null>;
   deletePrivate(input: DeletePrivateFileInput): Promise<void>;
+  createSignedDownload(input: CreateSignedPrivateDownloadInput): Promise<PrivateSignedDownload>;
 }
 
 export interface FileSqlResult<Row> {

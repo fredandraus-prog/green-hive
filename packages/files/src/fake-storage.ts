@@ -1,8 +1,10 @@
 import { createHash } from 'node:crypto';
 import { FileError } from './errors.js';
 import type {
+  CreateSignedPrivateDownloadInput,
   DeletePrivateFileInput,
   HeadPrivateFileInput,
+  PrivateSignedDownload,
   PrivateStorageProvider,
   PrivateStoredObject,
   PutPrivateFileInput,
@@ -13,6 +15,7 @@ export const FAKE_FILE_STORAGE_FAILURE_MODES = [
   'PUT_FAILED',
   'HEAD_FAILED',
   'DELETE_FAILED',
+  'SIGN_FAILED',
 ] as const;
 export type FakeFileStorageFailureMode =
   (typeof FAKE_FILE_STORAGE_FAILURE_MODES)[number];
@@ -149,6 +152,41 @@ export class FakeFileStorage implements PrivateStorageProvider {
       throw new FileError('FILE_STORAGE_CONFLICT');
     }
     this.#objects.delete(identity);
+  }
+
+  async createSignedDownload(
+    input: CreateSignedPrivateDownloadInput,
+  ): Promise<PrivateSignedDownload> {
+    safeLocator(input);
+    if (this.#failureMode === 'SIGN_FAILED') throw new FileError('FILE_STORAGE_FAILED');
+    if (
+      input.storageProvider !== this.providerCode
+      || typeof input.objectVersion !== 'string'
+      || typeof input.downloadFilename !== 'string'
+      || input.downloadFilename.length < 1
+      || !Number.isSafeInteger(input.expiresInSeconds)
+      || input.expiresInSeconds < 60
+      || input.expiresInSeconds > 300
+    ) {
+      throw new FileError('FILE_STORAGE_FAILED');
+    }
+    const stored = this.#objects.get(objectIdentity(input.storageBucket, input.storageKey));
+    if (!stored || stored.metadata.objectVersion !== input.objectVersion) {
+      throw new FileError('FILE_STORAGE_CONFLICT');
+    }
+    const opaqueGrant = createHash('sha256')
+      .update([
+        this.providerCode,
+        input.storageBucket,
+        input.storageKey,
+        input.objectVersion,
+        input.downloadFilename,
+        String(input.expiresInSeconds),
+      ].join('\u0000'))
+      .digest('hex');
+    return Object.freeze({
+      url: `https://files.green-hive.invalid/download/${opaqueGrant}`,
+    });
   }
 
   /** Test-only defensive snapshot of the injected fake; no production service should expose it. */

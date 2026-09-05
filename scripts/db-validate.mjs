@@ -717,6 +717,9 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'hive.complete_generated_file',
     'hive.abort_generated_file',
     'hive.soft_delete_file',
+    'hive.record_file_export',
+    "'green-hive-generated', false",
+    "'FILE'",
     'files_owner_select',
     'REVOKE ALL ON hive.files FROM PUBLIC',
     'physical references remain server-only',
@@ -736,6 +739,7 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'hive.complete_generated_file\\(\\s*uuid,\\s*text\\s*\\)',
     'hive.abort_generated_file\\(\\s*uuid\\s*\\)',
     'hive.soft_delete_file\\(\\s*uuid\\s*\\)',
+    'hive.record_file_export\\(\\s*uuid,\\s*uuid\\s*\\)',
   ];
   for (const fileFunction of fileServiceFunctions) {
     for (const deniedRole of ['PUBLIC', 'authenticated']) {

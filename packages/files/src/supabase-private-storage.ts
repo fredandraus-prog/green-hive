@@ -1,8 +1,10 @@
 import { createHash } from 'node:crypto';
 import { FileError } from './errors.js';
 import type {
+  CreateSignedPrivateDownloadInput,
   DeletePrivateFileInput,
   HeadPrivateFileInput,
+  PrivateSignedDownload,
   PrivateStorageProvider,
   PrivateStoredObject,
   PutPrivateFileInput,
@@ -35,6 +37,10 @@ interface SupabaseInfoData {
   readonly metadata?: unknown;
 }
 
+interface SupabaseSignedUrlData {
+  readonly signedUrl?: unknown;
+}
+
 export interface SupabasePrivateBucketClient {
   upload(
     path: string,
@@ -47,6 +53,11 @@ export interface SupabasePrivateBucketClient {
     },
   ): Promise<SupabaseStorageResult<SupabaseUploadData>>;
   info(path: string): Promise<SupabaseStorageResult<SupabaseInfoData>>;
+  createSignedUrl(
+    path: string,
+    expiresIn: number,
+    options: { readonly download: string },
+  ): Promise<SupabaseStorageResult<SupabaseSignedUrlData>>;
   remove(paths: readonly string[]): Promise<SupabaseStorageResult<unknown>>;
 }
 
@@ -238,6 +249,42 @@ export class SupabasePrivateStorageProvider implements PrivateStorageProvider {
     if (result.error && !notFound(result.error)) throw new FileError('FILE_STORAGE_FAILED');
   }
 
+  async createSignedDownload(
+    input: CreateSignedPrivateDownloadInput,
+  ): Promise<PrivateSignedDownload> {
+    this.#assertAllowed(input);
+    if (
+      typeof input.objectVersion !== 'string'
+      || !OBJECT_VERSION.test(input.objectVersion)
+      || typeof input.downloadFilename !== 'string'
+      || input.downloadFilename.length < 1
+      || !Number.isSafeInteger(input.expiresInSeconds)
+      || input.expiresInSeconds < 60
+      || input.expiresInSeconds > 300
+    ) {
+      throw new FileError('FILE_STORAGE_FAILED');
+    }
+    const existing = await this.headPrivate(input);
+    if (!existing || existing.objectVersion !== input.objectVersion) {
+      throw new FileError('FILE_STORAGE_CONFLICT');
+    }
+    let result: SupabaseStorageResult<SupabaseSignedUrlData>;
+    try {
+      result = await this.#bucket(input.storageBucket).createSignedUrl(
+        input.storageKey,
+        input.expiresInSeconds,
+        { download: input.downloadFilename },
+      );
+    } catch {
+      throw new FileError('FILE_STORAGE_FAILED');
+    }
+    if (result.error || !result.data || typeof result.data.signedUrl !== 'string') {
+      throw new FileError('FILE_STORAGE_FAILED');
+    }
+    const url = this.#safeSignedUrl(result.data.signedUrl);
+    return Object.freeze({ url });
+  }
+
   #reconcile(
     stored: PrivateStoredObject,
     expected: PutPrivateFileInput,
@@ -268,6 +315,25 @@ export class SupabasePrivateStorageProvider implements PrivateStorageProvider {
   #bucket(bucket: string): SupabasePrivateBucketClient {
     try {
       return this.#client.storage.from(bucket);
+    } catch {
+      throw new FileError('FILE_STORAGE_FAILED');
+    }
+  }
+
+  #safeSignedUrl(value: string): string {
+    try {
+      const parsed = new URL(value);
+      const localHttp = parsed.protocol === 'http:'
+        && (parsed.hostname === '127.0.0.1' || parsed.hostname === 'localhost');
+      if (
+        (parsed.protocol !== 'https:' && !localHttp)
+        || parsed.username
+        || parsed.password
+        || !parsed.pathname
+      ) {
+        throw new Error('unsafe URL');
+      }
+      return parsed.toString();
     } catch {
       throw new FileError('FILE_STORAGE_FAILED');
     }

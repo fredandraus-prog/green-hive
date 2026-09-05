@@ -247,6 +247,23 @@ export class PostgresFileRepository implements FileRepository {
     }
   }
 
+  async recordExport(
+    context: TrustedOrganizationContext,
+    projectId: string,
+    fileId: string,
+  ): Promise<void> {
+    await this.#assertAuthority(context);
+    try {
+      const result = await this.#database.query<{ recorded: boolean }>(
+        'SELECT hive.record_file_export($1::uuid, $2::uuid) AS recorded',
+        [projectId, fileId],
+      );
+      if (result.rows[0]?.recorded !== true) throw new FileError('FILE_OPERATION_FAILED');
+    } catch (error) {
+      throw databaseError(error);
+    }
+  }
+
   async #assertAuthority(context: TrustedOrganizationContext): Promise<AuthorityRow> {
     try {
       const result = await this.#database.query<AuthorityRow>(

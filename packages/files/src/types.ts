@@ -19,6 +19,12 @@ export interface FileRecord {
 /** Compatibility name for the safe owner-visible projection. */
 export type StoredFile = FileRecord;
 
+/** Short-lived authority returned only after the server has rechecked the owner scope. */
+export interface FileDownloadGrant {
+  readonly url: string;
+  readonly expiresAt: Date;
+}
+
 export const FILE_SENSITIVITIES = [
   'PUBLIC',
   'INTERNAL',

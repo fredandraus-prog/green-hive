@@ -42,6 +42,10 @@ Version `0.23.0` completes **GH-0601 (Private File Metadata and Storage Service)
 tenant-scoped file ledger, service-only lifecycle writers, owner-only safe metadata reads and
 deterministic private storage. Public/signed file delivery, browser uploads, real bucket activation
 and rendering remain deliberately absent.
+Version `0.24.0` implements **GH-0602 (Signed Private-File Download Path)** with fixed short-lived
+server-issued grants, owner/workspace/app rechecks and safe `FILE_EXPORTED` audit evidence. Native
+Supabase Storage activation remains the only operational gate; no public bucket or browser upload
+is introduced.
 
 The checkpoint is deliberately narrow. The only public Billing ingress is the verified fake-provider
 webhook used to prove the platform contract. The real AI adapter is server-only and has no Render
@@ -54,7 +58,7 @@ remain out of scope.
 - the 18 canonical `@green-hive/*` packages, `hive-reference-app` and `hive-admin`;
 - canonical `AppManifestV1`, validator, App Registry and complete `REFERENCE_APP` manifest;
 - schemas `hive`, `audit` and `reference_app`;
-- twenty-three immutable migrations and a SHA-256 migration ledger;
+- twenty-four immutable migrations and a SHA-256 migration ledger;
 - organizations, memberships and tenant app installations around the global app registry;
 - tenant-scoped `projects` and `project_settings`;
 - production-safe structural seeds containing only `REFERENCE_APP`, its manifest-registered
@@ -111,6 +115,8 @@ remain out of scope.
 - typed `@green-hive/files` private generated-artifact service, deterministic zero-network fake
   storage and server-injected Supabase private-storage adapter; migration `0023` stores opaque
   provider/bucket/key/integrity metadata while owners see only safe ready-file metadata;
+- migration `0024` declares the private generated-file bucket and permits only server-issued,
+  short-lived signed download grants after a repeated owner/workspace/app/project authorization;
 - owner-limited budget/logical-usage reads, admin-only raw monetary-cost inspection and no
   authenticated direct write authority;
 - a responsive React/Vite Reference App with signup, login, recovery, profile and project screens;
@@ -133,7 +139,7 @@ npm run verify
 `verify` removes generated outputs, checks formatting and platform boundaries, type-checks, builds
 all workspaces, validates migration integrity and runs the embedded RLS matrix.
 
-The GH-0601 implementation gate confirms 23 immutable migrations and 26 RLS-protected tables;
+The GH-0602 implementation gate confirms 24 immutable migrations and 26 RLS-protected tables;
 the focused file unit, embedded lifecycle and native local-Supabase matrices pass, and the guarded
 smoke reports ledger `23` with the structural seed and native Auth/RLS/grant contract intact. The
 full release verification, CI, staging, manifest and ZIP evidence is recorded only after each
