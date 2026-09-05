@@ -1,6 +1,6 @@
 # GH-0602 — Signed private-file download path
 
-Status: `PARTIAL — IMPLEMENTATION, UNIT AND EMBEDDED RLS GATES PASS; NATIVE SUPABASE STORAGE ACTIVATION PENDING`.
+Status: `DONE — IMPLEMENTATION, UNIT, EMBEDDED/NATIVE RLS AND DISPOSABLE LOCAL/STAGING STORAGE GATES PASS`.
 
 ## Objective
 
@@ -23,11 +23,12 @@ a public bucket or a browser storage authority.
 
 ## Remaining operational gate
 
-The local stack now starts the private Storage service without a host-published port and the native
-database gate verifies the private bucket, migration, RLS and writer grants. The remaining release
-gate must use a server-owned Storage client to write one disposable object, verify its short signed
-URL and clean the object/fixture on local Supabase and then staging. This requires no paid API and
-no public Storage configuration.
+The local stack starts the private Storage service without a host-published port. Its guarded native
+gate uses the real server-only adapter to write one random opaque object, prove direct public read
+fails, issue and read one 120-second signed URL through the complete File Service boundary, then
+remove the object in a `finally` block. The identical guard passed on dedicated staging after
+`0024` was applied, with no schema or user deletion. This required no paid API and no public
+Storage configuration.
 
 ## Exclusions
 

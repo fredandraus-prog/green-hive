@@ -342,14 +342,23 @@ export class FileService {
     }
     try {
       const parsed = new URL(signed.url);
+      const downloadParameters = parsed.searchParams.getAll('download');
       const localHttp = parsed.protocol === 'http:'
         && (parsed.hostname === '127.0.0.1' || parsed.hostname === 'localhost');
+      let decodedPathname: string;
+      try {
+        decodedPathname = decodeURIComponent(parsed.pathname);
+      } catch {
+        throw new Error('invalid encoded path');
+      }
       if (
         (parsed.protocol !== 'https:' && !localHttp)
         || parsed.username
         || parsed.password
         || !parsed.pathname
-        || parsed.toString().includes(file.originalFilename)
+        || decodedPathname.includes(file.originalFilename)
+        || downloadParameters.length > 1
+        || (downloadParameters.length === 1 && downloadParameters[0] !== file.originalFilename)
       ) {
         throw new Error('unsafe signed download');
       }

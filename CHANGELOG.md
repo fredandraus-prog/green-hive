@@ -23,8 +23,8 @@ semantic versioning.
 
 ### Status
 
-- GH-0602 is `PARTIAL`: implementation, private local Storage startup and database gates pass; a
-  server-owned disposable signed-download call and staging parity remain the non-public gate.
+- GH-0602 is `DONE`: the guarded local and dedicated staging real private Storage gates both pass;
+  each performs a disposable server-owned write, public-read denial, signed download and cleanup.
 - Coordinated platform packages advance to `0.24.0`; the `REFERENCE_APP` product manifest remains
   `0.1.0`.
 

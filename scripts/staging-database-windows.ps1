@@ -1,5 +1,5 @@
 param(
-  [ValidateSet('preflight', 'apply', 'test', 'auth-test', 'hosted-acceptance', 'ai-real-test')]
+  [ValidateSet('preflight', 'apply', 'test', 'auth-test', 'files-storage-test', 'hosted-acceptance', 'ai-real-test')]
   [string]$Operation = 'preflight'
 )
 
@@ -103,7 +103,7 @@ try {
     if ($LASTEXITCODE -eq 0) {
       & node --test --test-reporter=spec database/tests/ai-real-provider.staging.integration.test.mjs
     }
-  } elseif ($Operation -eq 'auth-test' -or $Operation -eq 'hosted-acceptance') {
+  } elseif ($Operation -eq 'auth-test' -or $Operation -eq 'files-storage-test' -or $Operation -eq 'hosted-acceptance') {
     $publishableKey = Unprotect-DpapiText $publishableKeyPath
     $serviceRoleKey = Unprotect-DpapiText $serviceRoleKeyPath
     $env:GREEN_HIVE_TEST_DATABASE_URL = $databaseUrl
@@ -126,6 +126,8 @@ try {
     if ($LASTEXITCODE -eq 0) {
       if ($Operation -eq 'hosted-acceptance') {
         & node scripts/hosted-acceptance.mjs
+      } elseif ($Operation -eq 'files-storage-test') {
+        & npm run files:storage:test:supabase --silent
       } else {
         & node --test --test-reporter=spec database/tests/staging-auth.integration.test.mjs
       }
