@@ -131,6 +131,7 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ,'jobs_registration_scope_fk'
        ,'ai_operations_project_scope_fk'
        ,'search_operations_project_scope_fk'
+       ,'files_project_scope_fk'
      )
      ORDER BY conname`,
   );
@@ -148,6 +149,7 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     { conname: 'cost_guard_reservations_cost_event_fk', target: 'hive.cost_events' },
     { conname: 'cost_guard_reservations_decision_fk', target: 'hive.cost_guard_decisions' },
     { conname: 'cost_guard_reservations_project_scope_fk', target: 'hive.projects' },
+    { conname: 'files_project_scope_fk', target: 'hive.projects' },
     { conname: 'jobs_project_scope_fk', target: 'hive.projects' },
     { conname: 'jobs_registration_scope_fk', target: 'hive.job_registrations' },
     { conname: 'organization_apps_installer_membership_fk', target: 'hive.organization_members' },
@@ -205,11 +207,12 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
           ,'jobs'
           ,'ai_operations'
           ,'search_operations'
+          ,'files'
        ))
        OR (pg_namespace.nspname = 'audit' AND relname = 'events')
      ORDER BY schema_name, relname`,
   );
-  assert.equal(rls.rows.length, 25);
+  assert.equal(rls.rows.length, 26);
   assert.ok(rls.rows.every((entry) => entry.relrowsecurity));
 
   const helpers = await client.query(
@@ -271,9 +274,13 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
         ,'hive.fail_search_operation(text,text)'
         ,'hive.fail_search_operation_accounted(text,uuid,text)'
        ,'audit.capture_search_operation_transition()'
+       ,'hive.prepare_generated_file(uuid,text,text,text,text,bigint,text,text,text,text,text)'
+       ,'hive.complete_generated_file(uuid,text)'
+       ,'hive.abort_generated_file(uuid)'
+       ,'hive.soft_delete_file(uuid)'
      ]) AS names(name)`,
   );
-  assert.equal(helpers.rows.length, 56);
+  assert.equal(helpers.rows.length, 60);
   assert.ok(helpers.rows.every((entry) => entry.helper));
 
   const privileges = await client.query(
@@ -769,6 +776,97 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     { policyname: 'search_operations_owner_or_platform_select', cmd: 'SELECT' },
   ]);
 
+  const filePrivileges = await client.query(
+    `SELECT
+       has_table_privilege('authenticated', 'hive.files', 'SELECT')
+         AS file_table_select,
+       has_any_column_privilege('authenticated', 'hive.files', 'SELECT')
+         AS file_column_select,
+       has_table_privilege('authenticated', 'hive.files', 'INSERT')
+         AS file_insert,
+       has_table_privilege('authenticated', 'hive.files', 'UPDATE')
+         AS file_update,
+       has_table_privilege('authenticated', 'hive.files', 'DELETE')
+         AS file_delete,
+       has_column_privilege('authenticated', 'hive.files', 'storage_provider', 'SELECT')
+         AS authenticated_can_select_storage_provider,
+       has_column_privilege('authenticated', 'hive.files', 'storage_bucket', 'SELECT')
+         AS authenticated_can_select_storage_bucket,
+       has_column_privilege('authenticated', 'hive.files', 'storage_key', 'SELECT')
+         AS authenticated_can_select_storage_key,
+       has_column_privilege('authenticated', 'hive.files', 'content_sha256', 'SELECT')
+         AS authenticated_can_select_content_hash,
+       has_column_privilege('authenticated', 'hive.files', 'object_version', 'SELECT')
+         AS authenticated_can_select_object_version,
+       has_column_privilege('authenticated', 'hive.files', 'required_capability', 'SELECT')
+         AS authenticated_can_select_required_capability,
+       has_column_privilege('authenticated', 'hive.files', 'idempotency_key_sha256', 'SELECT')
+         AS authenticated_can_select_idempotency,
+       has_column_privilege('authenticated', 'hive.files', 'request_fingerprint_sha256', 'SELECT')
+         AS authenticated_can_select_fingerprint,
+       has_function_privilege(
+         'authenticated',
+         'hive.prepare_generated_file(uuid,text,text,text,text,bigint,text,text,text,text,text)',
+         'EXECUTE'
+       ) AS authenticated_can_prepare,
+       has_function_privilege(
+         'service_role',
+         'hive.prepare_generated_file(uuid,text,text,text,text,bigint,text,text,text,text,text)',
+         'EXECUTE'
+       ) AS service_role_can_prepare,
+       has_function_privilege(
+         'authenticated', 'hive.complete_generated_file(uuid,text)', 'EXECUTE'
+       ) AS authenticated_can_complete,
+       has_function_privilege(
+         'service_role', 'hive.complete_generated_file(uuid,text)', 'EXECUTE'
+       ) AS service_role_can_complete,
+       has_function_privilege(
+         'authenticated', 'hive.abort_generated_file(uuid)', 'EXECUTE'
+       ) AS authenticated_can_abort,
+       has_function_privilege(
+         'service_role', 'hive.abort_generated_file(uuid)', 'EXECUTE'
+       ) AS service_role_can_abort,
+       has_function_privilege(
+         'authenticated', 'hive.soft_delete_file(uuid)', 'EXECUTE'
+       ) AS authenticated_can_soft_delete,
+       has_function_privilege(
+         'service_role', 'hive.soft_delete_file(uuid)', 'EXECUTE'
+       ) AS service_role_can_soft_delete`,
+  );
+  assert.deepEqual(filePrivileges.rows[0], {
+    file_table_select: false,
+    file_column_select: true,
+    file_insert: false,
+    file_update: false,
+    file_delete: false,
+    authenticated_can_select_storage_provider: false,
+    authenticated_can_select_storage_bucket: false,
+    authenticated_can_select_storage_key: false,
+    authenticated_can_select_content_hash: false,
+    authenticated_can_select_object_version: false,
+    authenticated_can_select_required_capability: false,
+    authenticated_can_select_idempotency: false,
+    authenticated_can_select_fingerprint: false,
+    authenticated_can_prepare: false,
+    service_role_can_prepare: true,
+    authenticated_can_complete: false,
+    service_role_can_complete: true,
+    authenticated_can_abort: false,
+    service_role_can_abort: true,
+    authenticated_can_soft_delete: false,
+    service_role_can_soft_delete: true,
+  });
+
+  const filePolicies = await client.query(
+    `SELECT policyname, cmd
+     FROM pg_policies
+     WHERE schemaname = 'hive' AND tablename = 'files'
+     ORDER BY policyname`,
+  );
+  assert.deepEqual(filePolicies.rows, [
+    { policyname: 'files_owner_select', cmd: 'SELECT' },
+  ]);
+
   const searchAuditConstraints = await client.query(
     `SELECT conname, pg_get_constraintdef(oid) AS definition
      FROM pg_constraint
@@ -803,9 +901,9 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ,'audit_usage_budgets_after_insert'
        ,'audit_cost_guard_decisions_after_insert'
        ,'audit_jobs_after_insert'
-       ,'audit_ai_operations_after_transition'
-       ,'audit_search_operations_after_transition'
-     )
+        ,'audit_ai_operations_after_transition'
+        ,'audit_search_operations_after_transition'
+      )
        AND NOT tgisinternal
      ORDER BY tgname`,
   );

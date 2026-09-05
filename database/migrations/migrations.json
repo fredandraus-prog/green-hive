@@ -199,6 +199,15 @@
       "description": "Create tenant-safe Search Gateway operation metadata with server-only lifecycle writers.",
       "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_SEARCH_OPERATION_EXPORT_RESTORE",
       "rollbackStrategy": "Prefer a forward fix; export and verify Search operation metadata, usage/cost evidence, Audit evidence and migration ledger state before any controlled restoration."
+    },
+    {
+      "version": 23,
+      "file": "0023_create_private_files_foundation.sql",
+      "sha256": "8356022cc09177f6d152ea9ea7b12020db07830c1cc7662f15095a90047c4522",
+      "checkpoint": "GH-0601",
+      "description": "Create tenant-safe private generated-file metadata with server-only lifecycle writers.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_PRIVATE_FILE_METADATA_EXPORT_RESTORE",
+      "rollbackStrategy": "Prefer a forward fix; export and reconcile file metadata, private object inventory and the migration ledger before a controlled restoration."
     }
   ]
 }

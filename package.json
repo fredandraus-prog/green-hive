@@ -1,9 +1,9 @@
 {
   "name": "green-hive",
-  "version": "0.22.0",
+  "version": "0.23.0",
   "private": true,
   "type": "module",
-  "description": "Green Hive platform monorepo - GH-0505 deterministic Search Gateway",
+  "description": "Green Hive platform monorepo - GH-0601 private generated-file foundation",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -26,7 +26,7 @@
     "db:validate": "node scripts/db-validate.mjs",
     "db:migrate": "node scripts/db-migrate.mjs",
     "db:seed": "node scripts/db-seed.mjs",
-    "db:test": "npm run build:types --silent && node --test --test-reporter=spec database/tests/embedded-rls.integration.test.mjs database/tests/billing-service.integration.test.mjs database/tests/billing-webhook.integration.test.mjs database/tests/entitlement-service.integration.test.mjs database/tests/usage-cost-service.integration.test.mjs database/tests/cost-guard-service.integration.test.mjs database/tests/job-service.integration.test.mjs database/tests/worker-service.integration.test.mjs database/tests/ai-gateway-service.integration.test.mjs database/tests/search-gateway-service.integration.test.mjs",
+    "db:test": "npm run build:types --silent && node --test --test-reporter=spec database/tests/embedded-rls.integration.test.mjs database/tests/billing-service.integration.test.mjs database/tests/billing-webhook.integration.test.mjs database/tests/entitlement-service.integration.test.mjs database/tests/usage-cost-service.integration.test.mjs database/tests/cost-guard-service.integration.test.mjs database/tests/job-service.integration.test.mjs database/tests/worker-service.integration.test.mjs database/tests/ai-gateway-service.integration.test.mjs database/tests/search-gateway-service.integration.test.mjs database/tests/file-service.integration.test.mjs",
     "db:test:external": "node --test --test-reporter=spec database/tests/postgres-rls.integration.test.mjs",
     "db:test:supabase": "node scripts/db-test-supabase.mjs",
     "projects:test:supabase": "npm run build --silent && node --test --test-reporter=spec database/tests/project-service.integration.test.mjs",
@@ -39,6 +39,7 @@
     "workers:test:supabase": "npm run build:types --silent && node --test --test-reporter=spec database/tests/worker-service.supabase.integration.test.mjs",
     "ai:test:supabase": "npm run build:types --silent && node --test --test-reporter=spec database/tests/ai-gateway-service.supabase.integration.test.mjs",
     "search:test:supabase": "npm run build:types --silent && node --test --test-reporter=spec database/tests/search-gateway-service.supabase.integration.test.mjs",
+    "files:test:supabase": "npm run build:types --silent && node --test --test-reporter=spec database/tests/file-service.supabase.integration.test.mjs",
     "ai:real:test:staging": "pwsh -NoProfile -File scripts/staging-database-windows.ps1 ai-real-test",
     "auth:test:supabase": "node scripts/auth-test-supabase.mjs",
     "web:test:supabase": "node scripts/web-test-supabase.mjs",

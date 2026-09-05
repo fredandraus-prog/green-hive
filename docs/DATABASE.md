@@ -42,11 +42,17 @@ No app-domain concepts belong in `hive`.
   contract for every accepted job type.
 - `hive.jobs`: tenant-safe queue state with registration snapshots, opaque input reference,
   SHA-256 identities, correlation and bounded lifecycle metadata; raw payloads are not stored.
+- `hive.files`: private generated-file metadata bound by a composite project/owner/workspace/app FK;
+  opaque storage key, integrity/idempotency hashes and provider/bucket fields remain server-only.
 - `audit.events`: immutable actor/tenant/app/project event metadata with request and correlation
   identifiers, protected by tenant-aware read RLS and no authenticated write grant.
 
 Project states are `DRAFT`, `ACTIVE`, `ARCHIVED` and `DELETED`. Check constraints synchronize
 `archived_at` and `deleted_at`. Physical deletion is not granted to authenticated users.
+
+File states are `PROCESSING`, `READY` and `DELETED`. Owner reads expose only an allowlisted safe
+metadata projection; storage authority, content hashes and lifecycle writers are unavailable to
+authenticated clients. See [Private generated files](FILES.md).
 
 The global app registry is deliberately not duplicated per organization. The tenant hierarchy is:
 

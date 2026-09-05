@@ -48,6 +48,7 @@ const packageDependencies = (name) => {
     || name === 'cost-guard'
     || name === 'jobs'
     || name === 'trust'
+    || name === 'files'
   ) {
     return { '@green-hive/core': platformVersion };
   }
@@ -67,6 +68,7 @@ const packageReferences = (name) =>
     || name === 'entitlements'
     || name === 'cost-guard'
     || name === 'trust'
+    || name === 'files'
     ? [{ path: '../core' }]
     : [];
 
