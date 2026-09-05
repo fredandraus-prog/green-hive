@@ -24,7 +24,7 @@ const STORE_KEYS = new Set([
 ]);
 const CONFIG_KEYS = new Set([
   'requiredCapability', 'sensitivity', 'storageProvider', 'storageBucket', 'maxBytes',
-  'allowedMediaTypes',
+  'allowedMediaTypes', 'downloadTtlSeconds',
 ]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -142,6 +142,9 @@ export function validateFileServiceConfiguration(value: unknown): FileServiceCon
       (candidate) => typeof candidate !== 'string' || !MEDIA_TYPE.test(candidate),
     )
     || new Set(config.allowedMediaTypes).size !== config.allowedMediaTypes.length
+    || !Number.isSafeInteger(config.downloadTtlSeconds)
+    || (config.downloadTtlSeconds as number) < 60
+    || (config.downloadTtlSeconds as number) > 300
   ) {
     throw new FileError('FILE_CONFIGURATION_INVALID');
   }
@@ -152,5 +155,6 @@ export function validateFileServiceConfiguration(value: unknown): FileServiceCon
     storageBucket: config.storageBucket,
     maxBytes: config.maxBytes,
     allowedMediaTypes: Object.freeze([...(config.allowedMediaTypes as string[])]),
+    downloadTtlSeconds: config.downloadTtlSeconds,
   }) as FileServiceConfiguration;
 }

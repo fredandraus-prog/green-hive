@@ -7,9 +7,10 @@ import type {
   FileServiceDependencies,
   InternalFileRecord,
   PrepareGeneratedFileInput,
+  PrivateSignedDownload,
   PrivateStoredObject,
 } from './server-types.js';
-import type { FileRecord, StoreGeneratedFileInput } from './types.js';
+import type { FileDownloadGrant, FileRecord, StoreGeneratedFileInput } from './types.js';
 import {
   validateFileId,
   validateFileProjectId,
@@ -62,9 +63,11 @@ function assertDependencies(value: FileServiceDependencies): void {
     || typeof value.repository.list !== 'function'
     || typeof value.repository.find !== 'function'
     || typeof value.repository.softDelete !== 'function'
+    || typeof value.repository.recordExport !== 'function'
     || typeof value.storage?.putPrivate !== 'function'
     || typeof value.storage.headPrivate !== 'function'
     || typeof value.storage.deletePrivate !== 'function'
+    || typeof value.storage.createSignedDownload !== 'function'
     || typeof value.storage.providerCode !== 'string'
     || typeof value.entitlements?.can !== 'function'
   ) {
@@ -235,6 +238,45 @@ export class FileService {
     }
   }
 
+  async createDownload(
+    context: TrustedAppContext,
+    projectId: string,
+    fileId: string,
+  ): Promise<FileDownloadGrant> {
+    const trustedContext = this.#ownerContext(context);
+    const validatedProjectId = validateFileProjectId(projectId);
+    const validatedFileId = validateFileId(fileId);
+    const file = await this.#repositoryOperation(() => this.#dependencies.repository.find(
+      trustedContext,
+      validatedProjectId,
+      validatedFileId,
+    ));
+    if (!file || file.status !== 'READY' || file.objectVersion === null) {
+      throw new FileError('FILE_NOT_FOUND');
+    }
+    const objectVersion = file.objectVersion;
+    this.#assertConfiguredStorage(file);
+    const issuedAt = new Date();
+    const signed = await this.#storageOperation(() => this.#dependencies.storage.createSignedDownload({
+      storageProvider: file.storageProvider,
+      storageBucket: file.storageBucket,
+      storageKey: file.storageKey,
+      objectVersion,
+      downloadFilename: file.originalFilename,
+      expiresInSeconds: this.#configuration.downloadTtlSeconds,
+    }));
+    const url = this.#assertSignedDownload(signed, file);
+    await this.#repositoryOperation(() => this.#dependencies.repository.recordExport(
+      trustedContext,
+      validatedProjectId,
+      validatedFileId,
+    ));
+    return Object.freeze({
+      url,
+      expiresAt: new Date(issuedAt.getTime() + (this.#configuration.downloadTtlSeconds * 1000)),
+    });
+  }
+
   #ownerContext(context: TrustedAppContext): TrustedOrganizationContext {
     const trustedContext = validateTrustedFileContext(context);
     if (trustedContext.platformRole === 'PLATFORM_ADMIN') {
@@ -291,6 +333,29 @@ export class FileService {
       || !stored.objectVersion
     ) {
       throw new FileError('FILE_STORAGE_CONFLICT');
+    }
+  }
+
+  #assertSignedDownload(signed: PrivateSignedDownload, file: InternalFileRecord): string {
+    if (!signed || typeof signed.url !== 'string' || signed.url.length > 2048) {
+      throw new FileError('FILE_STORAGE_FAILED');
+    }
+    try {
+      const parsed = new URL(signed.url);
+      const localHttp = parsed.protocol === 'http:'
+        && (parsed.hostname === '127.0.0.1' || parsed.hostname === 'localhost');
+      if (
+        (parsed.protocol !== 'https:' && !localHttp)
+        || parsed.username
+        || parsed.password
+        || !parsed.pathname
+        || parsed.toString().includes(file.originalFilename)
+      ) {
+        throw new Error('unsafe signed download');
+      }
+      return parsed.toString();
+    } catch {
+      throw new FileError('FILE_STORAGE_FAILED');
     }
   }
 

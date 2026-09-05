@@ -3,6 +3,31 @@
 All notable Green Hive changes are recorded here. Internal platform packages use coordinated
 semantic versioning.
 
+## [0.24.0] - 2026-09-05
+
+### Added
+
+- GH-0602 server-only signed-download grants for private generated artifacts, with a fixed 60–300
+  second server configuration and no caller-controlled storage or expiry authority.
+- Immutable migration `0024` declaring the exact private `green-hive-generated` bucket and adding
+  a service-role-only `hive.record_file_export(...)` recheck/audit writer.
+- `FILE_EXPORTED` Audit evidence with safe file operational metadata only, plus unit and embedded
+  PostgreSQL-compatible owner/cross-user/cross-app/admin/deletion matrices.
+
+### Security
+
+- No public URL operation was added. Signing revalidates the private object version and owner scope
+  before returning a URL; authenticated clients cannot execute the export writer.
+- Audit records never contain a signed URL, token, provider credential, bucket/key, content hash or
+  file content. Original filenames remain metadata and never become storage paths.
+
+### Status
+
+- GH-0602 is `PARTIAL`: implementation, private local Storage startup and database gates pass; a
+  server-owned disposable signed-download call and staging parity remain the non-public gate.
+- Coordinated platform packages advance to `0.24.0`; the `REFERENCE_APP` product manifest remains
+  `0.1.0`.
+
 ## [0.23.0] - 2026-09-05
 
 ### Added

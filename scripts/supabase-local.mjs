@@ -12,7 +12,6 @@ const command = process.argv[2] ?? 'status';
 const runtimeEnvironment = { ...process.env };
 const excludedServices = [
   'realtime',
-  'storage-api',
   'imgproxy',
   'kong',
   'mailpit',
@@ -28,6 +27,7 @@ const excludedServices = [
 const supabaseEntrypoint = path.join(repositoryRoot, 'node_modules', 'supabase', 'dist', 'supabase.js');
 const authContainer = 'supabase_auth_green-hive';
 const mailpitContainer = 'supabase_inbucket_green-hive';
+const storageContainer = 'supabase_storage_green-hive';
 const mailpitImage = 'public.ecr.aws/supabase/mailpit:v1.30.2';
 
 function findDocker() {
@@ -249,6 +249,14 @@ function assertLoopbackBinding(docker, container, containerPort, hostPort) {
   }
 }
 
+function assertNotHostPublished(docker, container) {
+  const inspected = containerInspection(docker, container);
+  const ports = inspected.NetworkSettings?.Ports ?? {};
+  if (Object.values(ports).some((bindings) => Array.isArray(bindings) && bindings.length > 0)) {
+    throw new Error(`${container} must remain internal to the local Docker network`);
+  }
+}
+
 function secureAuthServices(docker) {
   startMailpitOnLoopback(docker);
   recreateAuthOnLoopback(docker);
@@ -256,6 +264,7 @@ function secureAuthServices(docker) {
   waitForHealthyContainer(docker, authContainer);
   assertLoopbackBinding(docker, authContainer, 9999, 54321);
   assertLoopbackBinding(docker, mailpitContainer, 8025, 54324);
+  assertNotHostPublished(docker, storageContainer);
 }
 
 function verifyAuthServices(docker) {
@@ -263,6 +272,7 @@ function verifyAuthServices(docker) {
   waitForHealthyContainer(docker, mailpitContainer);
   assertLoopbackBinding(docker, authContainer, 9999, 54321);
   assertLoopbackBinding(docker, mailpitContainer, 8025, 54324);
+  assertNotHostPublished(docker, storageContainer);
 }
 
 const docker = findDocker();
@@ -289,7 +299,7 @@ if (command === 'start') {
   runSupabase(['status', '--output', 'json'], { capture: true });
   verifyWindowsFirewall();
   verifyAuthServices(docker);
-  console.log('Supabase local database, Auth and Mailpit are healthy and locally protected.');
+  console.log('Supabase local database, Auth, private Storage and Mailpit are healthy and locally protected.');
 } else if (command === 'stop') {
   removeLoopbackServices(docker);
   runSupabase(['stop']);

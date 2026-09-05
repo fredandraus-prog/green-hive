@@ -105,7 +105,17 @@ test(
              'service_role',
              'hive.prepare_generated_file(uuid,text,text,text,text,bigint,text,text,text,text,text)',
              'EXECUTE'
-           ) AS service_prepare`,
+           ) AS service_prepare,
+           has_function_privilege(
+             'authenticated', 'hive.record_file_export(uuid,uuid)', 'EXECUTE'
+           ) AS authenticated_export,
+           has_function_privilege(
+             'service_role', 'hive.record_file_export(uuid,uuid)', 'EXECUTE'
+           ) AS service_export,
+           EXISTS (
+             SELECT 1 FROM storage.buckets
+             WHERE id = 'green-hive-generated' AND name = 'green-hive-generated' AND public = false
+           ) AS private_bucket`,
       );
       assert.deepEqual(baseline.rows[0], {
         migrations: catalog.migrations.length,
@@ -115,6 +125,9 @@ test(
         storage_key_read: false,
         authenticated_prepare: false,
         service_prepare: true,
+        authenticated_export: false,
+        service_export: true,
+        private_bucket: true,
       });
 
       await cleanupGreenHiveFixtures(client);
@@ -154,6 +167,28 @@ test(
         `SELECT * FROM hive.complete_generated_file($1::uuid, 'native-version-0001')`,
         [file.file_id],
       );
+
+      await client.query('SET ROLE authenticated');
+      await setContext(client, USER_A_ID, 'REFERENCE_APP', ORGANIZATION_A_ID);
+      await assert.rejects(
+        () => client.query('SELECT hive.record_file_export($1::uuid, $2::uuid)', [PROJECT_ID, file.file_id]),
+        /permission denied|privilege/i,
+      );
+      await client.query('RESET ROLE');
+      await setContext(client, USER_A_ID, 'REFERENCE_APP', ORGANIZATION_A_ID);
+      assert.equal((await client.query(
+        'SELECT hive.record_file_export($1::uuid, $2::uuid) AS recorded', [PROJECT_ID, file.file_id],
+      )).rows[0].recorded, true);
+      const exportEvent = await client.query(
+        `SELECT subject_type, subject_id, metadata
+         FROM audit.events WHERE event_code = 'FILE_EXPORTED' AND project_id = $1::uuid`,
+        [PROJECT_ID],
+      );
+      assert.deepEqual(exportEvent.rows, [{
+        subject_type: 'FILE',
+        subject_id: file.file_id,
+        metadata: { byteSize: 24, mediaType: 'text/plain', sensitivity: 'INTERNAL' },
+      }]);
 
       await client.query('SET ROLE authenticated');
       await setContext(client, USER_A_ID, 'REFERENCE_APP', ORGANIZATION_A_ID);
@@ -203,7 +238,7 @@ test(
       assert.equal((await client.query(
         "SELECT count(*)::integer AS count FROM audit.events WHERE event_code = 'FILE_EXPORTED' AND project_id = $1::uuid",
         [PROJECT_ID],
-      )).rows[0].count, 0);
+      )).rows[0].count, 1);
     } finally {
       await client.query('RESET ROLE').catch(() => undefined);
       await cleanupGreenHiveFixtures(client).catch(() => undefined);

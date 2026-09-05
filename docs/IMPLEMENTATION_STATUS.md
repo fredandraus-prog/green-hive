@@ -2,7 +2,7 @@
 
 Status date: 2026-09-05.
 
-Current coordinated platform version: `0.23.0`. The `REFERENCE_APP` product manifest remains
+Current coordinated platform version: `0.24.0`. The `REFERENCE_APP` product manifest remains
 `0.1.0`.
 
 | Checkpoint | Status | Validation | Remaining gate |
@@ -35,7 +35,7 @@ Current coordinated platform version: `0.23.0`. The `REFERENCE_APP` product mani
 | GH-0504 | PARTIAL | fixed OpenAI Responses adapter, exact snapshot, strict schema, conservative cost reservation and one-shot staging runner pass deterministic local gates | dedicated key, provider-side spending control and one controlled real staging call |
 | GH-0505 | DONE | provider-neutral Search Gateway, deterministic zero-network fake, atomic accounting, metadata-only migration `0022`, local/staging Supabase, CI and deployed HTTPS/security gates pass | none |
 | GH-0601 | DONE | private generated-file service, migration `0023`, owner-only RLS, fake/private-provider adapters and embedded/native local Supabase matrices pass | real bucket activation and delivery remain separate operational/future gates |
-| GH-0602 | NOT_STARTED | signed/expiring authorized download path is deliberately absent | begin only after a reviewed private Storage activation plan |
+| GH-0602 | PARTIAL | immutable migration `0024`, private local Storage service/bucket, server-owned short signed grants, owner/app/workspace recheck, safe `FILE_EXPORTED` audit and unit/embedded/native database matrices pass | server-owned native signed-download call with disposable object, then staging parity |
 | GH-0603 | NOT_STARTED | generic PDF/text generation and rendering are deliberately absent | depends on GH-0601 plus worker composition |
 
 The local Supabase parity gate passed on PostgreSQL 17.6 with native `auth.users`, `auth.uid()` and

@@ -27,6 +27,7 @@ const configuration = Object.freeze({
   storageBucket: 'green-hive-generated',
   maxBytes: 1024,
   allowedMediaTypes: Object.freeze(['text/plain', 'application/json']),
+  downloadTtlSeconds: 120,
 });
 
 function hasCode(code) {
@@ -48,6 +49,7 @@ class MemoryFileRepository {
   #records = new Map();
   #next = 0;
   prepareCalls = 0;
+  exportCalls = 0;
 
   #record(input) {
     const key = `${input.projectId}:${input.idempotencyKeySha256}`;
@@ -120,6 +122,7 @@ class MemoryFileRepository {
   }
 
   async find(_context, projectId, id) {
+    if (_context.userId !== USER_ID || _context.appCode !== 'REFERENCE_APP') return null;
     return [...this.#records.values()].find((record) => record.projectId === projectId && record.id === id) ?? null;
   }
 
@@ -135,6 +138,12 @@ class MemoryFileRepository {
     });
     this.#replace(updated);
     return true;
+  }
+
+  async recordExport(_context, projectId, id) {
+    const record = await this.find(_context, projectId, id);
+    if (!record || record.status !== 'READY') throw new FileError('FILE_ACCESS_DENIED');
+    this.exportCalls += 1;
   }
 
   #replace(record) {
@@ -228,6 +237,45 @@ test('GH-0601 conflicts on idempotency reuse with changed bytes and performs an 
   await assert.rejects(service.get(context, PROJECT_ID, stored.id), hasCode('FILE_NOT_FOUND'));
 });
 
+test('GH-0602 issues a short owner-authorized download grant and records it before returning', async () => {
+  const { service, repository } = createService();
+  const stored = await service.storeGenerated(context, input());
+  const grant = await service.createDownload(context, PROJECT_ID, stored.id);
+
+  assert.match(grant.url, /^https:\/\/files\.green-hive\.invalid\/download\/[0-9a-f]{64}$/);
+  assert.equal(grant.url.includes('monthly-summary.txt'), false);
+  assert.ok(grant.expiresAt instanceof Date);
+  assert.ok(grant.expiresAt.getTime() > Date.now());
+  assert.equal(repository.exportCalls, 1);
+
+  await assert.rejects(
+    service.createDownload({ ...context, userId: '10000000-0000-4000-8000-000000000002' }, PROJECT_ID, stored.id),
+    hasCode('FILE_NOT_FOUND'),
+  );
+  await assert.rejects(
+    service.createDownload({ ...context, appCode: 'OTHER_TEST_APP' }, PROJECT_ID, stored.id),
+    hasCode('FILE_NOT_FOUND'),
+  );
+  await assert.rejects(
+    service.createDownload({ ...context, platformRole: 'PLATFORM_ADMIN' }, PROJECT_ID, stored.id),
+    hasCode('FILE_ACCESS_DENIED'),
+  );
+
+  await service.softDelete(context, PROJECT_ID, stored.id);
+  await assert.rejects(service.createDownload(context, PROJECT_ID, stored.id), hasCode('FILE_NOT_FOUND'));
+  assert.equal(repository.exportCalls, 1);
+
+  const signingFailure = createService({ storage: new FakeFileStorage({ failureMode: 'SIGN_FAILED' }) });
+  const second = await signingFailure.service.storeGenerated(context, input({
+    idempotencyKey: 'generated-file-operation-0002',
+  }));
+  await assert.rejects(
+    signingFailure.service.createDownload(context, PROJECT_ID, second.id),
+    hasCode('FILE_STORAGE_FAILED'),
+  );
+  assert.equal(signingFailure.repository.exportCalls, 0);
+});
+
 test('GH-0601 uses stable error contracts without leaking internal provider details', async () => {
   const repository = new MemoryFileRepository();
   repository.prepare = async () => { throw new Error('SELECT storage_key FROM private_bucket'); };
@@ -274,6 +322,12 @@ test('GH-0601 Supabase adapter accepts only the configured private bucket and pr
         error: null,
       };
     },
+    async createSignedUrl(key, expiresIn, options) {
+      if (!objects.has(key) || expiresIn !== 120 || options.download !== 'monthly-summary.txt') {
+        return { data: null, error: { status: 400 } };
+      }
+      return { data: { signedUrl: `https://storage.example.test/signed/${'b'.repeat(48)}` }, error: null };
+    },
     async remove(keys) {
       for (const key of keys) objects.delete(key);
       return { data: {}, error: null };
@@ -301,6 +355,13 @@ test('GH-0601 Supabase adapter accepts only the configured private bucket and pr
   });
   assert.equal(stored.objectVersion, 'version-0001');
   assert.equal(objects.get(locator.storageKey).metadata.greenHiveContentSha256, contentSha256);
+  const signed = await provider.createSignedDownload({
+    ...locator,
+    objectVersion: stored.objectVersion,
+    downloadFilename: 'monthly-summary.txt',
+    expiresInSeconds: 120,
+  });
+  assert.equal(signed.url, `https://storage.example.test/signed/${'b'.repeat(48)}`);
   await assert.rejects(
     provider.putPrivate({
       ...locator,

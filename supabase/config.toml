@@ -113,16 +113,15 @@ port = 54324
 # sender_name = "Admin"
 
 [storage]
-enabled = false
+enabled = true
 # The maximum file size allowed (e.g. "5MB", "500KB").
 file_size_limit = "50MiB"
 
-# Uncomment to configure local storage buckets
-# [storage.buckets.images]
-# public = false
-# file_size_limit = "50MiB"
-# allowed_mime_types = ["image/png", "image/jpeg"]
-# objects_path = "./images"
+# GH-0602 generated artifacts use this private bucket only. It is never public and is not exposed
+# directly to the host; the server-side provider issues bounded signed downloads after authorization.
+[storage.buckets.green-hive-generated]
+public = false
+file_size_limit = "50MiB"
 
 # Allow connections via S3 compatible clients
 [storage.s3_protocol]

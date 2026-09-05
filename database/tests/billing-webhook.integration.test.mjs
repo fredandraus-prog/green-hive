@@ -27,6 +27,12 @@ const NOW = 1_800_000_000_000;
 
 const authShim = `
   CREATE SCHEMA auth;
+  CREATE SCHEMA storage;
+  CREATE TABLE storage.buckets (
+    id text PRIMARY KEY,
+    name text NOT NULL,
+    public boolean NOT NULL DEFAULT false
+  );
   CREATE TABLE auth.users (id uuid PRIMARY KEY);
   CREATE FUNCTION auth.jwt()
   RETURNS jsonb

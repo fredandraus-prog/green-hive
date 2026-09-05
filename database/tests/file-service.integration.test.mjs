@@ -21,7 +21,13 @@ const CONTENT_HASH = 'c'.repeat(64);
 
 const authShim = `
   CREATE SCHEMA auth;
+  CREATE SCHEMA storage;
   CREATE TABLE auth.users (id uuid PRIMARY KEY);
+  CREATE TABLE storage.buckets (
+    id text PRIMARY KEY,
+    name text NOT NULL,
+    public boolean NOT NULL DEFAULT false
+  );
   CREATE FUNCTION auth.jwt()
   RETURNS jsonb LANGUAGE plpgsql STABLE SET search_path = pg_catalog AS $$
   DECLARE raw_claims text;
@@ -206,6 +212,75 @@ test('GH-0601 creates tenant-safe private generated-file metadata with owner-onl
       [PROJECT_ID],
     );
     assert.equal(prematureAudit.rows.length, 0);
+  } finally {
+    await database.close();
+  }
+});
+
+test('GH-0602 rechecks owner scope before an auditable private-file export', async () => {
+  const database = new PGlite({ extensions: { pgcrypto } });
+  await database.waitReady;
+  try {
+    await prepare(database);
+    await database.exec('RESET ROLE');
+    await setContext(database, USER_A_ID, 'REFERENCE_APP', ORGANIZATION_A_ID);
+    await database.query(
+      `INSERT INTO hive.projects (id, organization_id, app_id, owner_user_id, name)
+       VALUES ($1::uuid, $2::uuid, $3::uuid, $4::uuid, 'Download project')`,
+      [PROJECT_ID, ORGANIZATION_A_ID, REFERENCE_APP_ID, USER_A_ID],
+    );
+    await grantGeneratedFileCapability(database);
+    const prepared = await prepareFile(database);
+    const file = prepared.rows[0];
+    await database.query(
+      `SELECT * FROM hive.complete_generated_file($1::uuid, 'download-version-0001')`,
+      [file.file_id],
+    );
+
+    await database.exec('SET ROLE authenticated');
+    await setContext(database, USER_A_ID, 'REFERENCE_APP', ORGANIZATION_A_ID);
+    await assert.rejects(
+      () => database.query(
+        'SELECT hive.record_file_export($1::uuid, $2::uuid)',
+        [PROJECT_ID, file.file_id],
+      ),
+      /permission denied|privilege/i,
+    );
+    await database.exec('RESET ROLE');
+    await setContext(database, USER_A_ID, 'REFERENCE_APP', ORGANIZATION_A_ID);
+    const recorded = await database.query(
+      'SELECT hive.record_file_export($1::uuid, $2::uuid) AS recorded',
+      [PROJECT_ID, file.file_id],
+    );
+    assert.equal(recorded.rows[0].recorded, true);
+    const events = await database.query(
+      `SELECT event_code, subject_type, subject_id, metadata
+       FROM audit.events WHERE event_code = 'FILE_EXPORTED' AND project_id = $1::uuid`,
+      [PROJECT_ID],
+    );
+    assert.equal(events.rows.length, 1);
+    assert.deepEqual(events.rows[0], {
+      event_code: 'FILE_EXPORTED',
+      subject_type: 'FILE',
+      subject_id: file.file_id,
+      metadata: { byteSize: 24, mediaType: 'text/plain', sensitivity: 'INTERNAL' },
+    });
+
+    await setContext(database, USER_B_ID, 'REFERENCE_APP', ORGANIZATION_A_ID);
+    await assert.rejects(
+      () => database.query('SELECT hive.record_file_export($1::uuid, $2::uuid)', [PROJECT_ID, file.file_id]),
+      /FILE_ACCESS_DENIED/,
+    );
+    await setContext(database, USER_A_ID, 'OTHER_TEST_APP', ORGANIZATION_A_ID);
+    await assert.rejects(
+      () => database.query('SELECT hive.record_file_export($1::uuid, $2::uuid)', [PROJECT_ID, file.file_id]),
+      /FILE_ACCESS_DENIED/,
+    );
+    await setContext(database, ADMIN_ID, 'REFERENCE_APP', ORGANIZATION_A_ID, 'PLATFORM_ADMIN');
+    await assert.rejects(
+      () => database.query('SELECT hive.record_file_export($1::uuid, $2::uuid)', [PROJECT_ID, file.file_id]),
+      /FILE_ACCESS_DENIED/,
+    );
   } finally {
     await database.close();
   }

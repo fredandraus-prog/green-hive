@@ -278,9 +278,10 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ,'hive.complete_generated_file(uuid,text)'
        ,'hive.abort_generated_file(uuid)'
        ,'hive.soft_delete_file(uuid)'
+       ,'hive.record_file_export(uuid,uuid)'
      ]) AS names(name)`,
   );
-  assert.equal(helpers.rows.length, 60);
+  assert.equal(helpers.rows.length, 61);
   assert.ok(helpers.rows.every((entry) => entry.helper));
 
   const privileges = await client.query(
@@ -831,7 +832,13 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ) AS authenticated_can_soft_delete,
        has_function_privilege(
          'service_role', 'hive.soft_delete_file(uuid)', 'EXECUTE'
-       ) AS service_role_can_soft_delete`,
+       ) AS service_role_can_soft_delete,
+       has_function_privilege(
+         'authenticated', 'hive.record_file_export(uuid,uuid)', 'EXECUTE'
+       ) AS authenticated_can_record_export,
+       has_function_privilege(
+         'service_role', 'hive.record_file_export(uuid,uuid)', 'EXECUTE'
+       ) AS service_role_can_record_export`,
   );
   assert.deepEqual(filePrivileges.rows[0], {
     file_table_select: false,
@@ -855,7 +862,20 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     service_role_can_abort: true,
     authenticated_can_soft_delete: false,
     service_role_can_soft_delete: true,
+    authenticated_can_record_export: false,
+    service_role_can_record_export: true,
   });
+
+  const privateBucket = await client.query(
+    `SELECT id, name, public
+     FROM storage.buckets
+     WHERE id = 'green-hive-generated'`,
+  );
+  assert.deepEqual(privateBucket.rows, [{
+    id: 'green-hive-generated',
+    name: 'green-hive-generated',
+    public: false,
+  }]);
 
   const filePolicies = await client.query(
     `SELECT policyname, cmd

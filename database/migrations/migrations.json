@@ -208,6 +208,15 @@
       "description": "Create tenant-safe private generated-file metadata with server-only lifecycle writers.",
       "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_PRIVATE_FILE_METADATA_EXPORT_RESTORE",
       "rollbackStrategy": "Prefer a forward fix; export and reconcile file metadata, private object inventory and the migration ledger before a controlled restoration."
+    },
+    {
+      "version": 24,
+      "file": "0024_create_private_file_downloads.sql",
+      "sha256": "2e25bc06129ffd5e083fcfe8f8fb87e056402583a9450e9f7c931d5f31148c45",
+      "checkpoint": "GH-0602",
+      "description": "Declare the private generated-files bucket and authorize auditable short-lived download grants.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_PRIVATE_FILE_DELIVERY_AUDIT_EXPORT",
+      "rollbackStrategy": "Prefer a forward fix; export and verify file-delivery audit evidence and private bucket configuration before a controlled restoration."
     }
   ]
 }
