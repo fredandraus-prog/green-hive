@@ -53,11 +53,13 @@ private buckets and opaque keys, reconciles object versions, and calls Supabase 
 short-lived signing operation. It accepts HTTPS URLs, or loopback HTTP only for local development.
 Credentials and client construction remain outside the package and must never be browser-accessible.
 
-The local stack now starts Supabase Storage with the exact private bucket and keeps its container
-inside the protected Docker network with no host-published port. Remote staging application and a
-disposable native signed-download test still require a server-owned Storage client composition.
-Until that gate passes, GH-0602 remains implementation-complete but operationally partial. No
-bucket may be made public to avoid that gate.
+The local stack starts Supabase Storage with the exact private bucket and keeps its container inside
+the protected Docker network with no host-published port. `npm run files:storage:test:local` uses
+the real server-only adapter to write a random opaque object, prove its public endpoint rejects the
+read, obtain the exact short signed download through `FileService`, read the bytes once and remove
+the object even after a failure. `npm run staging:files:storage:test` repeats that disposable gate
+only against the explicitly confirmed dedicated staging project. Both gates passed; no bucket was
+made public to do so.
 
 ## Deliberately deferred
 

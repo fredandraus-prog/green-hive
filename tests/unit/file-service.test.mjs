@@ -276,6 +276,42 @@ test('GH-0602 issues a short owner-authorized download grant and records it befo
   assert.equal(signingFailure.repository.exportCalls, 0);
 });
 
+test('GH-0602 allows only the exact download filename query while rejecting filename paths', async () => {
+  const base = new FakeFileStorage();
+  const opaqueSignedStorage = {
+    providerCode: base.providerCode,
+    putPrivate: (value) => base.putPrivate(value),
+    headPrivate: (value) => base.headPrivate(value),
+    deletePrivate: (value) => base.deletePrivate(value),
+    async createSignedDownload(value) {
+      await base.createSignedDownload(value);
+      return { url: `https://storage.example.test/sign/${'f'.repeat(48)}?download=monthly-summary.txt&token=opaque` };
+    },
+  };
+  const allowed = createService({ storage: opaqueSignedStorage });
+  const stored = await allowed.service.storeGenerated(context, input());
+  const grant = await allowed.service.createDownload(context, PROJECT_ID, stored.id);
+  assert.match(grant.url, /\?download=monthly-summary\.txt&token=opaque$/);
+  assert.equal(allowed.repository.exportCalls, 1);
+
+  const unsafeStorage = {
+    ...opaqueSignedStorage,
+    async createSignedDownload(value) {
+      await base.createSignedDownload(value);
+      return { url: 'https://storage.example.test/sign/monthly-summary.txt?token=opaque' };
+    },
+  };
+  const denied = createService({ storage: unsafeStorage });
+  const second = await denied.service.storeGenerated(context, input({
+    idempotencyKey: 'generated-file-operation-0003',
+  }));
+  await assert.rejects(
+    denied.service.createDownload(context, PROJECT_ID, second.id),
+    hasCode('FILE_STORAGE_FAILED'),
+  );
+  assert.equal(denied.repository.exportCalls, 0);
+});
+
 test('GH-0601 uses stable error contracts without leaking internal provider details', async () => {
   const repository = new MemoryFileRepository();
   repository.prepare = async () => { throw new Error('SELECT storage_key FROM private_bucket'); };

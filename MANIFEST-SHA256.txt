@@ -33,7 +33,7 @@ bb565614dd90dc6ae412adb2e98989d0654e360f39a900e0cf84ada3abe33e7c | 6505 | apps/h
 600064a0cfaf2e8efc1f9318e9a616c96d40e879339d51fb33a48bcabd8fcf04 | 793 | apps/hive-reference-app/tsconfig.json
 d7a06c8e6aefeb71fc890d56b5af09f39483a83ac8e974fd118b79aad48bd6b0 | 436 | apps/hive-reference-app/vite.config.mjs
 21d651f25f0858b57d373c3e91f31a6af1c33f6fe7ad1171c88f14905d822b00 | 7120 | backlog/implementation_backlog.csv
-c294f6b2595773e66b88e7338334e4e8c6234772aa137081b5557f36e7564fef | 49052 | CHANGELOG.md
+616337572533fd2d0f0be27b0cc0f8d31f70564fa67fb17ad517218a662e3b4e | 49058 | CHANGELOG.md
 f3e4cbba0cc19cd6612f6deaca1af1c1a80e1d5ef97c8bb3fbb67effd661d377 | 183 | config/app-registry.json
 700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7 | 1367 | config/supabase-root-2021-ca.crt
 abc72e64d6d1544c051a66f62e4d24d99214d7219cfbbe5a03b44b8a9f09cdcb | 430 | CONTRIBUTING.md
@@ -84,6 +84,7 @@ fd9de7a666fb16862b93cbe210b440c63103ed55f0a607f437b99e71de8bbfbd | 12896 | datab
 eb837e0fd166e949b9c060cfe70c040db8055cc075b591c49e18a4310381b492 | 10021 | database/tests/entitlement-service.supabase.integration.test.mjs
 18ebd7d559fa0a76ae3550035223226230bca3e300af2f1e8ff7f60210af2ed8 | 12506 | database/tests/file-service.integration.test.mjs
 b13e9de880b1e4ab8e7bb982f833f29bfb840e0b6bd0c2130e1c7a1e0d077a14 | 11010 | database/tests/file-service.supabase.integration.test.mjs
+33534c9794268eff9d8e851495030afe43c7eef11dc34a50705d9b5c124d5de9 | 6751 | database/tests/file-storage.integration.test.mjs
 7885883193ac7c5ea28b300bf3c03f6c0ee4397f5d49207d8d493d07c62ad814 | 2946 | database/tests/fixtures/0001_rls_identities.sql
 c40194f7eac377400f4e16a4a94307b6cb6e966f6b3373cc04012f4540e60f9f | 17850 | database/tests/helpers/rls-matrix.mjs
 b493f2d0fd52c5120b2d4ddcce3074dd9f23714c720dfc52a0fcd5f248089a4b | 9674 | database/tests/job-service.integration.test.mjs
@@ -125,12 +126,12 @@ f85bb7c690c3bd3204107d5d8c534bccb7553842a2a0f65364836a74146b5e76 | 1726 | docs/C
 c135d05a27a1966dea77dbf0bcd06817139e9d7468a25f2c0f38ccd55a058562 | 4734 | docs/CHECKPOINT-GH-0504.md
 2acb2d2a5e1bcfd2e678c14f5fc517ba583bd26c3b98ec4b6cfd18cd0ca18da4 | 7850 | docs/CHECKPOINT-GH-0505.md
 2783c0de5f8fa12aa9ad7cb658ad0addb6dac4c0a354c51fa4b830647aa3de35 | 3194 | docs/CHECKPOINT-GH-0601.md
-efdb282505150171d873040b9875ce29df09f80fed6880c933fa50bf9e72c799 | 1866 | docs/CHECKPOINT-GH-0602.md
+500fb11c7fdcda2bd440573326d7ad76b93b1664bcc8de37f6a2a7395319c489 | 1936 | docs/CHECKPOINT-GH-0602.md
 46c6c53805a86ccd581714adcaf4c9042d1bfae63a16ff1a680753e520f1abd1 | 7353 | docs/DATABASE.md
 17c88f4944d0b07756f89d692c1c1537b88f84f27c61a0abdf69efad5c5431b6 | 5213 | docs/ENTITLEMENTS.md
-c0b5d91516347ca06f2db12638133fa540f27c2cfcc7734729e212543a701c40 | 4069 | docs/FILES.md
+f18ead06774a4681c8ff67a90e34fd388f74d22e8164351c38a2c7e1acd0537e | 4254 | docs/FILES.md
 83cfbec44301a6451ecd6d7286a0f64126184cfe66f21739222efe752c6d5ee1 | 11729 | docs/HOSTED-STAGING.md
-55694d5bd237d81d2b66fee6c139f31567fe786972204286333f30442069b725 | 14826 | docs/IMPLEMENTATION_STATUS.md
+686030d715413219ee907e7350e04c2bd6d88f8b633e91ae8937b10c59d2fdcd | 14814 | docs/IMPLEMENTATION_STATUS.md
 149a8d0f5a0808c32ca1a564b2f987067d5a7636dfbd9b7f40e8427c7e3cd5de | 4498 | docs/JOBS.md
 bcb1fcf582fc9148df6953184410d586ebc2057a619db8f1c3e0ed554f1e8124 | 3808 | docs/LOCAL-SUPABASE.md
 f036274b66e4f74a9dc91dbeb5e8fd5ab7e4dfe8e449538a1d327cfd287aeb09 | 1217 | docs/PLATFORM_BOUNDARIES.md
@@ -183,11 +184,12 @@ e7a02797ef7a545b8862fef897d6036884e03323871464d573d4b7b9df1f7e85 | 2880 | docs/V
 0f99404e5d7288ef3cf58166349abddd980e0caebfae2c7267b249f698bd9c53 | 4188 | docs/VALIDATION-2026-09-02-GH0505-RELEASE.md
 3b13d28bd64bc8c89a411e39eb4cf819658d7e20d0cd305efe812b7923bcd02d | 1638 | docs/VALIDATION-2026-09-05-GH0601-IMPLEMENTATION.md
 a274c53a23574ab8585106a9ed928dccc85d1d7d170d7c16c4cfb4ef2e881535 | 2470 | docs/VALIDATION-2026-09-05-GH0601-RELEASE.md
+a1fe995db7ef4e62b19e9690afa9efaee9718db33bf14db4298a223039a12fef | 1872 | docs/VALIDATION-2026-09-05-GH0602-IMPLEMENTATION.md
 9d3c5c7e21af6053debb1d041e55dbd1f438277da82c5981861f2f0eb2119f58 | 2485 | docs/WORKSPACE-SERVICE.md
 08511db289948bfa7a41417cb1e3dc4ef694b7a849491ba5a638f4f3a4b91df0 | 9324 | IDEAS_RADAR.md
 1e6e427a53f50faa522bc61c4dda8789791998b0242fd91b1e48c559c2ddb779 | 8891 | MANIFEST.csv
 eec0c01cf9c4b75127a35a018f55e7a37faec2d898d852a5918dbea4b1c4b229 | 81589 | package-lock.json
-0de9ad89b0b80e0467b14e24dd37162e3a1c3d0fee84034a426686528932e229 | 5814 | package.json
+8329d1d9ef23fc192547c8e1f420d00d5ece81e9e03ddbb4dac7bfc7c53df195 | 6197 | package.json
 451302da93d014b2febf540a282d23dd496b354a4acfa3779c6c5e92799d8b0d | 424 | packages/ai/package.json
 bea8861162479236187b9f66f91c8c93cd5647f1e520af546256a4b91b5dee4d | 2907 | packages/ai/src/errors.ts
 5211b989c7c63b2132dc93ad0e14e6488a295f5cce29fee5503631e4755d0dfb | 4271 | packages/ai/src/fake-provider.ts
@@ -265,7 +267,7 @@ f6fc53a93c058e5959b65e67d7888e4dc1bf777a4620ddb68cda0a166a576233 | 7514 | packag
 639c2168bb350affdc84993591f5d60964054e0be4d3103972546e2d16bd2f34 | 417 | packages/files/src/index.ts
 9b72af0fad12c677050096c51a3ea29fdd5ab37ea350d58b8d66fd9ba58ba468 | 9597 | packages/files/src/postgres-repository.ts
 069d6427ef0494744a49802511d8ac342842e4c7985fed19772cc3d5c4e19257 | 5221 | packages/files/src/server-types.ts
-332737da0e7bf8a55ad9bdf20797ee6e5c263510669b775c1a6d89b86b9bf1bd | 14969 | packages/files/src/service.ts
+629270aeabcca8a9ef9677c17ed3d70e221e8cbcdeb1f310853ebf997568612f | 15360 | packages/files/src/service.ts
 21066e70542e3450736e75f2ff0136066ca6f523bb3d262a632b06f0e7791e7e | 11157 | packages/files/src/supabase-private-storage.ts
 c0027cdbb244f7d0a096524e5e089c8d4b496635116a1733aed20f69b0de01aa | 1389 | packages/files/src/types.ts
 64402a6605592f60ef51e128f7b0e20bcc0e8b94dc9a1cb2c16719dac66ba4fe | 6266 | packages/files/src/validation.ts
@@ -329,7 +331,7 @@ f25436491df8276cc1a572096735744af212c5adba2531ec76466ece616cc034 | 665 | package
 c28f942a6a590d9a3c1a31f8cdc44e81a5767e7646a6c4c2315e6ad5bec13170 | 291 | packages/ui/package.json
 4bbb0b94f2e20614732cdc61d7b4760fee5e227524a7762dcc31970f576f88cb | 52 | packages/ui/src/index.ts
 40e391dea6bc34fad2af957df704c6bc2022c77af46d47e7d23a428b60f49e45 | 197 | packages/ui/tsconfig.json
-1eb8f73acd4886d5b3cf12ac8a99bc49a4d1b12d8b0430f3a82a9fbedd375b8a | 26058 | README.md
+f2f7489b1b8628771234bc6642b20ad18c5e382a17863ff82a120e5296e171b1 | 26087 | README.md
 17ec43ad21c80ab4ec71f6e5ae4dc8b0404fed8feaae18467430593da525b68e | 1170 | render.yaml
 fe7f12a85a6f8c4e609745a30dfbe5cb766d0cdc854075b6f980c4a4f914906e | 3639 | scripts/auth-test-supabase.mjs
 6bb7c358cd77ec6baa8e6e032f22aa62c1f9c882048efdc5ea1fcbf7eb148f64 | 677 | scripts/clean.mjs
@@ -338,6 +340,7 @@ dfbe814bff432c8085e2cb7ba5b4b29ebcfb8db4a1ea3d9adfd6454ed25c9f91 | 3574 | script
 5f30166ddfa784af0f7d547bfac56d0bec21fa48b7f45ab74a35b9a986736e16 | 1070 | scripts/db-smoke-supabase.mjs
 1266d884772ae8d730107ec7ef1c9c6efa422a9ba425fb71341ec01644257161 | 3418 | scripts/db-test-supabase.mjs
 bc873151f73de4e14fbb980d5852a1ddb6e6a5c9749cbdd03d6da810490b9abb | 38242 | scripts/db-validate.mjs
+c467bc104b244ce9f552478d43c8dda6cadfffe6c183c3b93f5756af1d6b006e | 2544 | scripts/files-storage-test-supabase.mjs
 1d9eebe98ee8819204cc7333cbef62d504d4a69857ce08a9feb078728066c5cb | 1749 | scripts/format-check.mjs
 479c71ff397b95776f8022ab2357e07b97af57fe1e7627b8ca58de9aab1b8cc2 | 1956 | scripts/generate-release-manifest.mjs
 99246f928f12efb1fb73d17f56d2466f8aa134674127beb7443b8494da371c38 | 26839 | scripts/hosted-acceptance.mjs
@@ -357,7 +360,7 @@ a92e4b6724fb4144ab5e42ce9d601520d718632289e7e14e1dcba65661ff83df | 1778 | script
 24e26ddee2ee2d18808701a2c4617dd79f2fabcca37bcd2aca2ab7a58fda8931 | 3394 | scripts/security-scan.mjs
 d426dd962d6cd79c9fbaaad57e929cdb79c1594fff45226ec473c617f06b50aa | 1783 | scripts/security-smoke.mjs
 c807e42b5d0d4f7e76dedec57880d741097c3352252644bdb5906dc596437a22 | 1772 | scripts/staging-apply.mjs
-9680c4b32ec796859de1582b322cdec39ff9276c2d8130ad5cc9d919ac908743 | 10842 | scripts/staging-database-windows.ps1
+7577f1cadf4f1001171103be00dea8214d6a3a364e1232478681a61879e7e968 | 11014 | scripts/staging-database-windows.ps1
 c54f7b1dcdc06807aa389e772e62fde6e2c2ca6eed1eee20c271a2265e2d860c | 5534 | scripts/staging-preflight.mjs
 75faafeb55720df5cfb94f3ea710e2e6d9a372431579b3710d58230ee5e00f68 | 10777 | scripts/supabase-local.mjs
 9b3d35253ed6e4526ff1e3b302c5f5534bc2379e45d3f0ed5c049388bb16ddca | 2901 | scripts/verify-release-manifest.mjs
@@ -375,7 +378,7 @@ b5282947b68f9971bd40c3681fcd4cdcad13d31fcddb18034b71d82e2a8ee1ab | 4541 | tests/
 b6243a8da3633e097395d6b31f986203811aae4d1cf2c3eafe9a6a45977d1b4b | 7143 | tests/unit/cost-guard-service.test.mjs
 be677e4431c7e462fdd5d8ff38aba6e638603f78a4ece3c6c5ccab7e797f7221 | 473 | tests/unit/database-validator.test.mjs
 7b241074dfe7067bc457e2feff2b4f9bcb757a300a55b7270f54f2ca517ec9b3 | 4869 | tests/unit/entitlement-service.test.mjs
-bd2040067374c46397c62e5a5f8807f9981d0ecd4dc97be3870c5cf8138a7c31 | 14466 | tests/unit/file-service.test.mjs
+727161c837a0f31b07881ed62ee212cce8ab296d762f3c2c45d45660ecec4de6 | 16033 | tests/unit/file-service.test.mjs
 afe9f5dc876f925244767c893ecb7bf24b10f8b50430fd214181a7f6f5fdc5e1 | 4595 | tests/unit/hosting-contract.test.mjs
 bcf05eee5efe56c7d1fe609046f30b0c3ab9cbb7992506c90f8b53ef69af0f97 | 4804 | tests/unit/job-service.test.mjs
 9cfad26199fde4a2f10a3a36de3f940d61bd017dfa8baefeb0340abc5e5f2ea8 | 1715 | tests/unit/local-supabase-guard.test.mjs

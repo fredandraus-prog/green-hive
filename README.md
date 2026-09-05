@@ -140,10 +140,10 @@ npm run verify
 all workspaces, validates migration integrity and runs the embedded RLS matrix.
 
 The GH-0602 implementation gate confirms 24 immutable migrations and 26 RLS-protected tables;
-the focused file unit, embedded lifecycle and native local-Supabase matrices pass, and the guarded
-smoke reports ledger `23` with the structural seed and native Auth/RLS/grant contract intact. The
-full release verification, CI, staging, manifest and ZIP evidence is recorded only after each
-separate gate is observed.
+the focused file unit, embedded lifecycle, native local-Supabase and real disposable private
+Storage matrices pass. The guarded smoke reports ledger `24` with the structural seed and native
+Auth/RLS/grant contract intact. The full release verification, CI, staging, manifest and ZIP
+evidence is recorded only after each separate gate is observed.
 
 Database deployment requires a dedicated connection:
 
