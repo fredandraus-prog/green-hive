@@ -1,6 +1,7 @@
 export * from './errors.js';
 export * from './fake-storage.js';
 export * from './postgres-repository.js';
+export * from './rendering.js';
 export * from './server-types.js';
 export * from './service.js';
 export * from './supabase-private-storage.js';
