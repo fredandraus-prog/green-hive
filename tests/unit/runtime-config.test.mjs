@@ -101,7 +101,7 @@ test('readiness requires the full migration, seed and helper contract', async ()
     entitlements_ready: true,
     usage_cost_ready: true,
     cost_guard_ready: true,
-    reference_job_registration_count: 1,
+    reference_job_registration_count: 2,
     jobs_ready: true,
     workers_ready: true,
     ai_gateway_ready: true,

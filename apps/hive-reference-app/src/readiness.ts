@@ -114,9 +114,11 @@ export function createReferenceAppReadinessCheck(database: ReadinessDatabase): (
            ) IS NOT NULL AS cost_guard_ready,
          (SELECT count(*)::integer
             FROM hive.job_registrations
-           WHERE id = $4::uuid
-             AND app_id = $1::uuid
-             AND job_type = 'REFERENCE_APP_FAKE_AI_JOB'
+           WHERE app_id = $1::uuid
+             AND job_type IN (
+               'REFERENCE_APP_FAKE_AI_JOB',
+               'REFERENCE_APP_RENDER_PROJECT_DOCUMENT'
+             )
              AND active) AS reference_job_registration_count,
          to_regclass('hive.jobs') IS NOT NULL
            AND to_regclass('hive.job_registrations') IS NOT NULL
@@ -191,7 +193,7 @@ export function createReferenceAppReadinessCheck(database: ReadinessDatabase): (
       !state.entitlements_ready ||
       !state.usage_cost_ready ||
       !state.cost_guard_ready ||
-      state.reference_job_registration_count !== 1 ||
+      state.reference_job_registration_count !== 2 ||
       !state.jobs_ready ||
       !state.workers_ready ||
       !state.ai_gateway_ready ||

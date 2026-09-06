@@ -87,6 +87,18 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
       timeout_class: 'SHORT',
       active: true,
     },
+    {
+      id: '70000000-0000-4000-8000-000000000002',
+      job_type: 'REFERENCE_APP_RENDER_PROJECT_DOCUMENT',
+      handler_owner: 'REFERENCE_APP',
+      required_capability: 'REFERENCE_APP_GENERATE_FILE',
+      cost_budget_type: 'FILE_PROCESSING',
+      idempotency_strategy: 'PROJECT_OWNER_KEY',
+      retry_policy: 'FIXED',
+      max_attempts: 3,
+      timeout_class: 'MEDIUM',
+      active: true,
+    },
   ]);
 
   const foreignKeys = await client.query(
