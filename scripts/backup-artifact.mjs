@@ -107,6 +107,24 @@ export async function verifyBackupManifest({ directory, manifest }) {
   return Object.freeze({ files: actualFiles.length, createdAt: manifest.createdAt });
 }
 
+export async function verifyEncryptedBackup({ archivePath, checksumPath }) {
+  if (typeof archivePath !== "string" || archivePath.length === 0) fail("encrypted archive path is required");
+  if (typeof checksumPath !== "string" || checksumPath.length === 0) fail("encrypted checksum path is required");
+
+  const archive = await readFile(path.resolve(archivePath));
+  if (archive.byteLength === 0) fail("encrypted archive must be a non-empty regular file");
+
+  const checksum = (await readFile(path.resolve(checksumPath), "utf8")).trim();
+  const match = /^([a-f0-9]{64})\s+\*?\S+$/i.exec(checksum);
+  if (!match) fail("encrypted archive checksum sidecar is invalid");
+
+  if (sha256(archive) !== match[1].toLowerCase()) {
+    fail("encrypted archive checksum mismatch");
+  }
+
+  return Object.freeze({ bytes: archive.byteLength, sha256: match[1].toLowerCase() });
+}
+
 async function readPlatformVersion(packagePath) {
   const packageJson = JSON.parse(await readFile(packagePath, "utf8"));
   if (typeof packageJson.version !== "string" || packageJson.version.length === 0) {
@@ -118,7 +136,7 @@ async function readPlatformVersion(packagePath) {
 async function main(argumentsList) {
   const [command, directoryArgument, manifestArgument] = argumentsList;
   if (!command || !directoryArgument || !manifestArgument || argumentsList.length !== 3) {
-    fail("usage: write|verify <dump-directory> <manifest-path>");
+    fail("usage: write|verify <dump-directory> <manifest-path> | verify-encrypted <archive-path> <checksum-path>");
   }
 
   const directory = path.resolve(directoryArgument);
@@ -143,7 +161,16 @@ async function main(argumentsList) {
     return;
   }
 
-  fail("usage: write|verify <dump-directory> <manifest-path>");
+  if (command === "verify-encrypted") {
+    const result = await verifyEncryptedBackup({
+      archivePath: directoryArgument,
+      checksumPath: manifestArgument
+    });
+    process.stdout.write(`BACKUP_ENCRYPTED_ARCHIVE_VERIFIED bytes=${result.bytes}\n`);
+    return;
+  }
+
+  fail("usage: write|verify <dump-directory> <manifest-path> | verify-encrypted <archive-path> <checksum-path>");
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -77,6 +77,10 @@ Version `0.33.0` completes **GH-0803 (Automated Backups)**: a manually proven en
 logical-database backup workflow for the free-tier staging environment. Its first private staging
 artifact passed manifest verification and plaintext cleanup before upload; see
 [Backups and recovery](docs/BACKUPS.md) for its intentional data, retention and recovery boundaries.
+Version `0.34.0` completes **GH-0804 (Disposable Local Recovery Proof)**: the passphrase-prompted,
+local Supabase-only recovery harness restored a current private encrypted artifact into a generated
+database, passed its verification matrix and removed plaintext during cleanup. Staging is never a
+recovery target.
 
 The checkpoint is deliberately narrow. The only public Billing ingress is the verified fake-provider
 webhook used to prove the platform contract. The real AI adapter is server-only and has no Render

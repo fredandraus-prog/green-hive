@@ -3,6 +3,26 @@
 All notable Green Hive changes are recorded here. Internal platform packages use coordinated
 semantic versioning.
 
+## [0.34.0] - 2026-09-07
+
+### Added
+
+- GH-0804 local-only recovery proof: passphrase-prompted PowerShell entry point, strict
+  encrypted-sidecar and archive-inventory verification, generated database in the official local
+  Supabase PostgreSQL `17.6` container, and a deterministic Green Hive recovery matrix.
+- The proof completed with `RECOVERY_PROOF_SUCCESS`; it removes plaintext, the generated database
+  and its temporary in-container directory locally, uploads no recovered artifact and has no
+  Supabase staging write path.
+- Native Node decryption implements the existing AES-256-CBC/PBKDF2 artifact format without
+  requiring a separately installed OpenSSL executable. The role-only dump is verified but is not
+  applied because roles are cluster-wide; a technical local baseline supplies Supabase roles and
+  extensions while excluding local Vault secret values.
+
+### Status
+
+- GH-0804 is `DONE`: a current private encrypted artifact was restored into the disposable local
+  Supabase target, the recovery matrix passed and automatic plaintext cleanup completed.
+
 ## [0.33.0] - 2026-09-07
 
 ### Added
