@@ -99,7 +99,11 @@ class FakeFacade {
   }
   async completePasswordRecovery(input) { this.calls.push(['completePasswordRecovery', input]); }
   async getMe(token) { this.calls.push(['getMe', token]); return profile(); }
-  async getAccount(token) { this.calls.push(['getAccount', token]); return { email: session().user.email, profile: profile() }; }
+  async getOperationalAdminOverview(token) {
+    this.calls.push(['getOperationalAdminOverview', token]);
+    return { users: 1, workspaces: 1, projects: { DRAFT: 1, ACTIVE: 0, ARCHIVED: 0, DELETED: 0 }, purchases: {}, payments: {}, jobs: {}, budgets: {}, costs: {}, providerOperations: {} };
+  }
+  async getAccount(token) { this.calls.push(['getAccount', token]); return { email: session().user.email, profile: profile(), isPlatformAdmin: false }; }
   async updateMe(token, input) { this.calls.push(['updateMe', token, input]); return { ...profile(), ...input }; }
   async listWorkspaces(token) { this.calls.push(['listWorkspaces', token]); return [workspace()]; }
   async createSharedWorkspace(token, input) { this.calls.push(['createSharedWorkspace', token, input]); return { ...workspace(), kind: 'SHARED', name: input.name }; }
@@ -117,6 +121,20 @@ class FakeFacade {
     return capabilityCode === 'REFERENCE_APP_RUN_JOB';
   }
 }
+
+test('admin overview uses the protected session and exposes no browser-selected scope', async () => {
+  const facade = new FakeFacade();
+  const application = await createReferenceAppHttpServer({ facade, allowedOrigin: ORIGIN, secureCookies: false });
+  try {
+    const signedIn = await application.inject(postOptions('/api/auth/sign-in', { email: 'web@example.test', password: 'StrongPass123' }));
+    const response = await application.inject({
+      method: 'GET', url: '/api/admin/overview?organizationId=forged', headers: { cookie: cookieHeader(signedIn) },
+    });
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.json().overview.users, 1);
+    assert.deepEqual(facade.calls.at(-1), ['getOperationalAdminOverview', 'access-token-that-is-long-enough-for-http']);
+  } finally { await application.close(); }
+});
 
 test('audit endpoint derives workspace scope from the protected cookie', async () => {
   const facade = new FakeFacade();

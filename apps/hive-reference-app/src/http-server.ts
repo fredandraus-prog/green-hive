@@ -67,6 +67,7 @@ export type ReferenceAppHttpFacade = Pick<
   | 'exchangePasswordRecoveryCode'
   | 'completePasswordRecovery'
   | 'getMe'
+  | 'getOperationalAdminOverview'
   | 'getAccount'
   | 'updateMe'
   | 'listWorkspaces'
@@ -441,7 +442,17 @@ export async function createReferenceAppHttpServer(
       options.facade,
       options.secureCookies,
       (token) => options.facade.getAccount(token),
-    ));
+  ));
+
+  application.get('/api/admin/overview', async (request, reply) => ({
+    overview: await withSession(
+      request,
+      reply,
+      options.facade,
+      options.secureCookies,
+      (token) => options.facade.getOperationalAdminOverview(token),
+    ),
+  }));
 
   application.patch('/api/me', async (request, reply) => {
     const body = exactObject(

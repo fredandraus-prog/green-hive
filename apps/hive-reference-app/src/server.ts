@@ -30,6 +30,11 @@ import {
 } from '@green-hive/projects';
 import type { TrustedAppContext, TrustedOrganizationContext } from '@green-hive/core';
 import {
+  OperationalAdminService,
+  PostgresOperationalAdminRepository,
+  type OperationalAdminOverview,
+} from '@green-hive/hive-admin';
+import {
   EntitlementService,
   PostgresEntitlementRepository,
   type ProjectEntitlement,
@@ -64,6 +69,12 @@ export interface ReferenceAppSignUpInput extends ReferenceAppCredentialsInput {
 export interface ReferenceAppAccountView {
   readonly email: string;
   readonly profile: AccountProfile;
+  /**
+   * Presentation-only capability derived from the verified JWT identity. The
+   * browser never supplies this value and the admin route still authorizes
+   * independently on every request.
+   */
+  readonly isPlatformAdmin: boolean;
 }
 
 export interface ReferenceAppRefreshInput {
@@ -240,6 +251,7 @@ export class ReferenceAppServer {
       async ({ accountService, identity, trustedContext }) => ({
         email: identity.email,
         profile: await accountService.get(trustedContext),
+        isPlatformAdmin: identity.platformRole === 'PLATFORM_ADMIN',
       }),
     );
   }
@@ -247,6 +259,13 @@ export class ReferenceAppServer {
   async updateMe(accessToken: string, input: AccountProfileInput): Promise<AccountProfile> {
     return this.#runWithoutWorkspace(accessToken, ({ accountService, trustedContext }) =>
       accountService.update(trustedContext, input),
+    );
+  }
+
+  async getOperationalAdminOverview(accessToken: string): Promise<OperationalAdminOverview> {
+    const verified = await this.#trustedContext(accessToken);
+    return this.#sessionRunner.run(verified.identity, ({ trustedContext, database }) =>
+      new OperationalAdminService(new PostgresOperationalAdminRepository(database)).overview(trustedContext),
     );
   }
 

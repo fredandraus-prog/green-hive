@@ -1,6 +1,6 @@
 {
   "name": "@green-hive/feature-flags",
-  "version": "0.30.0",
+  "version": "0.31.0",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
@@ -15,6 +15,6 @@
     "dist"
   ],
   "dependencies": {
-    "@green-hive/core": "0.30.0"
+    "@green-hive/core": "0.31.0"
   }
 }
