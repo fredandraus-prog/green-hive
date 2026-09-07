@@ -1,3 +1,5 @@
+import { languageForLocale as languageFromSupportedLocale } from '@green-hive/i18n';
+
 export const APP_ROUTES = Object.freeze({
   dashboard: '/app/dashboard',
   workspaceProjects: '/app/workspace/projects',
@@ -64,7 +66,6 @@ export interface LanguageOption {
 export const LANGUAGE_OPTIONS: readonly LanguageOption[] = Object.freeze([
   { language: 'pt', locale: 'pt-BR', label: 'Português (Brasil)' },
   { language: 'en', locale: 'en-US', label: 'English (United States)' },
-  { language: 'es', locale: 'es-ES', label: 'Español' },
 ]);
 
 export const COMMON_TIMEZONES = Object.freeze([
@@ -105,7 +106,7 @@ export function detectInitialPreferences(
 }
 
 export function languageForLocale(locale: string): string {
-  return LANGUAGE_OPTIONS.find((option) => option.locale === locale)?.language ?? 'pt';
+  return languageFromSupportedLocale(locale);
 }
 
 function normalizedSearch(value: string): string {

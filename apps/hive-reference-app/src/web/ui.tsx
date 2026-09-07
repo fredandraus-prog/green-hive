@@ -4,8 +4,10 @@ import type {
   SelectHTMLAttributes,
 } from 'react';
 import { go } from '../frontend-contracts.js';
+import { useI18n } from './i18n.js';
 
 export function Brand(): ReactNode {
+  const { t } = useI18n();
   return (
     <a
       className="brand"
@@ -17,7 +19,7 @@ export function Brand(): ReactNode {
       aria-label="Green Hive — página inicial"
     >
       <span className="brand-mark" aria-hidden="true"><span /><span /><span /></span>
-      <span><strong>Green Hive</strong><small>Reference App</small></span>
+      <span><strong>Green Hive</strong><small>{t('brand.referenceApp')}</small></span>
     </a>
   );
 }
@@ -26,6 +28,7 @@ export function MarketingShell({ children, compact = false }: {
   readonly children: ReactNode;
   readonly compact?: boolean;
 }): ReactNode {
+  const { t } = useI18n();
   return (
     <div className={compact ? 'shell shell-compact' : 'shell'}>
       <header className="topbar">
@@ -35,7 +38,7 @@ export function MarketingShell({ children, compact = false }: {
       {children}
       <footer>
         <span>Green Hive 0.7</span>
-        <span>Workspaces, projetos e preferências em um só lugar</span>
+        <span>{t('nav.workspace')} · {t('nav.projects')} · {t('settings.profile')}</span>
       </footer>
     </div>
   );
@@ -125,10 +128,12 @@ export function Breadcrumbs({ items }: {
 }
 
 export function LoadingPanel(): ReactNode {
-  return <div className="loading-panel"><div className="spinner" /><p>Carregando seu espaço…</p></div>;
+  const { t } = useI18n();
+  return <div className="loading-panel"><div className="spinner" /><p>{t('loading.workspace')}</p></div>;
 }
 
 export function LandingPage(): ReactNode {
+  const { t } = useI18n();
   return (
     <MarketingShell>
       <main>
@@ -141,8 +146,8 @@ export function LandingPage(): ReactNode {
               acompanhar a evolução de novos apps.
             </p>
             <div className="hero-actions">
-              <LinkButton href="/auth/sign-up">Criar minha conta</LinkButton>
-              <LinkButton href="/auth/sign-in" tone="secondary">Já tenho uma conta</LinkButton>
+              <LinkButton href="/auth/sign-up">{t('auth.createAccount')}</LinkButton>
+              <LinkButton href="/auth/sign-in" tone="secondary">{t('auth.haveAccount')}</LinkButton>
             </div>
             <div className="trust-line">
               <span>✓ Conta pessoal</span>

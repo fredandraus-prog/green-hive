@@ -110,9 +110,11 @@ defaults and falls back safely. The server accepts those bounded fields, validat
 `hive.ensure_personal_organization(text)` helper. Owner/app/organization IDs and administrative
 roles remain server-derived.
 
-`@green-hive/i18n` is still `SCAFFOLD_ONLY`; this slice does not introduce a competing translation
-runtime. It persists the user's language/locale preference for the future GH-0701 implementation,
-while current interface copy remains Portuguese. Renaming an already-created personal organization
+GH-0701 replaces the earlier `SCAFFOLD_ONLY` package with the small shared locale, typed-message and
+safe `Intl` formatting contract described in [Internationalization](I18N.md). The Reference App
+resolves only `pt-BR` and `en-US`, adopts the verified profile preference after sign-in, and updates
+the interface immediately after a successful Profile save. This preference remains presentation-only
+and never influences authorization. Renaming an already-created personal organization
 also remains a documented dependency: the immutable helper does not change the name on conflict and
 the current organization update policy intentionally covers shared workspaces only.
 

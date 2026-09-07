@@ -13,6 +13,7 @@ import {
 import type { AccountView, AuditEvent, HiveNotification, Profile, Project, Workspace } from './types.js';
 import { Brand, Breadcrumbs, Field, LoadingPanel, Message, SelectField } from './ui.js';
 import { CreateWorkspaceDialog, WorkspaceSwitcher } from './workspace-switcher.js';
+import { useI18n } from './i18n.js';
 
 const AUDIT_EVENT_LABELS: Readonly<Record<string, string>> = {
   ORGANIZATION_CREATED: 'Workspace criado',
@@ -63,6 +64,7 @@ function AppSidebar({ route, workspaces, activeWorkspace, workspaceBusy, onSelec
   readonly onCreateWorkspace: () => void;
   readonly onSignOut: () => Promise<void>;
 }): ReactNode {
+  const { t } = useI18n();
   const [mobileOpen, setMobileOpen] = useState(false);
   const closeMobile = () => setMobileOpen(false);
   return (
@@ -90,19 +92,19 @@ function AppSidebar({ route, workspaces, activeWorkspace, workspaceBusy, onSelec
       <nav id="primary-navigation" className="sidebar-navigation">
         <div className="nav-group nav-group-primary">
           <NavLink href={APP_ROUTES.dashboard} active={route === 'dashboard'} onNavigate={closeMobile}>
-            <span aria-hidden="true">⌂</span> Dashboard
+          <span aria-hidden="true">⌂</span> {t('nav.dashboard')}
           </NavLink>
         </div>
         <div className="nav-group">
-          <span className="nav-label">Workspace</span>
+          <span className="nav-label">{t('nav.workspace')}</span>
           <NavLink href={APP_ROUTES.workspaceProjects} active={route === 'workspaceProjects'} onNavigate={closeMobile}>
-            <span aria-hidden="true">◇</span> Projetos
+            <span aria-hidden="true">◇</span> {t('nav.projects')}
           </NavLink>
           <NavLink href={APP_ROUTES.workspaceActivity} active={route === 'workspaceActivity'} onNavigate={closeMobile}>
-            <span aria-hidden="true">◷</span> Atividade
+            <span aria-hidden="true">◷</span> {t('nav.activity')}
           </NavLink>
           <NavLink href={APP_ROUTES.workspaceNotifications} active={route === 'workspaceNotifications'} onNavigate={closeMobile}>
-            <span aria-hidden="true">◉</span> Notificações
+            <span aria-hidden="true">◉</span> {t('nav.notifications')}
           </NavLink>
         </div>
         <div className="nav-group nav-group-settings">
@@ -111,11 +113,11 @@ function AppSidebar({ route, workspaces, activeWorkspace, workspaceBusy, onSelec
             active={route === 'settingsProfile' || route === 'settingsOrganization'}
             onNavigate={closeMobile}
           >
-            <span aria-hidden="true">⚙</span> Configurações
+            <span aria-hidden="true">⚙</span> {t('nav.settings')}
           </NavLink>
         </div>
       </nav>
-      <button className="signout" type="button" onClick={() => void onSignOut()}>Sair da conta</button>
+      <button className="signout" type="button" onClick={() => void onSignOut()}>{t('nav.signOut')}</button>
     </aside>
   );
 }
@@ -185,6 +187,7 @@ function ProjectsView({ workspace, projects, busy, onCreate, onAction }: {
   readonly onCreate: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   readonly onAction: (project: Project, action: 'archive' | 'delete') => Promise<void>;
 }): ReactNode {
+  const { t, formatDateTime } = useI18n();
   const [search, setSearch] = useState('');
   const visibleProjects = useMemo(
     () => projects.filter((project) => projectMatchesSearch(project.name, search)),
@@ -196,8 +199,8 @@ function ProjectsView({ workspace, projects, busy, onCreate, onAction }: {
 
   return (
     <>
-      <Breadcrumbs items={[{ label: workspace.name }, { label: 'Projetos' }]} />
-      <PageHeader title="Projetos" description={`Organize o trabalho operacional de ${workspace.name}.`} />
+      <Breadcrumbs items={[{ label: workspace.name }, { label: t('nav.projects') }]} />
+      <PageHeader title={t('projects.title')} description={t('projects.description', { workspace: workspace.name })} />
       <section className="panel projects-panel">
         <div className="panel-heading">
           <div><span className="eyebrow">Workspace atual</span><h2>Seus projetos</h2></div>
@@ -207,15 +210,15 @@ function ProjectsView({ workspace, projects, busy, onCreate, onAction }: {
         </div>
         <div className="project-tools">
           <form className="create-project" onSubmit={(event) => void onCreate(event)}>
-            <input aria-label="Nome do novo projeto" name="name" placeholder="Nome do novo projeto" required maxLength={120} />
-            <button className="button button-primary" disabled={busy === 'project-create'} type="submit">{busy === 'project-create' ? 'Criando…' : '+ Criar projeto'}</button>
+            <input aria-label={t('projects.name')} name="name" placeholder={t('projects.name')} required maxLength={120} />
+            <button className="button button-primary" disabled={busy === 'project-create'} type="submit">{busy === 'project-create' ? t('projects.creating') : t('projects.create')}</button>
           </form>
           <label className="project-search">
             <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></svg>
             <input
               type="search"
-              aria-label="Buscar projetos"
-              placeholder="Buscar projetos"
+              aria-label={t('projects.search')}
+              placeholder={t('projects.search')}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
@@ -223,17 +226,17 @@ function ProjectsView({ workspace, projects, busy, onCreate, onAction }: {
         </div>
         <div className="project-list">
           {projects.length === 0 ? (
-            <div className="empty-state"><span>◇</span><h3>Ainda não há projetos</h3><p>Crie o primeiro projeto deste workspace.</p></div>
+            <div className="empty-state"><span>◇</span><h3>{t('projects.emptyTitle')}</h3><p>{t('projects.emptyDescription')}</p></div>
           ) : visibleProjects.length === 0 ? (
-            <div className="empty-state compact"><span aria-hidden="true">⌕</span><h3>Nenhum projeto encontrado</h3><p>Tente buscar por outro nome.</p></div>
+            <div className="empty-state compact"><span aria-hidden="true">⌕</span><h3>{t('projects.noneFound')}</h3><p>{t('projects.tryAnotherName')}</p></div>
           ) : visibleProjects.map((project) => (
             <article className="project-row" key={project.id}>
               <span className="project-glyph" aria-hidden="true">◇</span>
-              <div><strong>{project.name}</strong><small>Criado em {new Intl.DateTimeFormat('pt-BR').format(new Date(project.createdAt))}</small></div>
-              <span className={`project-status status-${project.status.toLowerCase()}`}>{project.status === 'DRAFT' ? 'Rascunho' : project.status === 'ARCHIVED' ? 'Arquivado' : 'Ativo'}</span>
+              <div><strong>{project.name}</strong><small>{t('projects.createdAt', { date: formatDateTime(project.createdAt, { dateStyle: 'medium' }) })}</small></div>
+              <span className={`project-status status-${project.status.toLowerCase()}`}>{project.status === 'DRAFT' ? t('projects.status.draft') : project.status === 'ARCHIVED' ? t('projects.status.archived') : t('projects.status.active')}</span>
               <div className="row-actions">
-                {project.status !== 'ARCHIVED' && <button type="button" disabled={busy === project.id} onClick={() => void onAction(project, 'archive')}>Arquivar</button>}
-                <button className="danger-link" type="button" disabled={busy === project.id} onClick={() => void onAction(project, 'delete')}>Excluir</button>
+                {project.status !== 'ARCHIVED' && <button type="button" disabled={busy === project.id} onClick={() => void onAction(project, 'archive')}>{t('projects.archive')}</button>}
+                <button className="danger-link" type="button" disabled={busy === project.id} onClick={() => void onAction(project, 'delete')}>{t('projects.delete')}</button>
               </div>
             </article>
           ))}
@@ -366,6 +369,7 @@ function OrganizationSettingsView({ workspace, busy, notice, onRename }: {
 }
 
 export function AuthenticatedApp({ route }: { readonly route: AppRoute }): ReactNode {
+  const { setLocale } = useI18n();
   const [account, setAccount] = useState<AccountView | null>(null);
   const [workspaces, setWorkspaces] = useState<readonly Workspace[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
@@ -397,6 +401,7 @@ export function AuthenticatedApp({ route }: { readonly route: AppRoute }): React
     ]).then(([accountView, workspaceList]) => {
       if (!active) return;
       setAccount(accountView);
+      setLocale(accountView.profile.preferredLocale);
       setWorkspaces(workspaceList.workspaces);
       setActiveWorkspaceId(workspaceList.activeWorkspaceId);
     }).catch((failure: unknown) => {
@@ -538,6 +543,7 @@ export function AuthenticatedApp({ route }: { readonly route: AppRoute }): React
         }),
       });
       setAccount((current) => current ? { ...current, profile: result.profile } : current);
+      setLocale(result.profile.preferredLocale);
       setNotice('Perfil atualizado com sucesso.');
     } catch (failure) {
       handleFailure(failure, 'Não foi possível atualizar o perfil.');
