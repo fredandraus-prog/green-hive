@@ -86,7 +86,7 @@ fails if a known disposable fixture remains.
 `staging:database:test` executes the hosted RLS/database matrix, the 10-scenario Project/Workspace
 Service matrix, the 7-scenario native Billing Service/provider matrix, verified-webhook concurrency,
 the 6-scenario Entitlements matrix, the 5-scenario Usage/Cost matrix, the 5-scenario Atomic Cost
-Guard matrix and the Jobs/Worker plus deterministic AI/Search Gateway lifecycle matrices,
+Guard matrix and the Jobs/Worker/Notification plus deterministic AI/Search Gateway lifecycle matrices,
 including separate-connection concurrent reservation and exclusive job claim.
 `staging:auth:test` creates two
 uniquely named confirmed

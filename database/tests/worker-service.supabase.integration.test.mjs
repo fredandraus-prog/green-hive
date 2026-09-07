@@ -17,6 +17,10 @@ import {
   WorkerService,
 } from '../../packages/jobs/dist/index.js';
 import {
+  NotificationService,
+  PostgresNotificationRepository,
+} from '../../packages/notifications/dist/index.js';
+import {
   assertLocalSupabaseTarget,
   assertNativeSupabaseContract,
   cleanupGreenHiveFixtures,
@@ -27,10 +31,12 @@ import {
 } from '../../scripts/lib/staging-guard.mjs';
 import { loadMigrationCatalog } from '../../scripts/lib/migration-catalog.mjs';
 import {
+  ADMIN_ID,
   ORGANIZATION_A_ID,
   REFERENCE_APP_ID,
   REFERENCE_PRICE_ID,
   USER_A_ID,
+  USER_B_ID,
 } from './helpers/rls-matrix.mjs';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -63,7 +69,7 @@ async function setOwner(client) {
 }
 
 test(
-  'GH-0404 leased worker lifecycle on native Supabase',
+  'GH-0404/GH-0604 leased worker lifecycle and in-app notification isolation on native Supabase',
   { skip: !databaseUrl || !confirmation ? 'local Supabase gate not configured' : false },
   async () => {
     if (isStaging) {
@@ -179,6 +185,58 @@ test(
       );
 
       await client.query('RESET ROLE');
+      await client.query('SET ROLE authenticated');
+      await setOwner(client);
+      const notifications = new NotificationService(new PostgresNotificationRepository(db));
+      const ownerNotifications = await notifications.list(context);
+      assert.equal(ownerNotifications.length, 1);
+      assert.equal(ownerNotifications[0].jobId, retryJob.id);
+      assert.equal(ownerNotifications[0].eventType, 'JOB_COMPLETED');
+      assert.equal(ownerNotifications[0].status, 'UNREAD');
+      assert.deepEqual(ownerNotifications[0].metadata, { jobType: 'REFERENCE_APP_FAKE_AI_JOB' });
+      const acknowledged = await notifications.markRead(context, ownerNotifications[0].id);
+      assert.equal(acknowledged.status, 'READ');
+      assert.ok(acknowledged.readAt instanceof Date);
+      assert.equal((await notifications.markRead(context, ownerNotifications[0].id)).status, 'READ');
+
+      await client.query(
+        `SELECT set_config('request.jwt.claims', $1, false),
+                set_config('request.green_hive.organization_id', $2, false)`,
+        [JSON.stringify({ sub: USER_B_ID, app_metadata: { app_code: 'REFERENCE_APP' } }), ORGANIZATION_A_ID],
+      );
+      assert.equal((await client.query('SELECT id FROM hive.notifications')).rows.length, 0);
+      assert.equal((await client.query(
+        `UPDATE hive.notifications SET status = 'READ', read_at = statement_timestamp()
+         WHERE id = $1::uuid RETURNING id`, [ownerNotifications[0].id],
+      )).rows.length, 0);
+
+      await client.query(
+        `SELECT set_config('request.jwt.claims', $1, false),
+                set_config('request.green_hive.organization_id', $2, false)`,
+        [JSON.stringify({
+          sub: ADMIN_ID,
+          app_metadata: { app_code: 'REFERENCE_APP', platform_role: 'PLATFORM_ADMIN' },
+        }), ORGANIZATION_A_ID],
+      );
+      assert.equal((await client.query('SELECT id FROM hive.notifications')).rows.length, 1);
+      assert.equal((await client.query(
+        `UPDATE hive.notifications SET status = 'READ', read_at = statement_timestamp()
+         WHERE id = $1::uuid RETURNING id`, [ownerNotifications[0].id],
+      )).rows.length, 0);
+
+      await client.query('RESET ROLE');
+      const notificationEvidence = await client.query(
+        `SELECT count(*)::integer AS notifications,
+                count(*) FILTER (WHERE metadata ?| ARRAY[
+                  'input', 'input_reference', 'output', 'output_reference',
+                  'lease_token', 'file_key', 'signed_url', 'secret'
+                ])::integer AS sensitive_metadata
+         FROM hive.notifications
+         WHERE job_id = $1::uuid`,
+        [retryJob.id],
+      );
+      assert.deepEqual(notificationEvidence.rows[0], { notifications: 1, sensitive_metadata: 0 });
+
       const evidence = await client.query(
         `SELECT
            (SELECT status FROM hive.jobs WHERE id = $1::uuid) AS completed_status,

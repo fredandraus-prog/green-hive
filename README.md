@@ -151,10 +151,11 @@ npm run verify
 `verify` removes generated outputs, checks formatting and platform boundaries, type-checks, builds
 all workspaces, validates migration integrity and runs the embedded RLS matrix.
 
-The GH-0604 implementation gate confirms 26 immutable migrations and 27 RLS-protected tables;
-the focused file unit, embedded lifecycle, native local-Supabase and real disposable private
-Storage matrices from GH-0602 pass. The new rendering matrix passes locally, embedded and on
-dedicated native Supabase staging. The full release verification, CI, staging, manifest and ZIP
+The GH-0604 release gate confirms 26 immutable migrations and 27 RLS-protected tables; the focused
+notification unit, embedded lifecycle, dedicated native-Supabase worker/notification matrix and
+published HTTPS/security smoke pass. The focused file unit, embedded lifecycle, native local-Supabase
+and real disposable private Storage matrices from GH-0602 pass. The rendering matrix passes locally,
+embedded and on dedicated native Supabase staging. The full release verification, CI, staging, manifest and ZIP
 evidence is recorded only after each separate gate is observed.
 
 Database deployment requires a dedicated connection:

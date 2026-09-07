@@ -22,8 +22,9 @@ semantic versioning.
 
 ### Status
 
-- GH-0604 is `PARTIAL` until native Supabase and deployed HTTPS acceptance gates pass. The
-  coordinated `0.26.0` release remains pending; `REFERENCE_APP` stays at product version `0.1.0`.
+- GH-0604 is `DONE`: the clean verification gate, embedded PostgreSQL-compatible lifecycle,
+  dedicated native Supabase notification/RLS matrix and deployed HTTPS/security smoke pass. The
+  coordinated platform release is `0.26.0`; `REFERENCE_APP` stays at product version `0.1.0`.
 
 ## [0.25.1] - 2026-09-07
 
