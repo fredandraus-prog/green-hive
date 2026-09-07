@@ -294,6 +294,10 @@ test(
         `SELECT hive.complete_job($1::uuid, 'native-render-worker', $2::text, $3::text, $4::text)`,
         [lease.rows[0].job_id, lease.rows[0].lease_token, CONTENT_HASH, `file:${renderedFile.file_id}`],
       );
+      // The worker role is deliberately write-only for file metadata. Inspect the
+      // resulting state through the administrative test connection instead of
+      // loosening the production grant simply for this assertion.
+      await client.query('RESET ROLE');
       const renderedState = await client.query(
         `SELECT file.status AS file_status, job.status AS job_status
          FROM hive.files AS file JOIN hive.jobs AS job ON job.project_id = file.project_id

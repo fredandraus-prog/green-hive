@@ -86,7 +86,7 @@ fd9de7a666fb16862b93cbe210b440c63103ed55f0a607f437b99e71de8bbfbd | 12896 | datab
 563ab14a19ec7190a92bc3a182ce19b50c888116cc8b37197afcbd34a59c0d24 | 10204 | database/tests/entitlement-service.integration.test.mjs
 eb837e0fd166e949b9c060cfe70c040db8055cc075b591c49e18a4310381b492 | 10021 | database/tests/entitlement-service.supabase.integration.test.mjs
 e6eb7107e365dadc5523dd98064d6eae6c2edb6fb78e7f991fdfd61ea26f4edb | 16857 | database/tests/file-service.integration.test.mjs
-2e1ef1dd86c856380c1ff3d4f545fbb9cba97885fc158d3c571b1523202f034a | 14154 | database/tests/file-service.supabase.integration.test.mjs
+11bd98b29deb764702dc33903d406812d1d63a379082bddd4c6a3f254208a236 | 14423 | database/tests/file-service.supabase.integration.test.mjs
 33534c9794268eff9d8e851495030afe43c7eef11dc34a50705d9b5c124d5de9 | 6751 | database/tests/file-storage.integration.test.mjs
 7885883193ac7c5ea28b300bf3c03f6c0ee4397f5d49207d8d493d07c62ad814 | 2946 | database/tests/fixtures/0001_rls_identities.sql
 c40194f7eac377400f4e16a4a94307b6cb6e966f6b3373cc04012f4540e60f9f | 17850 | database/tests/helpers/rls-matrix.mjs
@@ -361,7 +361,7 @@ c467bc104b244ce9f552478d43c8dda6cadfffe6c183c3b93f5756af1d6b006e | 2544 | script
 f7c216b707dfe89ad42c60a7ca7e9d8eeb7472408dd3fdc6af2bbee6bc320398 | 3266 | scripts/hosted-security-smoke.mjs
 f6a0c8530de91cb85ce23b18ed2dcd691df265ceed7c6b7de5a223df51c18895 | 2532 | scripts/hosted-smoke.mjs
 4b1852108fea4b093fbd2188120bcdaca1587cb76e8ec56b952f698c33c0ef16 | 42146 | scripts/lib/green-hive-smoke.mjs
-7bb1879abbafd0bb91b00ba594e93ec229484141cde31459323b93a751fade00 | 10935 | scripts/lib/local-supabase-guard.mjs
+81f0425a3d283ded2626d87f062e5da7761ecf8178ef94175d298f9d792704be | 11200 | scripts/lib/local-supabase-guard.mjs
 0c12d8a6d64958d2756a2e3e4a268110e125312d7d9faadf8de651ec0c28886e | 1544 | scripts/lib/migration-catalog.mjs
 a6314467b2c0de07bfc9f054a0553bf0bd12bda0bf002db09c3825a6c6d5b290 | 1442 | scripts/lib/migration-state.mjs
 d97bba0c62f4ce4d80ff106fd02b65c390f56d98e1f775e4febdcda50638e490 | 2777 | scripts/lib/real-ai-staging-guard.mjs
