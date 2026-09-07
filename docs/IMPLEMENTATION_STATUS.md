@@ -2,7 +2,7 @@
 
 Status date: 2026-09-05.
 
-Current coordinated platform version: `0.25.0`. The `REFERENCE_APP` product manifest remains
+Current coordinated platform version: `0.25.1`. The `REFERENCE_APP` product manifest remains
 `0.1.0`.
 
 | Checkpoint | Status | Validation | Remaining gate |

@@ -3,6 +3,14 @@
 All notable Green Hive changes are recorded here. Internal platform packages use coordinated
 semantic versioning.
 
+## [0.25.1] - 2026-09-07
+
+### Fixed
+
+- Corrected the hosted readiness query to bind exactly the three SQL placeholders it declares and
+  aligned its immutable migration expectation with the twenty-five migrations shipped by `0.25.0`.
+  This restores Render startup without weakening database readiness validation.
+
 ## [0.25.0] - 2026-09-07
 
 ### Added
