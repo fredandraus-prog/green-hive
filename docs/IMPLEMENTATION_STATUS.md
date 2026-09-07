@@ -2,8 +2,9 @@
 
 Status date: 2026-09-07.
 
-Current coordinated platform version: `0.33.0` (GH-0803 backup workflow prepared; live artifact
-acceptance pending). The `REFERENCE_APP` product manifest remains `0.1.0`.
+Current coordinated platform version: `0.33.0` (GH-0803 automated backup acceptance complete;
+GH-0804 disposable-target restore proof remains separate). The `REFERENCE_APP` product manifest
+remains `0.1.0`.
 
 | Checkpoint | Status | Validation | Remaining gate |
 |---|---|---|---|
@@ -44,7 +45,7 @@ acceptance pending). The `REFERENCE_APP` product manifest remains `0.1.0`.
 | GH-0704 | DONE | stable typed public-error taxonomy, safe HTTP masking and local Reference App client mapping pass unit/HTTP/clean verification | none; no error provider, browser secret, RLS or authorization change |
 | GH-0801 | DONE | aggregate-only operational dashboard, immutable migration `0027`, focused unit/HTTP, native local and dedicated staging Supabase matrices, CI, deployed HTTPS/security smokes and authenticated Mailtrap recovery acceptance pass | none; no tenant-content browsing or administrative mutation was introduced |
 | GH-0802 | DONE | strict structured HTTP events, server-generated correlation, redaction, CI and a published Render failure-to-correlation trace pass | none; no external log provider, persistence or tenant-content telemetry was added |
-| GH-0803 | PARTIAL | encrypted logical backup workflow, manifest verification and recovery boundary implemented | add two private GitHub Actions secrets, observe one successful encrypted staging backup artifact, then run GH-0804 restore proof |
+| GH-0803 | DONE | manual staging backup run #3 emitted `BACKUP_SUCCESS`, verified roles/schema/data hashes, plaintext cleanup and one encrypted 54 KB private artifact | GH-0804 disposable-target restore proof is a separate checkpoint |
 
 The local Supabase parity gate passed on PostgreSQL 17.6 with native `auth.users`, `auth.uid()` and
 `auth.jwt()`. The dedicated hosted staging project passes the twenty-two-migration baseline, RLS,

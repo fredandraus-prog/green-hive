@@ -73,10 +73,10 @@ reference access or administrative mutation path. Version `0.32.0` completes **G
 Observability)**: one server-generated correlation identity and one redacted structured event per
 HTTP response, including a published Render failure-to-correlation trace.
 
-Version `0.33.0` prepares **GH-0803 (Automated Backups)**: an encrypted logical-database backup
-workflow for the free-tier staging environment. It cannot run until its dedicated private GitHub
-Actions secrets are configured; see [Backups and recovery](docs/BACKUPS.md) for its intentional
-data, retention and recovery boundaries.
+Version `0.33.0` completes **GH-0803 (Automated Backups)**: a manually proven encrypted
+logical-database backup workflow for the free-tier staging environment. Its first private staging
+artifact passed manifest verification and plaintext cleanup before upload; see
+[Backups and recovery](docs/BACKUPS.md) for its intentional data, retention and recovery boundaries.
 
 The checkpoint is deliberately narrow. The only public Billing ingress is the verified fake-provider
 webhook used to prove the platform contract. The real AI adapter is server-only and has no Render
