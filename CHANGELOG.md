@@ -21,8 +21,9 @@ semantic versioning.
 
 ### Status
 
-- GH-0802 is `PARTIAL`: implementation and focused unit/HTTP coverage pass locally. CI plus one
-  deployed Render failure-to-correlation trace remain required before the checkpoint can be `DONE`.
+- GH-0802 is `DONE`: pull-request CI passed and the published Render service returned one protected
+  `401` response whose `X-Request-Id` matched exactly one redacted `ADMIN` / `DENIED` operational
+  event. No tenant or credential data was retained in the trace.
 
 ## [0.31.0] - 2026-09-07
 

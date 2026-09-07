@@ -20,9 +20,12 @@ no cross-tenant read path and no external monitoring account.
 
 ## Release gate
 
-**Status: PARTIAL — local implementation validated; CI and deployed Render trace evidence pending.**
+**Status: DONE — 2026-09-07.**
 
 Focused unit/HTTP validation proves a failed Authentication request is correlated without recording
 its e-mail, password or query parameter, and a failed webhook is correlated by public error code
-and normalized provider code without raw provider-event retention. The remaining gate is to deploy
-the branch and verify one controlled public failure through the exact Render log view.
+and normalized provider code without raw provider-event retention. Pull-request CI passed before
+merge. The exact published Render service then returned `401 AUTH_SESSION_INVALID` for one
+unauthenticated administrative request and its returned `X-Request-Id` matched one structured
+`ADMIN` / `DENIED` / `401` event in the Render log. The event retained no URL, identity, cookie,
+token, payload or tenant data.
