@@ -58,8 +58,9 @@ by this repository.
 
 ## Verify and recover an artifact
 
-Recovery is never performed against the live staging project. GH-0804 will use a separate,
-disposable recovery target and record the result.
+Recovery is never performed against the live staging project. GH-0804 uses a local-only generated
+database in the official local Supabase PostgreSQL container and records a result only after its
+verification matrix passes.
 
 1. Download the encrypted artifact and its `.sha256` sidecar from the successful private Actions
    run.
@@ -68,12 +69,70 @@ disposable recovery target and record the result.
    temporary directory outside the repository.
 4. Run `node scripts/backup-artifact.mjs verify <dump-directory> <manifest-path>`; it must emit
    `BACKUP_MANIFEST_VERIFIED`.
-5. Restore only into the approved recovery target using the documented Supabase CLI/`psql` process,
-   then execute the GH-0804 recovery matrix.
+5. Restore only into the approved local Docker recovery target, then execute the GH-0804 recovery
+   matrix.
 6. Remove the temporary plaintext directory when validation is finished.
 
 Do not restore into a project that still contains data to preserve. A restore makes the target
 inaccessible while it runs and must be treated as a controlled change.
+
+### Local GH-0804 procedure
+
+The artifact must be downloaded from a successful private GitHub Actions run to the operator's own
+computer. Do not upload it to another service or place the backup passphrase in a terminal command,
+source file or chat message. With Docker Desktop running, use the local source checkout:
+
+```text
+npm run backup:recover:local -- -ArtifactPath "C:\path\to\green-hive-staging-logical-backup-<run-id>.zip"
+```
+
+The script prompts for the passphrase without echoing it, verifies the encrypted sidecar, decrypts
+only into an OS temporary directory, and restores into a fresh generated database in the local
+official Supabase PostgreSQL 17 container.
+It then checks the Green Hive schema set, migration ledger count, `REFERENCE_APP`, project RLS and
+Auth foreign-key consistency. It removes the temporary plaintext directory, generated database and
+in-container temporary directory in all outcomes; it does not upload a recovered artifact or contact
+Supabase staging.
+
+The acceptance proof completed on 2026-09-07 with
+`RECOVERY_PROOF_SUCCESS target=local-supabase-disposable-database plaintext=removed-on-cleanup`.
+This is evidence of a logical-database recovery only; it does not restore Supabase Storage object
+bytes or claim complete Auth/Storage disaster recovery.
+
+The local official Supabase server supplies its own pre-provisioned cluster
+roles and native extensions, including `supabase_vault`. The helper validates
+the role-only dump as part of the encrypted artifact but deliberately does not
+apply it: roles are cluster-wide, and applying an external role dump could
+mutate the local development baseline. Schema and data instead restore into a
+generated database copied from the local Supabase system baseline. Before the
+restore, only `hive`, `audit` and `reference_app` are removed from that copy
+and disposable Auth/Storage data is cleared. Protected local Vault secret
+values are excluded from the technical baseline. When the active local baseline
+has connections, the helper uses a local logical dump to initialize the
+generated database rather than interrupting those services for a template
+clone. The generated database is dropped in cleanup. This never contacts or
+modifies Supabase staging.
+
+The local-only compatibility boundary still covers missing technical schemas
+such as `extensions`: a safe placeholder may be created in the generated
+database and the schema-only transaction retried within a fixed bound.
+
+Because normal local development keeps Realtime disabled, the generated
+database also receives its own empty `supabase_realtime` publication before
+the staging schema is restored. It exists only for schema compatibility and is
+removed with that generated database.
+
+The local CLI Storage schema can lag behind the hosted project. The disposable
+target therefore applies the official Storage object-versioning compatibility
+migration before data restore when needed; this includes `versioning_status`
+on `storage.buckets` and related additive object columns. It is not a Green
+Hive migration and never changes the local baseline or staging.
+
+The backup may include application-relevant Auth rows in its data dump. The recovery target therefore
+uses the real local Supabase Auth schema rather than a simplified table shim. The verification matrix
+still rejects orphaned Green Hive owners with `RECOVERY_AUTH_DEPENDENCY_UNRESOLVED` rather than making
+a broader Auth/Storage disaster-recovery claim. Storage object bytes remain outside this database-only
+proof.
 
 ## Why the workflow uses separate dumps
 
