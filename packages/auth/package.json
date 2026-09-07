@@ -1,6 +1,6 @@
 {
   "name": "@green-hive/auth",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
@@ -15,7 +15,7 @@
     "dist"
   ],
   "dependencies": {
-    "@green-hive/core": "0.24.0",
+    "@green-hive/core": "0.25.0",
     "@supabase/supabase-js": "2.112.3"
   }
 }

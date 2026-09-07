@@ -217,6 +217,15 @@
       "description": "Declare the private generated-files bucket and authorize auditable short-lived download grants.",
       "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_PRIVATE_FILE_DELIVERY_AUDIT_EXPORT",
       "rollbackStrategy": "Prefer a forward fix; export and verify file-delivery audit evidence and private bucket configuration before a controlled restoration."
+    },
+    {
+      "version": 25,
+      "file": "0025_create_worker_rendered_files.sql",
+      "sha256": "73fd35642e1dc522d7377022b53900ecf94a59ca33601585c390ec20e0189222",
+      "checkpoint": "GH-0603",
+      "description": "Permit a valid rendering-worker lease to create and complete one private generated document.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_RENDERED_FILE_AND_JOB_EXPORT_RESTORE",
+      "rollbackStrategy": "Prefer a forward fix; export and verify rendered-file metadata, private object inventory, completed job output references and Audit evidence before controlled restoration."
     }
   ]
 }

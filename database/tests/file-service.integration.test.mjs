@@ -285,3 +285,101 @@ test('GH-0602 rechecks owner scope before an auditable private-file export', asy
     await database.close();
   }
 });
+
+test('GH-0603 restricts rendered private-file lifecycle to the exact active worker lease', async () => {
+  const database = new PGlite({ extensions: { pgcrypto } });
+  await database.waitReady;
+  try {
+    await prepare(database);
+    await database.exec('RESET ROLE');
+    await setContext(database, USER_A_ID, 'REFERENCE_APP', ORGANIZATION_A_ID);
+    await database.query(
+      `INSERT INTO hive.projects (id, organization_id, app_id, owner_user_id, name)
+       VALUES ($1::uuid, $2::uuid, $3::uuid, $4::uuid, 'Render worker project')`,
+      [PROJECT_ID, ORGANIZATION_A_ID, REFERENCE_APP_ID, USER_A_ID],
+    );
+    await grantGeneratedFileCapability(database);
+    const queued = await database.query(
+      `SELECT hive.enqueue_project_job(
+         $1::uuid, 'REFERENCE_APP_RENDER_PROJECT_DOCUMENT', 'render-worker-file-0001',
+         $2::text, 'render:pdf', 100
+       )::text AS id`,
+      [PROJECT_ID, 'd'.repeat(64)],
+    );
+
+    await database.exec('SET ROLE authenticated');
+    await setContext(database, USER_A_ID, 'REFERENCE_APP', ORGANIZATION_A_ID);
+    await assert.rejects(
+      () => database.query(
+        `SELECT * FROM hive.prepare_worker_rendered_file(
+           $1::uuid, 'reference-render-worker', $2::text, 'project-document.pdf',
+           'application/pdf', 24::bigint, $3::text, 'GREEN_HIVE_FAKE_STORAGE', 'green-hive-generated'
+         )`,
+        [queued.rows[0].id, '80000000-0000-4000-8000-000000000001', CONTENT_HASH],
+      ),
+      /permission denied|privilege/i,
+    );
+
+    await database.exec('RESET ROLE; SET ROLE service_role');
+    const lease = await database.query(
+      `SELECT * FROM hive.claim_next_job('reference-render-worker', 120)`,
+    );
+    assert.equal(lease.rows[0].job_type, 'REFERENCE_APP_RENDER_PROJECT_DOCUMENT');
+    const prepared = await database.query(
+      `SELECT * FROM hive.prepare_worker_rendered_file(
+         $1::uuid, 'reference-render-worker', $2::text, 'project-document.pdf',
+         'application/pdf', 24::bigint, $3::text, 'GREEN_HIVE_FAKE_STORAGE', 'green-hive-generated'
+       )`,
+      [lease.rows[0].job_id, lease.rows[0].lease_token, CONTENT_HASH],
+    );
+    const file = prepared.rows[0];
+    assert.equal(file.status, 'PROCESSING');
+    assert.match(file.storage_key, /^ghf\/[0-9a-f]{64}$/);
+    const repeated = await database.query(
+      `SELECT * FROM hive.prepare_worker_rendered_file(
+         $1::uuid, 'reference-render-worker', $2::text, 'project-document.pdf',
+         'application/pdf', 24::bigint, $3::text, 'GREEN_HIVE_FAKE_STORAGE', 'green-hive-generated'
+       )`,
+      [lease.rows[0].job_id, lease.rows[0].lease_token, CONTENT_HASH],
+    );
+    assert.equal(repeated.rows[0].file_id, file.file_id);
+    await assert.rejects(
+      () => database.query(
+        `SELECT * FROM hive.complete_worker_rendered_file(
+           $1::uuid, 'other-worker', $2::text, $3::uuid, 'worker-version-0001'
+         )`,
+        [lease.rows[0].job_id, lease.rows[0].lease_token, file.file_id],
+      ),
+      /WORKER_LEASE_LOST/,
+    );
+    const completed = await database.query(
+      `SELECT hive.complete_worker_rendered_file(
+         $1::uuid, 'reference-render-worker', $2::text, $3::uuid, 'worker-version-0001'
+       ) AS completed`,
+      [lease.rows[0].job_id, lease.rows[0].lease_token, file.file_id],
+    );
+    assert.equal(completed.rows[0].completed, true);
+    const idempotent = await database.query(
+      `SELECT hive.complete_worker_rendered_file(
+         $1::uuid, 'reference-render-worker', $2::text, $3::uuid, 'worker-version-0001'
+       ) AS completed`,
+      [lease.rows[0].job_id, lease.rows[0].lease_token, file.file_id],
+    );
+    assert.equal(idempotent.rows[0].completed, true);
+    const readyAbort = await database.query(
+      `SELECT hive.abort_worker_rendered_file(
+        $1::uuid, 'reference-render-worker', $2::text, $3::uuid
+      ) AS aborted`,
+      [lease.rows[0].job_id, lease.rows[0].lease_token, file.file_id],
+    );
+    assert.equal(readyAbort.rows[0].aborted, false);
+
+    await database.exec('RESET ROLE');
+    const retained = await database.query(
+      'SELECT status, object_version FROM hive.files WHERE id = $1::uuid', [file.file_id],
+    );
+    assert.deepEqual(retained.rows, [{ status: 'READY', object_version: 'worker-version-0001' }]);
+  } finally {
+    await database.close();
+  }
+});

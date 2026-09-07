@@ -3,6 +3,30 @@
 All notable Green Hive changes are recorded here. Internal platform packages use coordinated
 semantic versioning.
 
+## [0.25.0] - 2026-09-07
+
+### Added
+
+- GH-0603 deterministic local TEXT/PDF rendering, a lease-bound private-file worker lifecycle and
+  the registered Reference App document-render job. The processor accepts only `render:text` and
+  `render:pdf` and completes jobs using an opaque file reference.
+- Immutable migration `0025` with service-role-only prepare, complete and compensation helpers;
+  tenant, project, owner and entitlement scope are derived from the exact active worker lease.
+
+### Security
+
+- No template execution, URL/file fetch, browser render authority, public Storage operation,
+  background daemon or paid rendering provider was added. Compensation removes a processing row
+  after a failed object write and removes the just-written object before a failed completion can
+  leave it orphaned.
+
+### Status
+
+- GH-0603 is `DONE`: focused unit, embedded PostgreSQL-compatible and dedicated native Supabase
+  staging matrices pass after migration `0025`; no paid provider call is part of this release.
+- Coordinated platform packages advance to `0.25.0`; the `REFERENCE_APP` product manifest remains
+  `0.1.0`.
+
 ## [0.24.0] - 2026-09-05
 
 ### Added

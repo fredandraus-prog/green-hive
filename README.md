@@ -46,6 +46,10 @@ Version `0.24.0` implements **GH-0602 (Signed Private-File Download Path)** with
 server-issued grants, owner/workspace/app rechecks and safe `FILE_EXPORTED` audit evidence. Native
 Supabase Storage activation remains the only operational gate; no public bucket or browser upload
 is introduced.
+Version `0.25.0` completes **GH-0603 (Private Document Rendering Worker)** with deterministic local
+TEXT/PDF rendering and a job-lease-bound private-file lifecycle. Its unit, embedded database and
+dedicated native Supabase staging gates pass. It adds no template fetching, browser upload,
+background daemon, public Storage or paid rendering call.
 
 The checkpoint is deliberately narrow. The only public Billing ingress is the verified fake-provider
 webhook used to prove the platform contract. The real AI adapter is server-only and has no Render
@@ -117,6 +121,9 @@ remain out of scope.
   provider/bucket/key/integrity metadata while owners see only safe ready-file metadata;
 - migration `0024` declares the private generated-file bucket and permits only server-issued,
   short-lived signed download grants after a repeated owner/workspace/app/project authorization;
+- migration `0025`, deterministic local document rendering and a service-role-only worker file
+  lifecycle derived solely from a verified active job lease, with compensation for failed writes or
+  failed metadata completion;
 - owner-limited budget/logical-usage reads, admin-only raw monetary-cost inspection and no
   authenticated direct write authority;
 - a responsive React/Vite Reference App with signup, login, recovery, profile and project screens;
@@ -139,10 +146,10 @@ npm run verify
 `verify` removes generated outputs, checks formatting and platform boundaries, type-checks, builds
 all workspaces, validates migration integrity and runs the embedded RLS matrix.
 
-The GH-0602 implementation gate confirms 24 immutable migrations and 26 RLS-protected tables;
+The GH-0603 implementation gate confirms 25 immutable migrations and 26 RLS-protected tables;
 the focused file unit, embedded lifecycle, native local-Supabase and real disposable private
-Storage matrices pass. The guarded smoke reports ledger `24` with the structural seed and native
-Auth/RLS/grant contract intact. The full release verification, CI, staging, manifest and ZIP
+Storage matrices from GH-0602 pass. The new rendering matrix passes locally, embedded and on
+dedicated native Supabase staging. The full release verification, CI, staging, manifest and ZIP
 evidence is recorded only after each separate gate is observed.
 
 Database deployment requires a dedicated connection:

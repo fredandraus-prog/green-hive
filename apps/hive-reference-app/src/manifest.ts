@@ -19,6 +19,7 @@ export const referenceAppManifest = {
   ],
   jobTypes: [
     'REFERENCE_APP_FAKE_AI_JOB',
+    'REFERENCE_APP_RENDER_PROJECT_DOCUMENT',
   ],
   aiTaskTypes: [
     'REFERENCE_APP_STRUCTURED_ECHO',

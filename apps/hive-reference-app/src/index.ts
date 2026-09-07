@@ -1,5 +1,6 @@
 export { referenceAppManifest, referenceAppManifest as REFERENCE_APP_MANIFEST } from './manifest.js';
 export * from './ai-config.js';
+export * from './document-render-worker.js';
 export * from './http-server.js';
 export * from './readiness.js';
 export * from './runtime-config.js';

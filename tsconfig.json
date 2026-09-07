@@ -39,6 +39,9 @@
       "@green-hive/cost-guard": [
         "packages/cost-guard/src/index.ts"
       ],
+      "@green-hive/jobs": [
+        "packages/jobs/src/index.ts"
+      ],
       "@green-hive/files": [
         "packages/files/src/index.ts"
       ]

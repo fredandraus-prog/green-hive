@@ -27,7 +27,7 @@ VALUES (
     "requiredCapabilities": ["AUTH", "PROJECTS", "ENTITLEMENTS", "COST_GUARD", "JOBS", "AI", "FILES", "AUDIT", "I18N", "FEATURE_FLAGS"],
     "products": [{"productCode": "REFERENCE_APP_SANDBOX", "productType": "ONE_TIME"}],
     "entitlementCapabilities": ["REFERENCE_APP_RUN_JOB", "REFERENCE_APP_GENERATE_FILE"],
-    "jobTypes": ["REFERENCE_APP_FAKE_AI_JOB"],
+    "jobTypes": ["REFERENCE_APP_FAKE_AI_JOB", "REFERENCE_APP_RENDER_PROJECT_DOCUMENT"],
     "aiTaskTypes": ["REFERENCE_APP_STRUCTURED_ECHO"],
     "featureFlags": ["REFERENCE_APP_GOLDEN_FLOW"],
     "routes": [
