@@ -1,6 +1,6 @@
 {
   "name": "green-hive",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "private": true,
   "type": "module",
   "description": "Green Hive platform monorepo - GH-0602 signed private-file delivery foundation",

@@ -107,6 +107,16 @@ test(
              'EXECUTE'
            ) AS service_prepare,
            has_function_privilege(
+             'authenticated',
+             'hive.prepare_worker_rendered_file(uuid,text,text,text,text,bigint,text,text,text)',
+             'EXECUTE'
+           ) AS authenticated_worker_prepare,
+           has_function_privilege(
+             'service_role',
+             'hive.prepare_worker_rendered_file(uuid,text,text,text,text,bigint,text,text,text)',
+             'EXECUTE'
+           ) AS service_worker_prepare,
+           has_function_privilege(
              'authenticated', 'hive.record_file_export(uuid,uuid)', 'EXECUTE'
            ) AS authenticated_export,
            has_function_privilege(
@@ -125,6 +135,8 @@ test(
         storage_key_read: false,
         authenticated_prepare: false,
         service_prepare: true,
+        authenticated_worker_prepare: false,
+        service_worker_prepare: true,
         authenticated_export: false,
         service_export: true,
         private_bucket: true,
@@ -239,6 +251,56 @@ test(
         "SELECT count(*)::integer AS count FROM audit.events WHERE event_code = 'FILE_EXPORTED' AND project_id = $1::uuid",
         [PROJECT_ID],
       )).rows[0].count, 1);
+
+      await client.query('RESET ROLE');
+      await setContext(client, USER_A_ID, 'REFERENCE_APP', ORGANIZATION_A_ID);
+      const renderJob = await client.query(
+        `SELECT hive.enqueue_project_job(
+           $1::uuid, 'REFERENCE_APP_RENDER_PROJECT_DOCUMENT', 'native-render-worker-file-0001',
+           $2::text, 'render:pdf', 100
+         )::text AS id`,
+        [PROJECT_ID, 'd'.repeat(64)],
+      );
+      await client.query('SET ROLE authenticated');
+      await setContext(client, USER_A_ID, 'REFERENCE_APP', ORGANIZATION_A_ID);
+      await assert.rejects(
+        () => client.query(
+          `SELECT * FROM hive.prepare_worker_rendered_file(
+             $1::uuid, 'native-render-worker', $2::text, 'project-document.pdf',
+             'application/pdf', 24::bigint, $3::text, 'GREEN_HIVE_FAKE_STORAGE', 'green-hive-generated'
+           )`,
+          [renderJob.rows[0].id, '80000000-0000-4000-8000-000000000001', CONTENT_HASH],
+        ),
+        /permission denied|privilege/i,
+      );
+      await client.query('RESET ROLE; SET ROLE service_role');
+      const lease = await client.query(`SELECT * FROM hive.claim_next_job('native-render-worker', 120)`);
+      assert.equal(lease.rows[0].job_id, renderJob.rows[0].id);
+      const rendered = await client.query(
+        `SELECT * FROM hive.prepare_worker_rendered_file(
+           $1::uuid, 'native-render-worker', $2::text, 'project-document.pdf',
+           'application/pdf', 24::bigint, $3::text, 'GREEN_HIVE_FAKE_STORAGE', 'green-hive-generated'
+         )`,
+        [lease.rows[0].job_id, lease.rows[0].lease_token, CONTENT_HASH],
+      );
+      const renderedFile = rendered.rows[0];
+      await client.query(
+        `SELECT hive.complete_worker_rendered_file(
+           $1::uuid, 'native-render-worker', $2::text, $3::uuid, 'native-worker-version-0001'
+         )`,
+        [lease.rows[0].job_id, lease.rows[0].lease_token, renderedFile.file_id],
+      );
+      await client.query(
+        `SELECT hive.complete_job($1::uuid, 'native-render-worker', $2::text, $3::text, $4::text)`,
+        [lease.rows[0].job_id, lease.rows[0].lease_token, CONTENT_HASH, `file:${renderedFile.file_id}`],
+      );
+      const renderedState = await client.query(
+        `SELECT file.status AS file_status, job.status AS job_status
+         FROM hive.files AS file JOIN hive.jobs AS job ON job.project_id = file.project_id
+         WHERE file.id = $1::uuid AND job.id = $2::uuid`,
+        [renderedFile.file_id, renderJob.rows[0].id],
+      );
+      assert.deepEqual(renderedState.rows, [{ file_status: 'READY', job_status: 'COMPLETED' }]);
     } finally {
       await client.query('RESET ROLE').catch(() => undefined);
       await cleanupGreenHiveFixtures(client).catch(() => undefined);

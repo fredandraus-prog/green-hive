@@ -291,9 +291,12 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ,'hive.abort_generated_file(uuid)'
        ,'hive.soft_delete_file(uuid)'
        ,'hive.record_file_export(uuid,uuid)'
+       ,'hive.prepare_worker_rendered_file(uuid,text,text,text,text,bigint,text,text,text)'
+       ,'hive.complete_worker_rendered_file(uuid,text,text,uuid,text)'
+       ,'hive.abort_worker_rendered_file(uuid,text,text,uuid)'
      ]) AS names(name)`,
   );
-  assert.equal(helpers.rows.length, 61);
+  assert.equal(helpers.rows.length, 64);
   assert.ok(helpers.rows.every((entry) => entry.helper));
 
   const privileges = await client.query(
@@ -850,7 +853,25 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
        ) AS authenticated_can_record_export,
        has_function_privilege(
          'service_role', 'hive.record_file_export(uuid,uuid)', 'EXECUTE'
-       ) AS service_role_can_record_export`,
+       ) AS service_role_can_record_export,
+       has_function_privilege(
+         'authenticated', 'hive.prepare_worker_rendered_file(uuid,text,text,text,text,bigint,text,text,text)', 'EXECUTE'
+       ) AS authenticated_can_prepare_rendered_file,
+       has_function_privilege(
+         'service_role', 'hive.prepare_worker_rendered_file(uuid,text,text,text,text,bigint,text,text,text)', 'EXECUTE'
+       ) AS service_role_can_prepare_rendered_file,
+       has_function_privilege(
+         'authenticated', 'hive.complete_worker_rendered_file(uuid,text,text,uuid,text)', 'EXECUTE'
+       ) AS authenticated_can_complete_rendered_file,
+       has_function_privilege(
+         'service_role', 'hive.complete_worker_rendered_file(uuid,text,text,uuid,text)', 'EXECUTE'
+       ) AS service_role_can_complete_rendered_file,
+       has_function_privilege(
+         'authenticated', 'hive.abort_worker_rendered_file(uuid,text,text,uuid)', 'EXECUTE'
+       ) AS authenticated_can_abort_rendered_file,
+       has_function_privilege(
+         'service_role', 'hive.abort_worker_rendered_file(uuid,text,text,uuid)', 'EXECUTE'
+       ) AS service_role_can_abort_rendered_file`,
   );
   assert.deepEqual(filePrivileges.rows[0], {
     file_table_select: false,
@@ -876,6 +897,12 @@ export async function runGreenHiveDatabaseSmoke(client, repositoryRoot) {
     service_role_can_soft_delete: true,
     authenticated_can_record_export: false,
     service_role_can_record_export: true,
+    authenticated_can_prepare_rendered_file: false,
+    service_role_can_prepare_rendered_file: true,
+    authenticated_can_complete_rendered_file: false,
+    service_role_can_complete_rendered_file: true,
+    authenticated_can_abort_rendered_file: false,
+    service_role_can_abort_rendered_file: true,
   });
 
   const privateBucket = await client.query(

@@ -740,6 +740,9 @@ export async function validateDatabaseLayout(repositoryRoot = defaultRepositoryR
     'hive.abort_generated_file\\(\\s*uuid\\s*\\)',
     'hive.soft_delete_file\\(\\s*uuid\\s*\\)',
     'hive.record_file_export\\(\\s*uuid,\\s*uuid\\s*\\)',
+    'hive.prepare_worker_rendered_file\\(\\s*uuid,\\s*text,\\s*text,\\s*text,\\s*text,\\s*bigint,\\s*text,\\s*text,\\s*text\\s*\\)',
+    'hive.complete_worker_rendered_file\\(\\s*uuid,\\s*text,\\s*text,\\s*uuid,\\s*text\\s*\\)',
+    'hive.abort_worker_rendered_file\\(\\s*uuid,\\s*text,\\s*text,\\s*uuid\\s*\\)',
   ];
   for (const fileFunction of fileServiceFunctions) {
     for (const deniedRole of ['PUBLIC', 'authenticated']) {

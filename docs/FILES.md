@@ -4,6 +4,11 @@ GH-0601 created the server-side metadata and private-object boundary. GH-0602 ad
 delivery capability: a project owner can receive a short-lived signed download URL only after the
 server rechecks the trusted user, app, workspace and project scope.
 
+GH-0603 adds a server-only worker composition for one registered Reference App document job. It
+accepts only a lease that has already been claimed by trusted worker infrastructure, renders bounded
+TEXT or deterministic PDF bytes locally, writes one private object and completes the job with only
+an opaque `file:<uuid>` output reference. See [GH-0603](CHECKPOINT-GH-0603.md).
+
 ## Public contract
 
 `FileService` exposes `storeGenerated`, `list`, `get`, `softDelete` and `createDownload`. It accepts
@@ -66,3 +71,6 @@ made public to do so.
 GH-0602 does not add a browser upload endpoint, arbitrary user uploads, permanent public URLs,
 download listing UI, malware scanning, content preview, CDN/cache delivery, generic rendering or a
 worker. GH-0603 owns generic PDF/text rendering and storage composition.
+
+GH-0603 still does not add browser upload, arbitrary file intake, public URL, remote template,
+HTML renderer, external provider, background daemon, queue polling service or paid rendering API.
