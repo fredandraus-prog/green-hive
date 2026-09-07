@@ -40,6 +40,7 @@ Current coordinated platform version: `0.28.0`. The `REFERENCE_APP` product mani
 | GH-0604 | DONE | immutable job-completion notification record, owner/app/workspace RLS, typed service, protected API and Reference App in-app view pass unit, embedded PostgreSQL-compatible, dedicated native Supabase and deployed HTTPS/security gates | none; no external delivery provider, polling or push path |
 | GH-0701 | DONE | typed locale/message/formatting core, safe `pt-BR`/`en-US` fallback, persisted profile adoption and Reference App core language switch pass unit and clean verification | none; no translation provider, remote locale configuration or authorization behavior |
 | GH-0702 | DONE | shared accessible Field, SelectField, Message and LoadingPanel primitives are consumed by Reference App and pass unit/clean verification | none; no external UI framework, remote theme/runtime or product behavior extraction |
+| GH-0703 | DONE | manifest-backed typed flag registry, trusted app/workspace evaluation, `OFF` kill switch and platform-admin read-only hook pass unit/clean verification | none; no persistent mutation, remote configuration, client evaluation or authorization behavior |
 
 The local Supabase parity gate passed on PostgreSQL 17.6 with native `auth.users`, `auth.uid()` and
 `auth.jwt()`. The dedicated hosted staging project passes the twenty-two-migration baseline, RLS,

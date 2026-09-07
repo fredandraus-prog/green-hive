@@ -61,6 +61,9 @@ remote request or authorization behavior.
 Version `0.28.0` completes **GH-0702 (Shared Accessible UI Primitives)** with reusable native form,
 status and loading semantics in `@green-hive/ui`; application navigation and product behavior remain
 local to the Reference App.
+Version `0.29.0` completes **GH-0703 (Feature Flags Foundation)** with manifest-backed typed flag
+registration, deterministic trusted-context evaluation and an `OFF` kill switch. It intentionally
+adds no remote configuration, persistent mutation or authorization behavior.
 
 The checkpoint is deliberately narrow. The only public Billing ingress is the verified fake-provider
 webhook used to prove the platform contract. The real AI adapter is server-only and has no Render
