@@ -44,6 +44,9 @@
       ],
       "@green-hive/files": [
         "packages/files/src/index.ts"
+      ],
+      "@green-hive/notifications": [
+        "packages/notifications/src/index.ts"
       ]
     },
     "types": [

@@ -37,3 +37,14 @@ export interface AuditEvent {
   readonly metadata: Readonly<Record<string, boolean | number | string | null>>;
   readonly occurredAt: string;
 }
+
+export interface HiveNotification {
+  readonly id: string;
+  readonly projectId: string;
+  readonly eventType: 'JOB_COMPLETED';
+  readonly title: string;
+  readonly body: string;
+  readonly status: 'UNREAD' | 'READ';
+  readonly createdAt: string;
+  readonly readAt: string | null;
+}

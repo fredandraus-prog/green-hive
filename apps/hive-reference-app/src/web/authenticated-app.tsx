@@ -10,7 +10,7 @@ import {
   projectMatchesSearch,
   type AppRoute,
 } from '../frontend-contracts.js';
-import type { AccountView, AuditEvent, Profile, Project, Workspace } from './types.js';
+import type { AccountView, AuditEvent, HiveNotification, Profile, Project, Workspace } from './types.js';
 import { Brand, Breadcrumbs, Field, LoadingPanel, Message, SelectField } from './ui.js';
 import { CreateWorkspaceDialog, WorkspaceSwitcher } from './workspace-switcher.js';
 
@@ -100,6 +100,9 @@ function AppSidebar({ route, workspaces, activeWorkspace, workspaceBusy, onSelec
           </NavLink>
           <NavLink href={APP_ROUTES.workspaceActivity} active={route === 'workspaceActivity'} onNavigate={closeMobile}>
             <span aria-hidden="true">◷</span> Atividade
+          </NavLink>
+          <NavLink href={APP_ROUTES.workspaceNotifications} active={route === 'workspaceNotifications'} onNavigate={closeMobile}>
+            <span aria-hidden="true">◉</span> Notificações
           </NavLink>
         </div>
         <div className="nav-group nav-group-settings">
@@ -263,6 +266,32 @@ function ActivityView({ workspace, events }: { readonly workspace: Workspace; re
   );
 }
 
+function NotificationsView({ workspace, notifications, busy, onMarkRead }: {
+  readonly workspace: Workspace;
+  readonly notifications: readonly HiveNotification[];
+  readonly busy: string | null;
+  readonly onMarkRead: (notification: HiveNotification) => Promise<void>;
+}): ReactNode {
+  return (
+    <>
+      <Breadcrumbs items={[{ label: workspace.name }, { label: 'Notificações' }]} />
+      <PageHeader title="Notificações" description="Acompanhe a conclusão dos processamentos do seu workspace." />
+      <section className="panel audit-panel">
+        <div className="panel-heading"><div><span className="eyebrow">Atualizações</span><h2>Processamentos concluídos</h2><p>Você vê apenas os eventos do seu usuário e workspace atual.</p></div><span className="count-pill">{notifications.length}</span></div>
+        <div className="audit-list">
+          {notifications.length === 0 ? <div className="empty-state compact"><span aria-hidden="true">◉</span><h3>Nenhuma notificação</h3><p>Quando um processamento for concluído, ele aparecerá aqui.</p></div> : notifications.map((notification) => (
+            <article className="audit-row" key={notification.id}>
+              <span className="audit-glyph" aria-hidden="true">◉</span>
+              <div><strong>{notification.title}</strong><small>{notification.body} · {new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(notification.createdAt))}</small></div>
+              {notification.status === 'UNREAD' ? <button type="button" disabled={busy === notification.id} onClick={() => void onMarkRead(notification)}>{busy === notification.id ? 'Marcando…' : 'Marcar como lida'}</button> : <span className="audit-outcome">Lida</span>}
+            </article>
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}
+
 function SettingsTabs({ active }: { readonly active: 'profile' | 'organization' }): ReactNode {
   return (
     <nav className="settings-tabs" aria-label="Configurações">
@@ -342,6 +371,7 @@ export function AuthenticatedApp({ route }: { readonly route: AppRoute }): React
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
   const [projects, setProjects] = useState<readonly Project[]>([]);
   const [events, setEvents] = useState<readonly AuditEvent[]>([]);
+  const [notifications, setNotifications] = useState<readonly HiveNotification[]>([]);
   const [loadingBase, setLoadingBase] = useState(true);
   const [loadingPage, setLoadingPage] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -378,13 +408,15 @@ export function AuthenticatedApp({ route }: { readonly route: AppRoute }): React
   }, []);
 
   useEffect(() => {
-    if (loadingBase || !activeWorkspaceId || (route !== 'workspaceProjects' && route !== 'workspaceActivity')) return;
+    if (loadingBase || !activeWorkspaceId || (route !== 'workspaceProjects' && route !== 'workspaceActivity' && route !== 'workspaceNotifications')) return;
     let active = true;
     setLoadingPage(true);
     setError(null);
     const request = route === 'workspaceProjects'
       ? api<{ projects: readonly Project[] }>('/api/projects').then((result) => { if (active) setProjects(result.projects); })
-      : api<{ events: readonly AuditEvent[] }>('/api/audit').then((result) => { if (active) setEvents(result.events); });
+      : route === 'workspaceActivity'
+        ? api<{ events: readonly AuditEvent[] }>('/api/audit').then((result) => { if (active) setEvents(result.events); })
+        : api<{ notifications: readonly HiveNotification[] }>('/api/notifications').then((result) => { if (active) setNotifications(result.notifications); });
     void request.catch((failure: unknown) => {
       if (active) handleFailure(failure, 'Não foi possível carregar este workspace.');
     }).finally(() => { if (active) setLoadingPage(false); });
@@ -474,6 +506,20 @@ export function AuthenticatedApp({ route }: { readonly route: AppRoute }): React
     }
   }
 
+  async function markNotificationRead(notification: HiveNotification): Promise<void> {
+    if (notification.status === 'READ') return;
+    setBusy(notification.id);
+    setError(null);
+    try {
+      const result = await api<{ notification: HiveNotification }>(`/api/notifications/${notification.id}/read`, { method: 'POST', body: '{}' });
+      setNotifications((current) => current.map((item) => item.id === notification.id ? result.notification : item));
+    } catch (failure) {
+      handleFailure(failure, 'Não foi possível atualizar a notificação.');
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function saveProfile(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setBusy('profile-save');
@@ -547,6 +593,7 @@ export function AuthenticatedApp({ route }: { readonly route: AppRoute }): React
             {route === 'dashboard' && <DashboardView workspaces={workspaces} onOpenWorkspace={openWorkspace} />}
             {route === 'workspaceProjects' && (loadingPage ? <LoadingPanel /> : <ProjectsView workspace={activeWorkspace} projects={projects} busy={busy} onCreate={createProject} onAction={projectAction} />)}
             {route === 'workspaceActivity' && (loadingPage ? <LoadingPanel /> : <ActivityView workspace={activeWorkspace} events={events} />)}
+            {route === 'workspaceNotifications' && (loadingPage ? <LoadingPanel /> : <NotificationsView workspace={activeWorkspace} notifications={notifications} busy={busy} onMarkRead={markNotificationRead} />)}
             {route === 'settingsProfile' && <ProfileSettingsView account={account} busy={busy === 'profile-save'} notice={notice} onSave={saveProfile} />}
             {route === 'settingsOrganization' && <OrganizationSettingsView workspace={activeWorkspace} busy={busy === 'organization-save'} notice={notice} onRename={renameOrganization} />}
           </>

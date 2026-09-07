@@ -17,6 +17,10 @@ import {
   PostgresWorkerRepository,
   WorkerService,
 } from '../../packages/jobs/dist/index.js';
+import {
+  NotificationService,
+  PostgresNotificationRepository,
+} from '../../packages/notifications/dist/index.js';
 import { loadMigrationCatalog } from '../../scripts/lib/migration-catalog.mjs';
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -102,7 +106,12 @@ test('GH-0404 claims once, renews ownership, retries deterministically and prote
   await database.waitReady;
   try {
     await prepare(database);
-    await setOwner(database);
+    await database.exec('RESET ROLE;');
+    await database.query(
+      `SELECT set_config('request.jwt.claims', $1, false),
+              set_config('request.green_hive.organization_id', $2, false)`,
+      [JSON.stringify({ sub: USER_ID, app_metadata: { app_code: 'REFERENCE_APP' } }), ORGANIZATION_ID],
+    );
     await database.query(
       `INSERT INTO hive.projects (id, organization_id, app_id, owner_user_id, name)
        VALUES ($1::uuid, $2::uuid, $3::uuid, $4::uuid, 'Worker Foundation')`,
@@ -298,6 +307,41 @@ test('GH-0404 claims once, renews ownership, retries deterministically and prote
       cancelled_status: 'CANCELLED', permanent_status: 'FAILED',
       started_events: 7, retry_events: 3, leaked_audit: 0,
     });
+
+    await database.exec('SET ROLE authenticated;');
+    await setOwner(database);
+    const notifications = new NotificationService(new PostgresNotificationRepository(db));
+    const ownerNotifications = await notifications.list(context);
+    assert.equal(ownerNotifications.length, 1);
+    assert.equal(ownerNotifications[0].jobId, first.id);
+    assert.equal(ownerNotifications[0].eventType, 'JOB_COMPLETED');
+    assert.equal(ownerNotifications[0].status, 'UNREAD');
+    const acknowledged = await notifications.markRead(context, ownerNotifications[0].id);
+    assert.equal(acknowledged.status, 'READ');
+    assert.ok(acknowledged.readAt instanceof Date);
+    assert.equal((await notifications.markRead(context, ownerNotifications[0].id)).status, 'READ');
+
+    await database.query(
+      `SELECT set_config('request.jwt.claims', $1, false),
+              set_config('request.green_hive.organization_id', $2, false)`,
+      [JSON.stringify({ sub: '10000000-0000-4000-8000-000000000002', app_metadata: { app_code: 'REFERENCE_APP' } }), ORGANIZATION_ID],
+    );
+    assert.equal((await database.query('SELECT id FROM hive.notifications')).rows.length, 0);
+    assert.equal((await database.query(
+      `UPDATE hive.notifications SET status = 'READ', read_at = statement_timestamp()
+       WHERE id = $1::uuid RETURNING id`, [ownerNotifications[0].id],
+    )).rows.length, 0);
+
+    await database.query(
+      `SELECT set_config('request.jwt.claims', $1, false),
+              set_config('request.green_hive.organization_id', $2, false)`,
+      [JSON.stringify({ sub: '10000000-0000-4000-8000-000000000003', app_metadata: { app_code: 'REFERENCE_APP', platform_role: 'PLATFORM_ADMIN' } }), ORGANIZATION_ID],
+    );
+    assert.equal((await database.query('SELECT id FROM hive.notifications')).rows.length, 1);
+    assert.equal((await database.query(
+      `UPDATE hive.notifications SET status = 'READ', read_at = statement_timestamp()
+       WHERE id = $1::uuid RETURNING id`, [ownerNotifications[0].id],
+    )).rows.length, 0);
   } finally {
     await database.close();
   }

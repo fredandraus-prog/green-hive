@@ -85,8 +85,8 @@ test('local runtime remains restricted to the canonical loopback preview', () =>
 
 test('readiness requires the full migration, seed and helper contract', async () => {
   const readyState = {
-    migration_count: 25,
-    migration_version: 25,
+    migration_count: 26,
+    migration_version: 26,
     reference_app_count: 1,
     reference_product_count: 1,
     reference_price_count: 1,
@@ -107,6 +107,7 @@ test('readiness requires the full migration, seed and helper contract', async ()
     ai_gateway_ready: true,
     search_gateway_ready: true,
     files_ready: true,
+    notifications_ready: true,
     app_helper_ready: true,
     organization_helper_ready: true,
   };
@@ -120,6 +121,7 @@ test('readiness requires the full migration, seed and helper contract', async ()
   await ready();
   assert.equal(calls.length, 1);
   assert.match(calls[0][0], /to_regclass\('hive\.files'\)/);
+  assert.match(calls[0][0], /to_regclass\('hive\.notifications'\)/);
   assert.match(
     calls[0][0],
     /hive\.prepare_generated_file\(uuid,text,text,text,text,bigint,text,text,text,text,text\)/,

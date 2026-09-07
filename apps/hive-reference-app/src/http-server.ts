@@ -7,6 +7,7 @@ import Fastify, {
 } from 'fastify';
 import { AuthError, type AuthSession } from '@green-hive/auth';
 import { AuditError } from '@green-hive/audit';
+import { NotificationError } from '@green-hive/notifications';
 import { BillingError, type BillingWebhookService } from '@green-hive/billing';
 import { EntitlementError, validateCapabilityCode } from '@green-hive/entitlements';
 import {
@@ -73,6 +74,8 @@ export type ReferenceAppHttpFacade = Pick<
   | 'listWorkspaceMembers'
   | 'addWorkspaceMember'
   | 'listAuditEvents'
+  | 'listNotifications'
+  | 'markNotificationRead'
   | 'createProject'
   | 'listProjects'
   | 'getProject'
@@ -99,7 +102,7 @@ function isBillingWebhookRequest(method: string, url: string): boolean {
 function exactObject(
   value: unknown,
   allowedKeys: ReadonlySet<string>,
-  error: AuthError | ProjectError | WorkspaceError,
+  error: AuthError | ProjectError | WorkspaceError | NotificationError,
 ): Record<string, unknown> {
   if (
     typeof value !== 'object' ||
@@ -697,6 +700,38 @@ export async function createReferenceAppHttpServer(
       },
     ),
   }));
+
+  application.get('/api/notifications', async (request, reply) => ({
+    notifications: await withSession(
+      request,
+      reply,
+      options.facade,
+      options.secureCookies,
+      async (token) => {
+        const workspace = await resolveWorkspace(
+          token, request, reply, options.facade, options.secureCookies,
+        );
+        return options.facade.listNotifications(token, workspace.id);
+      },
+    ),
+  }));
+
+  application.post('/api/notifications/:id/read', async (request, reply) => {
+    exactObject(request.body, new Set(), new NotificationError('NOTIFICATION_INVALID_INPUT'));
+    const notification = await withSession(
+      request,
+      reply,
+      options.facade,
+      options.secureCookies,
+      async (token) => {
+        const workspace = await resolveWorkspace(
+          token, request, reply, options.facade, options.secureCookies,
+        );
+        return options.facade.markNotificationRead(token, workspace.id, projectId(request));
+      },
+    );
+    return { notification };
+  });
 
   application.post('/api/projects', async (request, reply) => {
     const body = exactObject(

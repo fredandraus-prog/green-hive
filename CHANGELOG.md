@@ -3,6 +3,28 @@
 All notable Green Hive changes are recorded here. Internal platform packages use coordinated
 semantic versioning.
 
+## [0.26.0] - 2026-09-07
+
+### Added
+
+- GH-0604 in-app notification foundation: a job that first reaches `COMPLETED` produces one
+  durable, scoped `JOB_COMPLETED` record for its project owner.
+- Immutable migration `0026`, forced owner/app/workspace RLS, typed notification service and
+  protected Reference App list/acknowledge API with an in-app Notifications view.
+
+### Security
+
+- Notification recipients, scope and content are derived only from the trusted job lifecycle.
+  Browser input cannot choose an event, recipient, app, workspace or job; no input, output,
+  worker lease, file location, signed URL or secret is copied into the record.
+- Platform admins retain operational read access only. They cannot create, acknowledge or delete a
+  notification. No email, push, broker, polling daemon or external provider is enabled.
+
+### Status
+
+- GH-0604 is `PARTIAL` until native Supabase and deployed HTTPS acceptance gates pass. The
+  coordinated `0.26.0` release remains pending; `REFERENCE_APP` stays at product version `0.1.0`.
+
 ## [0.25.1] - 2026-09-07
 
 ### Fixed
