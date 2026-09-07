@@ -20,7 +20,6 @@ jobs:
     env:
       GREEN_HIVE_BACKUP_DATABASE_URL: ${{ secrets.GREEN_HIVE_BACKUP_DATABASE_URL }}
       GREEN_HIVE_BACKUP_PASSPHRASE: ${{ secrets.GREEN_HIVE_BACKUP_PASSPHRASE }}
-      BACKUP_WORKSPACE: ${{ runner.temp }}/green-hive-backup
     steps:
       - name: Check out source
         uses: actions/checkout@v6
@@ -43,6 +42,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          BACKUP_WORKSPACE="${RUNNER_TEMP}/green-hive-backup"
           trap 'rm -rf "${BACKUP_WORKSPACE}"' EXIT
           mkdir -p "${BACKUP_WORKSPACE}/plain"
           supabase db dump --db-url "${GREEN_HIVE_BACKUP_DATABASE_URL}" --role-only --file "${BACKUP_WORKSPACE}/plain/roles.sql"
