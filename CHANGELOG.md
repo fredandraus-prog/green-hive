@@ -3,6 +3,29 @@
 All notable Green Hive changes are recorded here. Internal platform packages use coordinated
 semantic versioning.
 
+## [0.30.0] - 2026-09-07
+
+### Added
+
+- GH-0704 Stable Error Taxonomy and Client Mapping: `@green-hive/core` now
+  exposes the reviewed public error categories, code allowlist, HTTP status and
+  retryability contract.
+- Reference App HTTP errors, rate limits and not-found responses share that
+  contract. The browser maps codes/categories to its own friendly Portuguese
+  messages and never renders text returned by a failed HTTP response.
+
+### Security
+
+- Unknown JavaScript, database and provider failures are reduced to the generic
+  `INTERNAL_ERROR` payload. Original messages, error codes, details and stacks
+  cannot reach a browser response.
+
+### Status
+
+- GH-0704 is `DONE` after focused contract/HTTP coverage and the clean release
+  gate. The coordinated platform release is `0.30.0`; `REFERENCE_APP` remains
+  at product version `0.1.0`.
+
 ## [0.29.0] - 2026-09-07
 
 ### Added

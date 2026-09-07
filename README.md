@@ -64,6 +64,9 @@ local to the Reference App.
 Version `0.29.0` completes **GH-0703 (Feature Flags Foundation)** with manifest-backed typed flag
 registration, deterministic trusted-context evaluation and an `OFF` kill switch. It intentionally
 adds no remote configuration, persistent mutation or authorization behavior.
+Version `0.30.0` completes **GH-0704 (Stable Error Taxonomy and Client Mapping)** with one
+typed transport contract for public failures. Unknown implementation errors are masked at the
+server boundary, while the Reference App renders local, friendly messages from stable codes.
 
 The checkpoint is deliberately narrow. The only public Billing ingress is the verified fake-provider
 webhook used to prove the platform contract. The real AI adapter is server-only and has no Render

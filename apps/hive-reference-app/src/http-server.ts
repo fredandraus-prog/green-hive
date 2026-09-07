@@ -10,6 +10,7 @@ import { AuditError } from '@green-hive/audit';
 import { NotificationError } from '@green-hive/notifications';
 import { BillingError, type BillingWebhookService } from '@green-hive/billing';
 import { EntitlementError, validateCapabilityCode } from '@green-hive/entitlements';
+import { toPublicError } from '@green-hive/core';
 import {
   ProjectError,
   WorkspaceError,
@@ -217,80 +218,6 @@ async function withSession<Result>(
   }
 }
 
-function publicError(error: unknown): { status: number; code: string; message: string } {
-  if (error instanceof AuthError) {
-    const status =
-      error.code === 'INVALID_AUTH_INPUT' || error.code === 'INVALID_ACCOUNT_INPUT'
-        ? 400
-        : error.code === 'AUTH_INVALID_CREDENTIALS' ||
-            error.code === 'AUTH_SESSION_INVALID' ||
-            error.code === 'AUTH_SESSION_REFRESH_FAILED' ||
-            error.code === 'AUTH_RECOVERY_EXCHANGE_FAILED'
-          ? 401
-          : error.code === 'AUTH_APP_NOT_ALLOWED' || error.code === 'ACCOUNT_ACCESS_DENIED'
-              || error.code === 'AUTH_ORGANIZATION_ACCESS_DENIED'
-            ? 403
-            : error.code === 'ACCOUNT_NOT_FOUND'
-              ? 404
-              : 503;
-    return { status, code: error.code, message: error.message };
-  }
-  if (error instanceof ProjectError) {
-    const status =
-      error.code === 'PROJECT_NOT_FOUND'
-        ? 404
-        : error.code === 'PROJECT_ACCESS_DENIED'
-          ? 403
-          : error.code === 'INVALID_PROJECT_TRANSITION'
-            ? 409
-            : error.code === 'INVALID_PROJECT_INPUT'
-              ? 400
-              : 503;
-    return { status, code: error.code, message: error.message };
-  }
-  if (error instanceof WorkspaceError) {
-    const status =
-      error.code === 'INVALID_WORKSPACE_INPUT'
-        ? 400
-        : error.code === 'WORKSPACE_ACCESS_DENIED'
-          ? 403
-          : error.code === 'WORKSPACE_NOT_FOUND'
-            ? 404
-            : 503;
-    return { status, code: error.code, message: error.message };
-  }
-  if (error instanceof EntitlementError) {
-    const status = error.code === 'INVALID_ENTITLEMENT_INPUT'
-      ? 400
-      : error.code === 'ENTITLEMENT_ACCESS_DENIED'
-        ? 403
-        : 503;
-    return { status, code: error.code, message: error.message };
-  }
-  if (error instanceof AuditError) {
-    const status = error.code === 'AUDIT_INVALID_INPUT'
-      ? 400
-      : error.code === 'AUDIT_ACCESS_DENIED'
-        ? 403
-        : 503;
-    return { status, code: error.code, message: error.message };
-  }
-  if (error instanceof BillingError) {
-    const status = error.code === 'INVALID_BILLING_WEBHOOK_INPUT'
-      ? 400
-      : error.code === 'BILLING_WEBHOOK_SIGNATURE_INVALID'
-        ? 401
-        : error.code === 'BILLING_WEBHOOK_PROVIDER_UNSUPPORTED'
-          ? 404
-          : error.code === 'BILLING_WEBHOOK_IDEMPOTENCY_CONFLICT'
-              || error.code === 'INVALID_PAYMENT_TRANSITION'
-            ? 409
-            : 503;
-    return { status, code: error.code, message: error.message };
-  }
-  return { status: 500, code: 'INTERNAL_ERROR', message: 'Request could not be completed' };
-}
-
 export async function createReferenceAppHttpServer(
   options: ReferenceAppHttpServerOptions,
 ): Promise<FastifyInstance> {
@@ -369,9 +296,8 @@ export async function createReferenceAppHttpServer(
     );
     if (decision.allowed) return;
     reply.header('Retry-After', decision.resetSeconds);
-    return reply.code(429).send({
-      error: { code: 'RATE_LIMITED', message: 'Too many requests. Retry later.' },
-    });
+    const safe = toPublicError({ code: 'RATE_LIMITED' });
+    return reply.code(safe.status).send({ error: safe });
   });
 
   application.get('/api/health', async () => ({ status: 'ok', app: 'REFERENCE_APP' }));
@@ -851,8 +777,8 @@ export async function createReferenceAppHttpServer(
   });
 
   application.setErrorHandler((error, _request, reply) => {
-    const safe = publicError(error);
-    void reply.code(safe.status).send({ error: { code: safe.code, message: safe.message } });
+    const safe = toPublicError(error);
+    void reply.code(safe.status).send({ error: safe });
   });
 
   if (options.webRoot) {
@@ -867,7 +793,8 @@ export async function createReferenceAppHttpServer(
         reply.header('Cache-Control', 'private, no-store');
         return reply.type('text/html').sendFile('index.html');
       }
-      return reply.code(404).send({ error: { code: 'NOT_FOUND', message: 'Route was not found' } });
+      const safe = toPublicError({ code: 'NOT_FOUND' });
+      return reply.code(safe.status).send({ error: safe });
     });
   }
 

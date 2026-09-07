@@ -1,4 +1,47 @@
 import { languageForLocale as languageFromSupportedLocale } from '@green-hive/i18n';
+import type { PlatformErrorCategory } from '@green-hive/core';
+
+const FRIENDLY_ERRORS: Readonly<Record<string, string>> = {
+  INVALID_AUTH_INPUT: 'Confira os dados informados e tente novamente.',
+  AUTH_INVALID_CREDENTIALS: 'E-mail ou senha incorretos.',
+  AUTH_SESSION_INVALID: 'Sua sessão expirou. Entre novamente.',
+  AUTH_SIGN_UP_FAILED: 'Não foi possível criar a conta. O e-mail pode já estar em uso.',
+  AUTH_RECOVERY_FAILED: 'Não foi possível iniciar a recuperação agora.',
+  AUTH_RECOVERY_EXCHANGE_FAILED: 'Este link de recuperação é inválido ou expirou.',
+  AUTH_PASSWORD_UPDATE_FAILED: 'Não foi possível atualizar a senha.',
+  INVALID_ACCOUNT_INPUT: 'Revise os dados do perfil.',
+  INVALID_PROJECT_INPUT: 'Informe um nome válido para o projeto.',
+  PROJECT_NOT_FOUND: 'Projeto não encontrado.',
+  INVALID_PROJECT_TRANSITION: 'Essa mudança não é permitida para o projeto.',
+  INVALID_WORKSPACE_INPUT: 'Informe um nome válido para o workspace.',
+  WORKSPACE_ACCESS_DENIED: 'Você não possui permissão para esta alteração.',
+  WORKSPACE_NOT_FOUND: 'Workspace não encontrado.',
+  AUTH_ORGANIZATION_ACCESS_DENIED: 'Sua sessão não possui acesso a este workspace.',
+  AUDIT_ACCESS_DENIED: 'Você não possui acesso ao histórico deste workspace.',
+  AUDIT_OPERATION_FAILED: 'Não foi possível carregar o histórico de atividades.',
+};
+
+const FRIENDLY_CATEGORIES: Readonly<Record<PlatformErrorCategory, string>> = {
+  VALIDATION: 'Confira os dados informados e tente novamente.',
+  UNAUTHENTICATED: 'Sua sessão expirou. Entre novamente.',
+  FORBIDDEN: 'Você não possui permissão para esta ação.',
+  NOT_FOUND: 'Não foi possível encontrar o item solicitado.',
+  CONFLICT: 'Essa ação não pode ser concluída no estado atual.',
+  RATE_LIMITED: 'Muitas tentativas em pouco tempo. Aguarde e tente novamente.',
+  RESOURCE_EXHAUSTED: 'Este recurso não está disponível no momento.',
+  UNAVAILABLE: 'O serviço está temporariamente indisponível. Tente novamente.',
+  INTERNAL: 'Ocorreu um erro inesperado. Tente novamente.',
+};
+
+export function platformErrorCategory(value: string | undefined): PlatformErrorCategory {
+  if (value && value in FRIENDLY_CATEGORIES) return value as PlatformErrorCategory;
+  return 'INTERNAL';
+}
+
+/** Never render text supplied by an HTTP error response. */
+export function clientErrorMessage(code: string, category: PlatformErrorCategory): string {
+  return FRIENDLY_ERRORS[code] ?? FRIENDLY_CATEGORIES[category];
+}
 
 export const APP_ROUTES = Object.freeze({
   dashboard: '/app/dashboard',
