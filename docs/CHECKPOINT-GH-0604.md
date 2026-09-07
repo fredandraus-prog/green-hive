@@ -30,7 +30,11 @@ become a second notification authority.
 
 ## Validation status
 
+Status: `DONE — CLEAN, EMBEDDED, NATIVE SUPABASE AND DEPLOYED HTTPS GATES PASS`.
+
 The embedded PostgreSQL-compatible matrix verifies automatic creation, one notification per job,
 owner acknowledgement idempotency, cross-user invisibility and read-only platform-admin access.
-Native Supabase and deployed HTTPS validation remain release gates before this checkpoint can be
-promoted from `PARTIAL` to `DONE`.
+The dedicated native Supabase worker/notification matrix repeats that proof using the real
+`auth.users`, `auth.uid()` and `auth.jwt()` contract. The deployed HTTPS smoke verifies liveness,
+database readiness, HSTS/security headers and the Reference App shell at the published staging
+origin.
