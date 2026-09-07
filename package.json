@@ -1,6 +1,6 @@
 {
   "name": "green-hive",
-  "version": "0.32.0",
+  "version": "0.33.0",
   "private": true,
   "type": "module",
   "description": "Green Hive platform monorepo - GH-0802 safe structured observability",
@@ -26,6 +26,7 @@
     "db:validate": "node scripts/db-validate.mjs",
     "db:migrate": "node scripts/db-migrate.mjs",
     "db:seed": "node scripts/db-seed.mjs",
+    "backup:validate-artifact": "node scripts/backup-artifact.mjs verify",
     "db:test": "npm run build:types --silent && node --test --test-reporter=spec database/tests/embedded-rls.integration.test.mjs database/tests/billing-service.integration.test.mjs database/tests/billing-webhook.integration.test.mjs database/tests/entitlement-service.integration.test.mjs database/tests/usage-cost-service.integration.test.mjs database/tests/cost-guard-service.integration.test.mjs database/tests/job-service.integration.test.mjs database/tests/worker-service.integration.test.mjs database/tests/ai-gateway-service.integration.test.mjs database/tests/search-gateway-service.integration.test.mjs database/tests/file-service.integration.test.mjs",
     "db:test:external": "node --test --test-reporter=spec database/tests/postgres-rls.integration.test.mjs",
     "db:test:supabase": "node scripts/db-test-supabase.mjs",
