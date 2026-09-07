@@ -95,7 +95,13 @@ test('auth rate limit is account-scoped, normalized and returns a stable 429 con
     assert.equal(second.statusCode, 200);
     assert.equal(blocked.statusCode, 429);
     assert.deepEqual(blocked.json(), {
-      error: { code: 'RATE_LIMITED', message: 'Too many requests. Retry later.' },
+      error: {
+        code: 'RATE_LIMITED',
+        category: 'RATE_LIMITED',
+        status: 429,
+        retryable: true,
+        message: 'Request could not be completed.',
+      },
     });
     assert.equal(blocked.headers['ratelimit-limit'], '2');
     assert.equal(blocked.headers['ratelimit-remaining'], '0');

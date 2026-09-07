@@ -2,7 +2,7 @@
 
 Status date: 2026-09-07.
 
-Current coordinated platform version: `0.28.0`. The `REFERENCE_APP` product manifest remains
+Current coordinated platform version: `0.30.0`. The `REFERENCE_APP` product manifest remains
 `0.1.0`.
 
 | Checkpoint | Status | Validation | Remaining gate |
@@ -41,6 +41,7 @@ Current coordinated platform version: `0.28.0`. The `REFERENCE_APP` product mani
 | GH-0701 | DONE | typed locale/message/formatting core, safe `pt-BR`/`en-US` fallback, persisted profile adoption and Reference App core language switch pass unit and clean verification | none; no translation provider, remote locale configuration or authorization behavior |
 | GH-0702 | DONE | shared accessible Field, SelectField, Message and LoadingPanel primitives are consumed by Reference App and pass unit/clean verification | none; no external UI framework, remote theme/runtime or product behavior extraction |
 | GH-0703 | DONE | manifest-backed typed flag registry, trusted app/workspace evaluation, `OFF` kill switch and platform-admin read-only hook pass unit/clean verification | none; no persistent mutation, remote configuration, client evaluation or authorization behavior |
+| GH-0704 | DONE | stable typed public-error taxonomy, safe HTTP masking and local Reference App client mapping pass unit/HTTP/clean verification | none; no error provider, browser secret, RLS or authorization change |
 
 The local Supabase parity gate passed on PostgreSQL 17.6 with native `auth.users`, `auth.uid()` and
 `auth.jwt()`. The dedicated hosted staging project passes the twenty-two-migration baseline, RLS,

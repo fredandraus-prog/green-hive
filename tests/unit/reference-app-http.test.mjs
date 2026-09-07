@@ -509,9 +509,38 @@ test('payment webhook accepts a provider-signed raw body without browser Origin 
     assert.deepEqual(unavailable.json(), {
       error: {
         code: 'BILLING_WEBHOOK_PROCESSING_FAILED',
-        message: 'Billing webhook could not be processed',
+        category: 'UNAVAILABLE',
+        status: 503,
+        retryable: true,
+        message: 'Request could not be completed.',
       },
     });
+  } finally {
+    await application.close();
+  }
+});
+
+test('HTTP boundary replaces unexpected implementation failures with the stable internal contract', async () => {
+  const facade = new FakeFacade();
+  facade.signIn = async () => {
+    throw new Error('SQLSTATE 23505 provider_secret=not-for-client stack trace');
+  };
+  const application = await createReferenceAppHttpServer({ facade, allowedOrigin: ORIGIN, secureCookies: false });
+  try {
+    const response = await application.inject(
+      postOptions('/api/auth/sign-in', { email: 'web@example.test', password: 'StrongPass123' }),
+    );
+    assert.equal(response.statusCode, 500);
+    assert.deepEqual(response.json(), {
+      error: {
+        code: 'INTERNAL_ERROR',
+        category: 'INTERNAL',
+        status: 500,
+        retryable: true,
+        message: 'Request could not be completed.',
+      },
+    });
+    assert.doesNotMatch(response.body, /SQLSTATE|provider_secret|stack trace/i);
   } finally {
     await application.close();
   }
