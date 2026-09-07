@@ -373,7 +373,7 @@ c467bc104b244ce9f552478d43c8dda6cadfffe6c183c3b93f5756af1d6b006e | 2544 | script
 1d9eebe98ee8819204cc7333cbef62d504d4a69857ce08a9feb078728066c5cb | 1749 | scripts/format-check.mjs
 479c71ff397b95776f8022ab2357e07b97af57fe1e7627b8ca58de9aab1b8cc2 | 1956 | scripts/generate-release-manifest.mjs
 99246f928f12efb1fb73d17f56d2466f8aa134674127beb7443b8494da371c38 | 26839 | scripts/hosted-acceptance.mjs
-f7c216b707dfe89ad42c60a7ca7e9d8eeb7472408dd3fdc6af2bbee6bc320398 | 3266 | scripts/hosted-security-smoke.mjs
+daed0b66f7cc573794b34d73f74c4ae5670566256fd4f3be75a20a018fe81b66 | 3345 | scripts/hosted-security-smoke.mjs
 f6a0c8530de91cb85ce23b18ed2dcd691df265ceed7c6b7de5a223df51c18895 | 2532 | scripts/hosted-smoke.mjs
 4b1852108fea4b093fbd2188120bcdaca1587cb76e8ec56b952f698c33c0ef16 | 42146 | scripts/lib/green-hive-smoke.mjs
 81f0425a3d283ded2626d87f062e5da7761ecf8178ef94175d298f9d792704be | 11200 | scripts/lib/local-supabase-guard.mjs
