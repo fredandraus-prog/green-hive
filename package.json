@@ -1,9 +1,9 @@
 {
   "name": "green-hive",
-  "version": "0.31.0",
+  "version": "0.32.0",
   "private": true,
   "type": "module",
-  "description": "Green Hive platform monorepo - GH-0801 read-only operational administration",
+  "description": "Green Hive platform monorepo - GH-0802 safe structured observability",
   "workspaces": [
     "apps/*",
     "packages/*"

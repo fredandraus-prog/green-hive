@@ -1,6 +1,8 @@
 import cookie from '@fastify/cookie';
 import fastifyStatic from '@fastify/static';
+import { randomUUID } from 'node:crypto';
 import Fastify, {
+  LogController,
   type FastifyInstance,
   type FastifyReply,
   type FastifyRequest,
@@ -11,6 +13,11 @@ import { NotificationError } from '@green-hive/notifications';
 import { BillingError, type BillingWebhookService } from '@green-hive/billing';
 import { EntitlementError, validateCapabilityCode } from '@green-hive/entitlements';
 import { toPublicError } from '@green-hive/core';
+import {
+  structuredHttpEvent,
+  writeOperationalEvent,
+  type ObservabilitySink,
+} from '@green-hive/observability';
 import {
   ProjectError,
   WorkspaceError,
@@ -93,6 +100,7 @@ export interface ReferenceAppHttpServerOptions {
   readonly readinessCheck?: () => Promise<void>;
   readonly webRoot?: string;
   readonly logger?: boolean;
+  readonly observabilitySink?: ObservabilitySink;
   readonly rateLimit?: ReferenceAppRateLimitOptions;
   readonly billingWebhookService?: Pick<BillingWebhookService, 'process'>;
 }
@@ -194,6 +202,29 @@ function capabilityCode(request: FastifyRequest): string {
   return validateCapabilityCode(params.capabilityCode);
 }
 
+/** Never return the URL itself: query strings and dynamic IDs are not telemetry. */
+function operationFor(request: FastifyRequest): string {
+  const path = request.url.split('?', 1)[0] ?? '';
+  if (path === '/api/health') return 'HEALTH';
+  if (path === '/api/ready') return 'READINESS';
+  if (path.startsWith('/api/auth/')) return 'AUTH';
+  if (path.startsWith('/api/admin/')) return 'ADMIN';
+  if (path.startsWith('/api/workspaces')) return 'WORKSPACE';
+  if (path.startsWith('/api/projects')) return 'PROJECT';
+  if (path.startsWith('/api/audit')) return 'AUDIT';
+  if (path.startsWith('/api/notifications')) return 'NOTIFICATION';
+  if (path.startsWith('/api/webhooks/payments/')) return 'PAYMENT_WEBHOOK';
+  return path.startsWith('/api/') ? 'API_OTHER' : 'WEB';
+}
+
+function providerFor(request: FastifyRequest): string | undefined {
+  if (!request.url.split('?', 1)[0]?.startsWith('/api/webhooks/payments/')) return undefined;
+  const value = (request.params as { provider?: unknown }).provider;
+  return typeof value === 'string' && /^[A-Z][A-Z0-9_]{1,63}$/.test(value.toUpperCase())
+    ? value.toUpperCase()
+    : 'UNKNOWN';
+}
+
 async function withSession<Result>(
   request: FastifyRequest,
   reply: FastifyReply,
@@ -225,8 +256,12 @@ export async function createReferenceAppHttpServer(
   const allowedOrigin = new URL(options.allowedOrigin).origin;
   const rateLimiter = new ReferenceAppRateLimiter(options.rateLimit);
   const rawJsonBodies = new WeakMap<FastifyRequest, Uint8Array>();
+  const startedAt = new WeakMap<FastifyRequest, number>();
+  const publicErrors = new WeakMap<FastifyRequest, string>();
   const application = Fastify({
     logger: options.logger ?? false,
+    logController: new LogController({ disableRequestLogging: true }),
+    genReqId: () => randomUUID(),
     bodyLimit: 32 * 1024,
     trustProxy: false,
   });
@@ -251,7 +286,15 @@ export async function createReferenceAppHttpServer(
   );
   await application.register(cookie);
 
+  const observabilitySink = options.observabilitySink ?? {
+    write(event: ReturnType<typeof structuredHttpEvent>) {
+      application.log.info(event, 'green_hive_observability');
+    },
+  };
+
   application.addHook('onRequest', async (request, reply) => {
+    startedAt.set(request, Date.now());
+    reply.header('X-Request-Id', request.id);
     reply.header('X-Content-Type-Options', 'nosniff');
     reply.header('X-Frame-Options', 'DENY');
     reply.header('Referrer-Policy', 'no-referrer');
@@ -298,7 +341,26 @@ export async function createReferenceAppHttpServer(
     if (decision.allowed) return;
     reply.header('Retry-After', decision.resetSeconds);
     const safe = toPublicError({ code: 'RATE_LIMITED' });
+    publicErrors.set(request, safe.code);
     return reply.code(safe.status).send({ error: safe });
+  });
+
+  application.addHook('onResponse', async (request, reply) => {
+    const statusCode = reply.statusCode;
+    const outcome = statusCode >= 500 ? 'FAILED' : statusCode >= 400 ? 'DENIED' : 'SUCCEEDED';
+    const errorCode = publicErrors.get(request);
+    const providerCode = providerFor(request);
+    const event = structuredHttpEvent({
+      operation: operationFor(request),
+      outcome,
+      requestId: request.id,
+      correlationId: request.id,
+      durationMs: Math.max(0, Date.now() - (startedAt.get(request) ?? Date.now())),
+      statusCode,
+      ...(errorCode === undefined ? {} : { errorCode }),
+      ...(providerCode === undefined ? {} : { providerCode }),
+    });
+    writeOperationalEvent(observabilitySink, event);
   });
 
   application.get('/api/health', async () => ({ status: 'ok', app: 'REFERENCE_APP' }));
@@ -787,8 +849,9 @@ export async function createReferenceAppHttpServer(
     return reply.code(204).send();
   });
 
-  application.setErrorHandler((error, _request, reply) => {
+  application.setErrorHandler((error, request, reply) => {
     const safe = toPublicError(error);
+    publicErrors.set(request, safe.code);
     void reply.code(safe.status).send({ error: safe });
   });
 

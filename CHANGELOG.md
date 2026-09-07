@@ -3,6 +3,27 @@
 All notable Green Hive changes are recorded here. Internal platform packages use coordinated
 semantic versioning.
 
+## [0.32.0] - 2026-09-07
+
+### Added
+
+- GH-0802 Structured Observability: a strict `@green-hive/observability` contract and one
+  server-generated `X-Request-Id` / correlation identity per Reference App HTTP request.
+- Redacted structured events report only normalized operation, outcome, duration, status, public
+  error code and, for payment webhooks, normalized provider code.
+
+### Security
+
+- Default Fastify request logging is suppressed. URLs/query strings, route IDs, account and tenant
+  identities, e-mail, payloads, cookies, tokens, raw provider events, signatures, stack traces and
+  arbitrary error messages cannot enter the reviewed observability event.
+- The event sink is fail-open and cannot change an HTTP response or a domain side effect.
+
+### Status
+
+- GH-0802 is `PARTIAL`: implementation and focused unit/HTTP coverage pass locally. CI plus one
+  deployed Render failure-to-correlation trace remain required before the checkpoint can be `DONE`.
+
 ## [0.31.0] - 2026-09-07
 
 ### Added

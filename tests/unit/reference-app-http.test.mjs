@@ -136,6 +136,39 @@ test('admin overview uses the protected session and exposes no browser-selected 
   } finally { await application.close(); }
 });
 
+test('GH-0802 emits one safe correlated failure without URL, email or password material', async () => {
+  const events = [];
+  const facade = new FakeFacade();
+  const application = await createReferenceAppHttpServer({
+    facade,
+    allowedOrigin: ORIGIN,
+    secureCookies: false,
+    observabilitySink: { write(event) { events.push(event); } },
+  });
+  try {
+    const response = await application.inject({
+      method: 'POST',
+      url: '/api/auth/sign-in?recovery_token=must-not-be-recorded',
+      headers: { origin: ORIGIN, 'content-type': 'application/json' },
+      payload: JSON.stringify({ email: 'private@example.test', password: 'must-not-be-recorded', extra: true }),
+    });
+    assert.equal(response.statusCode, 400);
+    assert.match(response.headers['x-request-id'], /^[0-9a-f-]{36}$/i);
+    const event = events.at(-1);
+    assert.deepEqual(event, {
+      event: 'HTTP_REQUEST', component: 'REFERENCE_APP_HTTP', operation: 'AUTH', outcome: 'DENIED',
+      requestId: response.headers['x-request-id'], correlationId: response.headers['x-request-id'],
+      durationMs: event.durationMs, statusCode: 400, errorCode: 'INVALID_AUTH_INPUT',
+    });
+    const serialized = JSON.stringify(event);
+    assert.equal(serialized.includes('private@example.test'), false);
+    assert.equal(serialized.includes('must-not-be-recorded'), false);
+    assert.equal(serialized.includes('recovery_token'), false);
+  } finally {
+    await application.close();
+  }
+});
+
 test('audit endpoint derives workspace scope from the protected cookie', async () => {
   const facade = new FakeFacade();
   const application = await createReferenceAppHttpServer({
@@ -465,6 +498,7 @@ test('capability decisions derive project and workspace scope from the verified 
 
 test('payment webhook accepts a provider-signed raw body without browser Origin trust', async () => {
   const calls = [];
+  const events = [];
   const billingWebhookService = {
     async process(providerCode, request) {
       calls.push({ providerCode, signature: request.signature, rawBody: Buffer.from(request.rawBody) });
@@ -484,6 +518,7 @@ test('payment webhook accepts a provider-signed raw body without browser Origin 
     allowedOrigin: ORIGIN,
     secureCookies: false,
     billingWebhookService,
+    observabilitySink: { write(event) { events.push(event); } },
   });
   try {
     const rawPayload = '{"eventId":"evt_http_0001", "type":"PAYMENT_PAID"}';
@@ -533,6 +568,19 @@ test('payment webhook accepts a provider-signed raw body without browser Origin 
         message: 'Request could not be completed.',
       },
     });
+    assert.deepEqual(events.at(-1), {
+      event: 'HTTP_REQUEST',
+      component: 'REFERENCE_APP_HTTP',
+      operation: 'PAYMENT_WEBHOOK',
+      outcome: 'FAILED',
+      requestId: events.at(-1).requestId,
+      correlationId: events.at(-1).requestId,
+      durationMs: events.at(-1).durationMs,
+      statusCode: 503,
+      errorCode: 'BILLING_WEBHOOK_PROCESSING_FAILED',
+      providerCode: 'GREEN_HIVE_FAKE',
+    });
+    assert.equal(JSON.stringify(events.at(-1)).includes('evt_http_0001'), false);
   } finally {
     await application.close();
   }

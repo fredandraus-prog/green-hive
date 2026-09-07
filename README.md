@@ -69,7 +69,9 @@ typed transport contract for public failures. Unknown implementation errors are 
 server boundary, while the Reference App renders local, friendly messages from stable codes.
 Version `0.31.0` implements **GH-0801 (Minimal Operational Admin)** with a backend-verified,
 aggregate-only dashboard for platform administrators. It adds no tenant-content browser, provider
-reference access or administrative mutation path.
+reference access or administrative mutation path. Version `0.32.0` implements the local foundation
+for **GH-0802 (Structured Observability)**: one server-generated correlation identity and one
+redacted structured event per HTTP response. Its hosted Render trace release gate remains pending.
 
 The checkpoint is deliberately narrow. The only public Billing ingress is the verified fake-provider
 webhook used to prove the platform contract. The real AI adapter is server-only and has no Render
@@ -82,13 +84,15 @@ remain out of scope.
 - the 18 canonical `@green-hive/*` packages, `hive-reference-app` and `hive-admin`;
 - canonical `AppManifestV1`, validator, App Registry and complete `REFERENCE_APP` manifest;
 - schemas `hive`, `audit` and `reference_app`;
-- twenty-six immutable migrations and a SHA-256 migration ledger;
+- twenty-seven immutable migrations and a SHA-256 migration ledger;
 - organizations, memberships and tenant app installations around the global app registry;
 - tenant-scoped `projects` and `project_settings`;
 - production-safe structural seeds containing only `REFERENCE_APP`, its manifest-registered
   zero-value sandbox catalog item and reviewed product-to-capability mappings;
 - Supabase-native trusted context through `auth.uid()` and `auth.jwt()`;
 - owner/workspace/app isolation, operational-only platform administration and logical deletion;
+- safe structured HTTP observability with server-generated request correlation, bounded operation
+  classes and no URL, payload, cookie, token or tenant-content logging;
 - typed `@green-hive/projects` service with create/list/get/archive/soft-delete operations;
 - typed `@green-hive/auth` services for signup, login, refresh, logout, password recovery and
   account profiles;
