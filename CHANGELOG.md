@@ -3,6 +3,21 @@
 All notable Green Hive changes are recorded here. Internal platform packages use coordinated
 semantic versioning.
 
+## [0.29.0] - 2026-09-07
+
+### Added
+
+- GH-0703 Feature Flags Foundation: `@green-hive/feature-flags` now provides a
+  manifest-backed typed registry, deterministic app/workspace-aware evaluation,
+  explicit rollout states and a safe `OFF` kill switch.
+- A platform-admin-only read-only configuration hook and focused unit matrix for
+  audience targeting, cross-app denial and invalid registration.
+
+### Status
+
+- GH-0703 is `DONE` after unit coverage and the clean verification gate. The
+  coordinated platform release is `0.29.0`; `REFERENCE_APP` remains `0.1.0`.
+
 ## [0.28.0] - 2026-09-07
 
 ### Added

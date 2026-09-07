@@ -53,6 +53,9 @@
       ],
       "@green-hive/ui": [
         "packages/ui/src/index.ts"
+      ],
+      "@green-hive/feature-flags": [
+        "packages/feature-flags/src/index.ts"
       ]
     },
     "types": [
