@@ -114,6 +114,15 @@ test('Reference App uses the shared i18n contract for locale, messages and forma
   assert.doesNotMatch(contracts, /es-ES/);
 });
 
+test('Reference App consumes shared UI primitives while keeping product-specific navigation local', async () => {
+  const [ui, switcher] = await Promise.all([source('ui.tsx'), source('workspace-switcher.tsx')]);
+  assert.match(ui, /from '@green-hive\/ui'/);
+  assert.match(ui, /export \{ Field, Message, SelectField \}/);
+  assert.match(ui, /<SharedLoadingPanel label=\{t\('loading\.workspace'\)\} \/>/);
+  assert.match(switcher, /function WorkspaceSwitcher/);
+  assert.match(switcher, /showModal\(\)/);
+});
+
 test('two-step signup renders all required onboarding labels', async () => {
   const auth = await source('auth-pages.tsx');
   for (const label of ['Nome', 'E-mail', 'Senha', 'Idioma', 'Fuso horário', 'Nome da organização']) {

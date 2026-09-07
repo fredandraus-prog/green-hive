@@ -1,8 +1,6 @@
-import type {
-  InputHTMLAttributes,
-  ReactNode,
-  SelectHTMLAttributes,
-} from 'react';
+import type { ReactNode } from 'react';
+export { Field, Message, SelectField } from '@green-hive/ui';
+import { LoadingPanel as SharedLoadingPanel } from '@green-hive/ui';
 import { go } from '../frontend-contracts.js';
 import { useI18n } from './i18n.js';
 
@@ -63,50 +61,6 @@ export function LinkButton({ href, children, tone = 'primary' }: {
   );
 }
 
-type FieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'name'> & {
-  readonly label: string;
-  readonly name: string;
-  readonly hint?: string;
-};
-
-export function Field({ label, name, hint, ...input }: FieldProps): ReactNode {
-  return (
-    <label className="field">
-      <span>{label}</span>
-      <input name={name} {...input} />
-      {hint && <small>{hint}</small>}
-    </label>
-  );
-}
-
-type SelectFieldProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'name'> & {
-  readonly label: string;
-  readonly name: string;
-  readonly children: ReactNode;
-  readonly hint?: string;
-};
-
-export function SelectField({ label, name, children, hint, ...select }: SelectFieldProps): ReactNode {
-  return (
-    <label className="field">
-      <span>{label}</span>
-      <select name={name} {...select}>{children}</select>
-      {hint && <small>{hint}</small>}
-    </label>
-  );
-}
-
-export function Message({ children, kind = 'error' }: {
-  readonly children: ReactNode;
-  readonly kind?: 'error' | 'success' | 'info';
-}): ReactNode {
-  return (
-    <div className={`message message-${kind}`} role={kind === 'error' ? 'alert' : 'status'}>
-      {children}
-    </div>
-  );
-}
-
 export function Breadcrumbs({ items }: {
   readonly items: readonly { readonly label: string; readonly href?: string }[];
 }): ReactNode {
@@ -129,7 +83,7 @@ export function Breadcrumbs({ items }: {
 
 export function LoadingPanel(): ReactNode {
   const { t } = useI18n();
-  return <div className="loading-panel"><div className="spinner" /><p>{t('loading.workspace')}</p></div>;
+  return <SharedLoadingPanel label={t('loading.workspace')} />;
 }
 
 export function LandingPage(): ReactNode {

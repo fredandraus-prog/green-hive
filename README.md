@@ -58,6 +58,9 @@ Version `0.27.0` completes **GH-0701 (Locale, Language and Formatting Core)** wi
 `@green-hive/i18n` contract, safe `pt-BR`/`en-US` resolution and persisted profile-driven Reference
 App core language switching. Locale remains presentation-only and adds no translation provider,
 remote request or authorization behavior.
+Version `0.28.0` completes **GH-0702 (Shared Accessible UI Primitives)** with reusable native form,
+status and loading semantics in `@green-hive/ui`; application navigation and product behavior remain
+local to the Reference App.
 
 The checkpoint is deliberately narrow. The only public Billing ingress is the verified fake-provider
 webhook used to prove the platform contract. The real AI adapter is server-only and has no Render
