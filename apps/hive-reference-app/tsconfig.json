@@ -35,10 +35,16 @@
       "path": "../../packages/entitlements"
     },
     {
+      "path": "../../packages/files"
+    },
+    {
       "path": "../../packages/cost-guard"
     },
     {
       "path": "../../packages/jobs"
+    },
+    {
+      "path": "../../packages/notifications"
     },
     {
       "path": "../../packages/projects"

@@ -2,6 +2,7 @@ export const APP_ROUTES = Object.freeze({
   dashboard: '/app/dashboard',
   workspaceProjects: '/app/workspace/projects',
   workspaceActivity: '/app/workspace/activity',
+  workspaceNotifications: '/app/workspace/notifications',
   settingsProfile: '/app/settings/profile',
   settingsOrganization: '/app/settings/organization',
 } as const);
@@ -15,6 +16,7 @@ const ROUTE_BY_PATH = new Map<string, AppRoute>(
 const LEGACY_HASH_ROUTES = new Map<string, AppRoute>([
   ['#projects', 'workspaceProjects'],
   ['#activity', 'workspaceActivity'],
+  ['#notifications', 'workspaceNotifications'],
   ['#profile', 'settingsProfile'],
 ]);
 

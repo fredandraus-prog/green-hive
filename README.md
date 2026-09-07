@@ -50,6 +50,10 @@ Version `0.25.0` completes **GH-0603 (Private Document Rendering Worker)** with 
 TEXT/PDF rendering and a job-lease-bound private-file lifecycle. Its unit, embedded database and
 dedicated native Supabase staging gates pass. It adds no template fetching, browser upload,
 background daemon, public Storage or paid rendering call.
+Version `0.26.0` implements **GH-0604 (Basic In-App Notifications)**: each completed job produces
+one durable notification scoped to its owner, app and workspace. The owner can acknowledge it in
+the Reference App; external delivery, e-mail, push, polling and paid providers remain absent until
+their own future checkpoints and release gates pass.
 
 The checkpoint is deliberately narrow. The only public Billing ingress is the verified fake-provider
 webhook used to prove the platform contract. The real AI adapter is server-only and has no Render
@@ -62,7 +66,7 @@ remain out of scope.
 - the 18 canonical `@green-hive/*` packages, `hive-reference-app` and `hive-admin`;
 - canonical `AppManifestV1`, validator, App Registry and complete `REFERENCE_APP` manifest;
 - schemas `hive`, `audit` and `reference_app`;
-- twenty-four immutable migrations and a SHA-256 migration ledger;
+- twenty-six immutable migrations and a SHA-256 migration ledger;
 - organizations, memberships and tenant app installations around the global app registry;
 - tenant-scoped `projects` and `project_settings`;
 - production-safe structural seeds containing only `REFERENCE_APP`, its manifest-registered
@@ -124,6 +128,7 @@ remain out of scope.
 - migration `0025`, deterministic local document rendering and a service-role-only worker file
   lifecycle derived solely from a verified active job lease, with compensation for failed writes or
   failed metadata completion;
+- migration `0026`, a job-derived in-app notification record and a protected Notifications view;
 - owner-limited budget/logical-usage reads, admin-only raw monetary-cost inspection and no
   authenticated direct write authority;
 - a responsive React/Vite Reference App with signup, login, recovery, profile and project screens;
@@ -146,7 +151,7 @@ npm run verify
 `verify` removes generated outputs, checks formatting and platform boundaries, type-checks, builds
 all workspaces, validates migration integrity and runs the embedded RLS matrix.
 
-The GH-0603 implementation gate confirms 25 immutable migrations and 26 RLS-protected tables;
+The GH-0604 implementation gate confirms 26 immutable migrations and 27 RLS-protected tables;
 the focused file unit, embedded lifecycle, native local-Supabase and real disposable private
 Storage matrices from GH-0602 pass. The new rendering matrix passes locally, embedded and on
 dedicated native Supabase staging. The full release verification, CI, staging, manifest and ZIP

@@ -226,6 +226,15 @@
       "description": "Permit a valid rendering-worker lease to create and complete one private generated document.",
       "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_RENDERED_FILE_AND_JOB_EXPORT_RESTORE",
       "rollbackStrategy": "Prefer a forward fix; export and verify rendered-file metadata, private object inventory, completed job output references and Audit evidence before controlled restoration."
+    },
+    {
+      "version": 26,
+      "file": "0026_create_in_app_notifications.sql",
+      "sha256": "681f97cc6dcb9f0f01e2f6d93b3bb8f7b9d8adbd80d7d909d02dcf6db5825faf",
+      "checkpoint": "GH-0604",
+      "description": "Create tenant-safe in-app job-completion notifications with owner-only read acknowledgement.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_NOTIFICATION_EXPORT_RESTORE",
+      "rollbackStrategy": "Prefer a forward fix; export and verify scoped notification records and completed-job references before a controlled restoration."
     }
   ]
 }

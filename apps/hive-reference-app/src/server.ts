@@ -41,6 +41,11 @@ import {
   type UsageEvent,
   type UsageSummary,
 } from '@green-hive/cost-guard';
+import {
+  NotificationService,
+  PostgresNotificationRepository,
+  type HiveNotification,
+} from '@green-hive/notifications';
 import { referenceAppManifest } from './manifest.js';
 
 export interface ReferenceAppCredentialsInput {
@@ -306,6 +311,25 @@ export class ReferenceAppServer {
     );
   }
 
+  async listNotifications(
+    accessToken: string,
+    organizationId: string,
+  ): Promise<readonly HiveNotification[]> {
+    return this.#runInWorkspace(accessToken, organizationId, ({ notificationService, trustedContext }) =>
+      notificationService.list(trustedContext),
+    );
+  }
+
+  async markNotificationRead(
+    accessToken: string,
+    organizationId: string,
+    notificationId: string,
+  ): Promise<HiveNotification> {
+    return this.#runInWorkspace(accessToken, organizationId, ({ notificationService, trustedContext }) =>
+      notificationService.markRead(trustedContext, notificationId),
+    );
+  }
+
   async createProject(
     accessToken: string,
     organizationId: string,
@@ -444,6 +468,7 @@ export class ReferenceAppServer {
     operation: (services: {
       readonly trustedContext: TrustedOrganizationContext;
       readonly auditService: AuditService;
+      readonly notificationService: NotificationService;
       readonly entitlementService: EntitlementService;
       readonly projectService: ProjectService;
       readonly usageCostService: UsageCostService;
@@ -457,6 +482,7 @@ export class ReferenceAppServer {
       ({ trustedContext, database }) => operation({
         trustedContext,
         auditService: new AuditService(new PostgresAuditEventRepository(database)),
+        notificationService: new NotificationService(new PostgresNotificationRepository(database)),
         entitlementService: new EntitlementService(new PostgresEntitlementRepository(database)),
         projectService: new ProjectService(new PostgresProjectRepository(database)),
         usageCostService: new UsageCostService(new PostgresUsageCostRepository(database)),

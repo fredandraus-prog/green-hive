@@ -13,6 +13,9 @@ No app-domain concepts belong in `hive`.
 ## Core tables
 
 - `hive.schema_migrations`: sequence, filename, SHA-256, rollback strategy, duration and actor.
+- `hive.notifications`: durable, job-derived in-app notices scoped to one project owner, app and
+  workspace. A completed job creates at most one `JOB_COMPLETED` notice; the owner may only mark it
+  as read. The record never includes job input/output, a lease token or storage data.
 - `hive.apps`: `app_code`, version, status, schema namespace, canonical manifest and metadata.
 - `hive.user_profiles`: app-neutral profile with PK/FK to `auth.users(id) ON DELETE CASCADE`.
 - `hive.organizations`: personal/shared tenant identity and lifecycle.

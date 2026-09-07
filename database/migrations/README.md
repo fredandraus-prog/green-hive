@@ -66,6 +66,11 @@ identifiers are checked by literal comparison with the complete app code plus `_
 codes that themselves contain underscores. Terminal transitions append metadata-only
 success/failure Audit events. No real Search provider, network fetcher or paid call is introduced by
 this migration.
+GH-0601, GH-0602 and GH-0603 are expressed only through migrations `0023`, `0024` and `0025`;
+migrations `0001` through `0022` remain unchanged. `0026` expresses GH-0604 only: a completed job
+creates one bounded owner notification, with no input, output, lease or storage metadata copied
+into the notification record. Owners can acknowledge their own scoped notifications; platform
+administrators are limited to read access.
 
 Every SQL file begins with parseable migration ID, checkpoint, description and rollback strategy
 metadata. `migrations.json` stores the same description and strategy plus the immutable SHA-256.

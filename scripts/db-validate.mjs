@@ -34,6 +34,7 @@ const requiredHiveTables = [
   'ai_operations',
   'search_operations',
   'files',
+  'notifications',
 ];
 const requiredAuditTables = ['events'];
 const forceRlsTables = [
@@ -61,6 +62,7 @@ const forceRlsTables = [
   'ai_operations',
   'search_operations',
   'files',
+  'notifications',
 ];
 const expectedPolicies = new Map([
   ['apps', ['apps_admin_select']],
@@ -136,6 +138,7 @@ const expectedPolicies = new Map([
   ['ai_operations', ['ai_operations_owner_or_platform_select']],
   ['search_operations', ['search_operations_owner_or_platform_select']],
   ['files', ['files_owner_select']],
+  ['notifications', ['notifications_owner_or_admin_select', 'notifications_owner_mark_read']],
 ]);
 const forbiddenHiveDomainTerms = [
   'break_even',
