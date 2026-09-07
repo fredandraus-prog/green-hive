@@ -4,6 +4,7 @@ import { AuthenticatedApp } from './authenticated-app.js';
 import { AuthPage, RecoveryPage } from './auth-pages.js';
 import { resolveAppRoute } from '../frontend-contracts.js';
 import { LandingPage } from './ui.js';
+import { I18nProvider } from './i18n.js';
 import './styles.css';
 
 function App(): ReactNode {
@@ -33,4 +34,4 @@ function App(): ReactNode {
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Reference App root element was not found');
-createRoot(root).render(<App />);
+createRoot(root).render(<I18nProvider><App /></I18nProvider>);

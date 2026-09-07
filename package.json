@@ -1,6 +1,6 @@
 {
   "name": "green-hive",
-  "version": "0.26.0",
+  "version": "0.27.0",
   "private": true,
   "type": "module",
   "description": "Green Hive platform monorepo - GH-0604 in-app job notification foundation",

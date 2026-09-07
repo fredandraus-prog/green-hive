@@ -2,7 +2,7 @@
 
 Status date: 2026-09-07.
 
-Current coordinated platform version: `0.26.0`. The `REFERENCE_APP` product manifest remains
+Current coordinated platform version: `0.27.0`. The `REFERENCE_APP` product manifest remains
 `0.1.0`.
 
 | Checkpoint | Status | Validation | Remaining gate |
@@ -38,6 +38,7 @@ Current coordinated platform version: `0.26.0`. The `REFERENCE_APP` product mani
 | GH-0602 | DONE | immutable migration `0024`, private local/staging Storage bucket, real disposable private-write/public-denial/signed-read/cleanup gates, server-owned short signed grants, owner/app/workspace recheck, safe `FILE_EXPORTED` audit and unit/embedded/native database matrices pass | none |
 | GH-0603 | DONE | deterministic TEXT/PDF renderer, lease-bound private file lifecycle, Reference App one-job processor and unit/embedded/dedicated native Supabase staging matrices pass | none; no template execution, public storage, daemon or paid renderer was added |
 | GH-0604 | DONE | immutable job-completion notification record, owner/app/workspace RLS, typed service, protected API and Reference App in-app view pass unit, embedded PostgreSQL-compatible, dedicated native Supabase and deployed HTTPS/security gates | none; no external delivery provider, polling or push path |
+| GH-0701 | DONE | typed locale/message/formatting core, safe `pt-BR`/`en-US` fallback, persisted profile adoption and Reference App core language switch pass unit and clean verification | none; no translation provider, remote locale configuration or authorization behavior |
 
 The local Supabase parity gate passed on PostgreSQL 17.6 with native `auth.users`, `auth.uid()` and
 `auth.jwt()`. The dedicated hosted staging project passes the twenty-two-migration baseline, RLS,

@@ -3,6 +3,28 @@
 All notable Green Hive changes are recorded here. Internal platform packages use coordinated
 semantic versioning.
 
+## [0.27.0] - 2026-09-07
+
+### Added
+
+- GH-0701 internationalization foundation: `@green-hive/i18n` now provides the immutable
+  `pt-BR`/`en-US` registry, safe locale resolution, typed text messages and safe `Intl` date/time
+  formatting without a browser or network dependency.
+- The Reference App adopts a verified account profile locale after sign-in, changes immediately
+  after Profile save, updates the document language, and uses the shared contract for navigation,
+  project actions/statuses/empty states, loading and core product actions.
+
+### Security
+
+- Language, locale and timezone remain presentation preferences only. They cannot determine app,
+  workspace, user, role or RLS authorization; no translation API, remote configuration, credential
+  or external request was added.
+
+### Status
+
+- GH-0701 is `DONE` after typed unit coverage and the clean local verification gate. The coordinated
+  platform release is `0.27.0`; the `REFERENCE_APP` product manifest remains `0.1.0`.
+
 ## [0.26.0] - 2026-09-07
 
 ### Added

@@ -54,6 +54,10 @@ Version `0.26.0` implements **GH-0604 (Basic In-App Notifications)**: each compl
 one durable notification scoped to its owner, app and workspace. The owner can acknowledge it in
 the Reference App; external delivery, e-mail, push, polling and paid providers remain absent until
 their own future checkpoints and release gates pass.
+Version `0.27.0` completes **GH-0701 (Locale, Language and Formatting Core)** with a small typed
+`@green-hive/i18n` contract, safe `pt-BR`/`en-US` resolution and persisted profile-driven Reference
+App core language switching. Locale remains presentation-only and adds no translation provider,
+remote request or authorization behavior.
 
 The checkpoint is deliberately narrow. The only public Billing ingress is the verified fake-provider
 webhook used to prove the platform contract. The real AI adapter is server-only and has no Render
@@ -129,6 +133,8 @@ remain out of scope.
   lifecycle derived solely from a verified active job lease, with compensation for failed writes or
   failed metadata completion;
 - migration `0026`, a job-derived in-app notification record and a protected Notifications view;
+- typed `@green-hive/i18n` locale/message/date-formatting primitives and Reference App profile-driven
+  `pt-BR`/`en-US` switching;
 - owner-limited budget/logical-usage reads, admin-only raw monetary-cost inspection and no
   authenticated direct write authority;
 - a responsive React/Vite Reference App with signup, login, recovery, profile and project screens;

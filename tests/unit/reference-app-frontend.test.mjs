@@ -78,7 +78,7 @@ test('normal product UI omits infrastructure status and keeps profile outside Da
   assert.doesNotMatch(dashboardSource, /ProfileSettings|Meu perfil|displayName|Organizations Foundation|Criar workspace/i);
   assert.match(authenticated, /function ProfileSettingsView/);
   assert.match(authenticated, /function OrganizationSettingsView/);
-  assert.match(authenticated, /> Configurações/);
+  assert.match(authenticated, /t\('nav\.settings'\)/);
 });
 
 test('workspace selector exposes an accessible menu, selection and dialog creation action', async () => {
@@ -94,10 +94,24 @@ test('workspace selector exposes an accessible menu, selection and dialog creati
 
 test('projects expose a real name filter with a magnifying-glass control', async () => {
   const authenticated = await source('authenticated-app.tsx');
-  assert.match(authenticated, /aria-label="Buscar projetos"/);
+  assert.match(authenticated, /aria-label=\{t\('projects\.search'\)\}/);
   assert.match(authenticated, /type="search"/);
   assert.match(authenticated, /projectMatchesSearch\(project\.name, search\)/);
-  assert.match(authenticated, /Nenhum projeto encontrado/);
+  assert.match(authenticated, /t\('projects\.noneFound'\)/);
+});
+
+test('Reference App uses the shared i18n contract for locale, messages and formatting', async () => {
+  const [main, authenticated, contracts] = await Promise.all([
+    source('main.tsx'),
+    source('authenticated-app.tsx'),
+    readFile(new URL('../../apps/hive-reference-app/src/frontend-contracts.ts', import.meta.url), 'utf8'),
+  ]);
+  assert.match(main, /<I18nProvider><App \/><\/I18nProvider>/);
+  assert.match(authenticated, /setLocale\(accountView\.profile\.preferredLocale\)/);
+  assert.match(authenticated, /setLocale\(result\.profile\.preferredLocale\)/);
+  assert.match(authenticated, /formatDateTime\(project\.createdAt/);
+  assert.match(contracts, /@green-hive\/i18n/);
+  assert.doesNotMatch(contracts, /es-ES/);
 });
 
 test('two-step signup renders all required onboarding labels', async () => {
