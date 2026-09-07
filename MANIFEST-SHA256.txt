@@ -36,7 +36,7 @@ f844a2d6c25326d8ed97178cd0c2098639761a145f8d4c17185245932c74fd83 | 5253 | apps/h
 bb565614dd90dc6ae412adb2e98989d0654e360f39a900e0cf84ada3abe33e7c | 6505 | apps/hive-reference-app/src/web/workspace-switcher.tsx
 8fd09a8b48987b08d3707f0ca0aebbbc97ceab184d93ffe6038d2339f7e1addd | 997 | apps/hive-reference-app/tsconfig.json
 d7a06c8e6aefeb71fc890d56b5af09f39483a83ac8e974fd118b79aad48bd6b0 | 436 | apps/hive-reference-app/vite.config.mjs
-21d651f25f0858b57d373c3e91f31a6af1c33f6fe7ad1171c88f14905d822b00 | 7120 | backlog/implementation_backlog.csv
+07ed88620892c7c161e85dcf04f0579166fb0ac964339fd690cb9e5df0c4dcf9 | 9429 | backlog/implementation_backlog.csv
 a5bb2e211f633455f3dcba5cdba497a679592b4f4a69f3a8a5533315155b33f2 | 58769 | CHANGELOG.md
 f3e4cbba0cc19cd6612f6deaca1af1c1a80e1d5ef97c8bb3fbb67effd661d377 | 183 | config/app-registry.json
 700723581420dd1ac98fd7e9ac529f0ef210eadcaf87fc868a3ad7d114c2f3b7 | 1367 | config/supabase-root-2021-ca.crt
@@ -112,6 +112,7 @@ cf57776e00be7eb208e51e6ab6945ddb442db7a1320dde36f38263afcbb1097e | 15766 | datab
 56115632dec0d16fed71337fdf3c5c9395d5a5900750c55f8f15f19c3834cf95 | 1520 | docs/APP_CONTRACT.md
 79310d34e65c827bf1b5e24780f4d2435349f97833fe4150d8e4b12e88898cc2 | 4976 | docs/AUDIT.md
 84de2a38546845c485605b47547fe8fca9cc1af23d1e3d115f1ddaf29a4ba208 | 6691 | docs/AUTH-ACCOUNTS.md
+58901c7c555b6a47145d448076e2eb43acc6c7069376c4be66c83c3a2ca370a0 | 1137 | docs/BACKLOG-RECONCILIATION-2026-09-07.md
 6ff62b7c9bc794ee4ead0cabfd149f347d18721472111adeff29df84615cf74d | 8555 | docs/BACKUPS.md
 e23f1321bd65efd05eddc3cc7e372441d8d3a8a6feca9f7ace2f5b12d642b9f4 | 9757 | docs/BILLING.md
 59b5efc4b4b083dd7f1267fc043da7ea4098fc240ccf456c416098fdb2ba74f4 | 1539 | docs/CHECKPOINT-GH-0102-GH-0103.md
