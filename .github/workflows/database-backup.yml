@@ -1,0 +1,80 @@
+name: Green Hive encrypted database backup
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 3 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: green-hive-staging-database-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Create encrypted logical backup
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GREEN_HIVE_BACKUP_DATABASE_URL: ${{ secrets.GREEN_HIVE_BACKUP_DATABASE_URL }}
+      GREEN_HIVE_BACKUP_PASSPHRASE: ${{ secrets.GREEN_HIVE_BACKUP_PASSPHRASE }}
+      BACKUP_WORKSPACE: ${{ runner.temp }}/green-hive-backup
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Verify private backup configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${GREEN_HIVE_BACKUP_DATABASE_URL}" || -z "${GREEN_HIVE_BACKUP_PASSPHRASE}" ]]; then
+            echo "::error title=Backup configuration missing::Set the two required repository secrets before enabling this workflow."
+            exit 1
+          fi
+
+      - name: Install the pinned Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.115.0
+
+      - name: Create logical database dumps
+        shell: bash
+        run: |
+          set -euo pipefail
+          trap 'rm -rf "${BACKUP_WORKSPACE}"' EXIT
+          mkdir -p "${BACKUP_WORKSPACE}/plain"
+          supabase db dump --db-url "${GREEN_HIVE_BACKUP_DATABASE_URL}" --role-only --file "${BACKUP_WORKSPACE}/plain/roles.sql"
+          supabase db dump --db-url "${GREEN_HIVE_BACKUP_DATABASE_URL}" --file "${BACKUP_WORKSPACE}/plain/schema.sql"
+          supabase db dump --db-url "${GREEN_HIVE_BACKUP_DATABASE_URL}" --data-only --use-copy --file "${BACKUP_WORKSPACE}/plain/data.sql"
+          node scripts/backup-artifact.mjs write "${BACKUP_WORKSPACE}/plain" "${BACKUP_WORKSPACE}/plain/backup-manifest.json"
+          node scripts/backup-artifact.mjs verify "${BACKUP_WORKSPACE}/plain" "${BACKUP_WORKSPACE}/plain/backup-manifest.json"
+          tar --directory "${BACKUP_WORKSPACE}/plain" --create --gzip --file "${BACKUP_WORKSPACE}/logical-backup.tar.gz" roles.sql schema.sql data.sql backup-manifest.json
+          openssl enc -aes-256-cbc -salt -pbkdf2 -iter 600000 -in "${BACKUP_WORKSPACE}/logical-backup.tar.gz" -out "${BACKUP_WORKSPACE}/logical-backup.tar.gz.enc" -pass env:GREEN_HIVE_BACKUP_PASSPHRASE
+          sha256sum "${BACKUP_WORKSPACE}/logical-backup.tar.gz.enc" > "${BACKUP_WORKSPACE}/logical-backup.tar.gz.enc.sha256"
+          rm -rf "${BACKUP_WORKSPACE}/plain" "${BACKUP_WORKSPACE}/logical-backup.tar.gz"
+          mkdir -p "${BACKUP_WORKSPACE}/artifact"
+          mv "${BACKUP_WORKSPACE}/logical-backup.tar.gz.enc" "${BACKUP_WORKSPACE}/logical-backup.tar.gz.enc.sha256" "${BACKUP_WORKSPACE}/artifact/"
+          trap - EXIT
+
+      - name: Upload encrypted backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: green-hive-staging-logical-backup-${{ github.run_id }}
+          path: ${{ runner.temp }}/green-hive-backup/artifact
+          if-no-files-found: error
+          retention-days: 1
+          overwrite: false
+
+      - name: Publish safe backup result
+        shell: bash
+        run: |
+          {
+            echo "## Green Hive backup success"
+            echo
+            echo "- Result: \`BACKUP_SUCCESS\`"
+            echo "- Artifact: encrypted logical database dump (one-day retention)"
+            echo "- Plaintext dumps: removed before upload"
+            echo "- Verification: roles/schema/data manifest hashes passed before encryption"
+          } >> "$GITHUB_STEP_SUMMARY"

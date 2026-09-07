@@ -69,9 +69,14 @@ typed transport contract for public failures. Unknown implementation errors are 
 server boundary, while the Reference App renders local, friendly messages from stable codes.
 Version `0.31.0` implements **GH-0801 (Minimal Operational Admin)** with a backend-verified,
 aggregate-only dashboard for platform administrators. It adds no tenant-content browser, provider
-reference access or administrative mutation path. Version `0.32.0` implements the local foundation
-for **GH-0802 (Structured Observability)**: one server-generated correlation identity and one
-redacted structured event per HTTP response. Its hosted Render trace release gate remains pending.
+reference access or administrative mutation path. Version `0.32.0` completes **GH-0802 (Structured
+Observability)**: one server-generated correlation identity and one redacted structured event per
+HTTP response, including a published Render failure-to-correlation trace.
+
+Version `0.33.0` prepares **GH-0803 (Automated Backups)**: an encrypted logical-database backup
+workflow for the free-tier staging environment. It cannot run until its dedicated private GitHub
+Actions secrets are configured; see [Backups and recovery](docs/BACKUPS.md) for its intentional
+data, retention and recovery boundaries.
 
 The checkpoint is deliberately narrow. The only public Billing ingress is the verified fake-provider
 webhook used to prove the platform contract. The real AI adapter is server-only and has no Render

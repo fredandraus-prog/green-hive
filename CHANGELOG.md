@@ -3,6 +3,26 @@
 All notable Green Hive changes are recorded here. Internal platform packages use coordinated
 semantic versioning.
 
+## [0.33.0] - 2026-09-07
+
+### Added
+
+- GH-0803 database-first backup preparation: a daily/manual GitHub Actions workflow that creates
+  separate roles, schema and data logical dumps with the pinned Supabase CLI.
+- Strict local manifest evidence for the three dump files, with size and SHA-256 verification before
+  an artifact can be considered recoverable.
+- AES-256-CBC + PBKDF2 encryption before upload, one-day private Actions-artifact retention,
+  read-only repository permissions and plaintext cleanup before artifact upload.
+- A dedicated backup/recovery runbook, including the explicit boundary that database dumps do not
+  copy Supabase Storage object bytes or external-service configuration.
+
+### Status
+
+- GH-0803 remains `PARTIAL` until the two dedicated private GitHub Actions secrets are configured
+  and a manual staging run emits `BACKUP_SUCCESS` with one encrypted artifact and checksum. No live
+  dump, managed Supabase backup, PITR, storage-object replication or restore was run by this source
+  release.
+
 ## [0.32.0] - 2026-09-07
 
 ### Added
