@@ -1,4 +1,4 @@
-export const REFERENCE_APP_EXPECTED_MIGRATION_VERSION = 23;
+export const REFERENCE_APP_EXPECTED_MIGRATION_VERSION = 25;
 
 interface ReadinessRow extends Record<string, unknown> {
   readonly migration_count: number;
@@ -171,7 +171,6 @@ export function createReferenceAppReadinessCheck(database: ReadinessDatabase): (
         '00000000-0000-4000-8000-000000000001',
         '40000000-0000-4000-8000-000000000001',
         '50000000-0000-4000-8000-000000000001',
-        '70000000-0000-4000-8000-000000000001',
       ],
     );
     const state = result.rows[0];
