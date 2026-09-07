@@ -16,7 +16,7 @@ semantic versioning.
 
 ### Status
 
-- GH-0801 is `PARTIAL — LOCAL IMPLEMENTATION PASS` pending the protected staging migration/matrix, CI and deployed HTTPS smoke.
+- GH-0801 is `DONE`: the protected staging migration/matrix, CI, public HTTPS/security smokes and the full authenticated acceptance matrix passed. The acceptance run verified Mailtrap recovery, rejection of the old password, new-session login, logout and cleanup of every disposable fixture.
 
 ## [0.30.0] - 2026-09-07
 

@@ -9,6 +9,9 @@ import { stagingConfigurationFromEnvironment } from './lib/staging-guard.mjs';
 const EXPECTED_ORIGIN = 'https://green-hive-staging.onrender.com';
 const EXPECTED_CONFIRMATION = 'CREATE_DISPOSABLE_HOSTED_FIXTURES';
 const RECOVERY_WAIT_MS = 5 * 60 * 1000;
+// Render Free may need a little over fifty seconds to wake an idle instance.
+// This is a test-client allowance only; it does not change server timeouts.
+const HOSTED_REQUEST_TIMEOUT_MS = 70 * 1000;
 const MAX_RECOVERY_LINK_BYTES = 8 * 1024;
 
 const originValue = process.env.GREEN_HIVE_HOSTED_APP_ORIGIN?.trim();
@@ -55,6 +58,10 @@ const fixtureOrganizationIds = new Set();
 const fixtureProjectIds = new Set();
 const fixtureProviderEventIds = new Set();
 
+function reportStep(step) {
+  console.log(JSON.stringify({ status: 'PUBLIC_HTTPS_ACCEPTANCE_STEP', step }));
+}
+
 class CookieJar {
   #cookies;
 
@@ -95,13 +102,21 @@ async function request(
     headers.set('origin', requestOrigin);
     if (contentType) headers.set('content-type', 'application/json');
   }
-  const response = await fetch(new URL(pathname, origin), {
-    method,
-    headers,
-    ...(payload === undefined ? {} : { body: JSON.stringify(payload) }),
-    redirect: 'error',
-    signal: AbortSignal.timeout(30_000),
-  });
+  let response;
+  try {
+    response = await fetch(new URL(pathname, origin), {
+      method,
+      headers,
+      ...(payload === undefined ? {} : { body: JSON.stringify(payload) }),
+      redirect: 'error',
+      signal: AbortSignal.timeout(HOSTED_REQUEST_TIMEOUT_MS),
+    });
+  } catch (error) {
+    throw new Error(
+      `Hosted request ${method} ${pathname} exceeded the ${HOSTED_REQUEST_TIMEOUT_MS / 1000}-second test allowance`,
+      { cause: error },
+    );
+  }
   const setCookies = jar?.absorb(response) ?? response.headers.getSetCookie?.() ?? [];
   const bodyText = await response.text();
   let body;
@@ -167,7 +182,7 @@ async function deliverPaymentWebhook(payload, { validSignature = true } = {}) {
       },
       body: rawBody,
       redirect: 'error',
-      signal: AbortSignal.timeout(30_000),
+      signal: AbortSignal.timeout(HOSTED_REQUEST_TIMEOUT_MS),
     },
   );
   const bodyText = await response.text();
@@ -249,6 +264,7 @@ function adminClient() {
 
 async function waitForRecoveryLink(email) {
   const bridgeToken = randomUUID();
+  const bridgePath = `/recovery-link/${bridgeToken}`;
   let timeout;
   let settled = false;
   let resolver;
@@ -259,8 +275,21 @@ async function waitForRecoveryLink(email) {
   });
 
   const server = http.createServer((incoming, response) => {
-    if (incoming.method !== 'POST' || incoming.url !== `/recovery-link/${bridgeToken}`) {
+    if (incoming.url !== bridgePath) {
       response.writeHead(404).end();
+      return;
+    }
+    if (incoming.method === 'GET') {
+      response.writeHead(200, {
+        'cache-control': 'no-store',
+        'content-security-policy': "default-src 'none'; base-uri 'none'; form-action 'self'; style-src 'unsafe-inline'",
+        'content-type': 'text/html; charset=utf-8',
+        'x-content-type-options': 'nosniff',
+      }).end(`<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Green Hive recovery test</title><style>body{font-family:system-ui,sans-serif;max-width:42rem;margin:3rem auto;padding:0 1rem}textarea{display:block;width:100%;min-height:8rem;margin:1rem 0}button{padding:.6rem 1rem}</style></head><body><h1>Green Hive recovery test</h1><p>Copy the recovery link from the Mailtrap message without opening it, paste it below, then submit. The link is sent only to this temporary loopback test process and is not stored.</p><form method="post"><label for="recovery-link">Recovery link</label><textarea id="recovery-link" name="recoveryLink" autocomplete="off" required></textarea><button type="submit">Continue acceptance test</button></form></body></html>`);
+      return;
+    }
+    if (incoming.method !== 'POST') {
+      response.writeHead(405, { allow: 'GET, POST' }).end();
       return;
     }
     let bytes = 0;
@@ -276,7 +305,8 @@ async function waitForRecoveryLink(email) {
         return;
       }
       try {
-        const candidate = new URL(Buffer.concat(chunks).toString('utf8').trim());
+        const form = new URLSearchParams(Buffer.concat(chunks).toString('utf8'));
+        const candidate = new URL(form.get('recoveryLink')?.trim() ?? '');
         if (candidate.protocol !== 'https:' || candidate.hostname !== `${staging.projectRef}.supabase.co`) {
           throw new Error('Recovery link does not belong to the confirmed Supabase staging project');
         }
@@ -305,6 +335,7 @@ async function waitForRecoveryLink(email) {
     status: 'WAITING_FOR_MAILTRAP_RECOVERY_LINK',
     recipient: email,
     bridgeUrl: `http://127.0.0.1:${address.port}/recovery-link/${bridgeToken}`,
+    bridgeInstructions: 'Copy the recovery link from Mailtrap without opening it, paste it into the temporary loopback page, then submit.',
     timeoutSeconds: RECOVERY_WAIT_MS / 1000,
   }));
 
@@ -332,7 +363,7 @@ async function completeRecovery(jar, email) {
   const recoveryUrl = await waitForRecoveryLink(email);
   const verification = await fetch(recoveryUrl, {
     redirect: 'manual',
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(HOSTED_REQUEST_TIMEOUT_MS),
   });
   assert.ok([302, 303].includes(verification.status));
   const location = verification.headers.get('location');
@@ -449,6 +480,7 @@ async function run() {
   const jarB = new CookieJar();
   const jarRecovery = new CookieJar();
 
+  reportStep('readiness-and-headers');
   const ready = await request('/api/ready');
   assert.equal(ready.response.status, 200);
   assert.deepEqual(ready.body, { status: 'ready', app: 'REFERENCE_APP' });
@@ -483,6 +515,7 @@ async function run() {
   const unsigned = await request('/api/projects');
   assertSafeError(unsigned, 401, 'AUTH_SESSION_INVALID');
 
+  reportStep('signup-and-session-cookies');
   for (const [email, jar] of [
     [fixtureEmails[0], jarA],
     [fixtureEmails[1], jarB],
@@ -528,6 +561,7 @@ async function run() {
   const personalWorkspaceId = workspacesA.body.activeWorkspaceId;
   fixtureOrganizationIds.add(personalWorkspaceId);
 
+  reportStep('projects-workspaces-and-verified-payment');
   const createdProject = await request('/api/projects', {
     method: 'POST',
     payload: { name: 'Hosted acceptance project', metadata: { gate: 'hosted-https' } },
@@ -601,6 +635,7 @@ async function run() {
     /Hosted acceptance project|hosted-https|password|token|cookie|payload/i,
   );
 
+  reportStep('cross-user-cross-workspace-and-forged-scope');
   const listB = await request('/api/projects', { jar: jarB });
   assert.equal(listB.response.status, 200);
   assert.deepEqual(listB.body.projects, []);
@@ -654,6 +689,7 @@ async function run() {
   });
   assertSafeError(csrfAttempt, 400, 'INVALID_AUTH_INPUT');
 
+  reportStep('logical-deletion-and-audit');
   const archived = await request(`/api/projects/${projectId}/archive`, {
     method: 'POST',
     payload: {},
@@ -707,8 +743,10 @@ async function run() {
     0,
   );
 
+  reportStep('password-recovery-through-mailtrap');
   await completeRecovery(jarRecovery, fixtureEmails[2]);
 
+  reportStep('logout-and-cleanup');
   const signedOutB = await request('/api/auth/sign-out', {
     method: 'POST',
     payload: {},

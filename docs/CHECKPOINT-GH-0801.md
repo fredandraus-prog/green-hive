@@ -13,4 +13,10 @@ This is not break-glass support access, tenant-content browsing, administrative 
 
 ## Release gate
 
-The local clean gate and local native Supabase matrix must pass before staging. The checkpoint moves to `DONE` only after migration `0027`, the dedicated staging matrix, CI and the deployed HTTPS smoke pass. Until then it remains `PARTIAL — LOCAL IMPLEMENTATION PASS`.
+**Status: DONE — 2026-09-07.**
+
+The local clean gate, the local native Supabase matrix, migration `0027`, the dedicated staging
+matrix, CI, deployed HTTPS/security smokes and the complete authenticated public acceptance matrix
+all passed. The acceptance run additionally verified password recovery through Mailtrap, rejection
+of the former password, new-session login, logout and `finally` cleanup. The staging preflight after
+the run reported 27 applied migrations, zero pending migrations and zero disposable test artifacts.
