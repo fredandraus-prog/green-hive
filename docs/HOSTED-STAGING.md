@@ -140,8 +140,11 @@ The gate expects ten guarded credential failures, a stable eleventh-request `429
 account bucket, rate-limit headers and unthrottled health/readiness probes. It passed against Render
 deploy `dep-da56dmoae00c73b2pcog` from merge commit `67b55cf`.
 
-The authenticated gate uses only uniquely named disposable users and requires the Mailtrap recovery
-link to cross a one-shot loopback bridge into the guarded runner:
+The authenticated gate uses only uniquely named disposable users. For the one Mailtrap recovery
+message it opens a one-shot `127.0.0.1` bridge: the operator copies the Supabase recovery link from
+the sandbox message without opening it and submits it only to that temporary local page. The bridge
+accepts only a link for the confirmed staging project, does not persist the link and closes after one
+submission:
 
 ```text
 npm run hosted:acceptance

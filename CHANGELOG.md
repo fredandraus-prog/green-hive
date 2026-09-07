@@ -3,6 +3,21 @@
 All notable Green Hive changes are recorded here. Internal platform packages use coordinated
 semantic versioning.
 
+## [0.31.0] - 2026-09-07
+
+### Added
+
+- GH-0801 Minimal Operational Admin: a backend-verified, read-only Reference App dashboard now reports bounded operational counters for users, workspaces, projects, purchases, payments, jobs, budgets, costs and provider operations.
+- Immutable migration `0027` adds one platform-admin-only aggregate function; no table read policy or administrative write path is expanded.
+
+### Security
+
+- The dashboard accepts no browser-selected scope. A non-admin session is denied by the service and database function, while payment provider references and commercial writes remain unavailable to `authenticated`.
+
+### Status
+
+- GH-0801 is `DONE`: the protected staging migration/matrix, CI, public HTTPS/security smokes and the full authenticated acceptance matrix passed. The acceptance run verified Mailtrap recovery, rejection of the old password, new-session login, logout and cleanup of every disposable fixture.
+
 ## [0.30.0] - 2026-09-07
 
 ### Added

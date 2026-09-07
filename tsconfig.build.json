@@ -19,7 +19,7 @@
     { "path": "./packages/observability" },
     { "path": "./packages/ui" },
     { "path": "./packages/sdk" },
-    { "path": "./apps/hive-reference-app" },
-    { "path": "./apps/hive-admin" }
+    { "path": "./apps/hive-admin" },
+    { "path": "./apps/hive-reference-app" }
   ]
 }

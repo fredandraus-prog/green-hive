@@ -51,7 +51,13 @@ const blocked = await signIn(email);
 assert.equal(blocked.status, 429);
 const blockedBody = await blocked.json();
 assert.deepEqual(blockedBody, {
-  error: { code: 'RATE_LIMITED', message: 'Too many requests. Retry later.' },
+  error: {
+    code: 'RATE_LIMITED',
+    category: 'RATE_LIMITED',
+    status: 429,
+    retryable: true,
+    message: 'Request could not be completed.',
+  },
 });
 assert.equal(blocked.headers.get('ratelimit-limit'), '10');
 assert.equal(blocked.headers.get('ratelimit-remaining'), '0');

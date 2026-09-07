@@ -1,0 +1,22 @@
+# GH-0801 — Minimal operational admin
+
+## Delivered
+
+- `@green-hive/hive-admin` provides a typed, read-only operational overview.
+- The Reference App exposes the protected `/api/admin/overview` route and a navigation entry visible only after backend-recognized platform authority.
+- Immutable migration `0027` creates `hive.operational_admin_overview()`. The function returns aggregate-only data and retains all table-level RLS and provider-reference column boundaries.
+- Unit, HTTP and native Supabase coverage prove role denial, forged browser scope rejection, aggregate visibility, no provider-reference exposure and no commercial write authority.
+
+## Deliberate boundary
+
+This is not break-glass support access, tenant-content browsing, administrative mutation, payment reconciliation, user impersonation or an observability system. The only output is a bounded aggregate operational snapshot.
+
+## Release gate
+
+**Status: DONE — 2026-09-07.**
+
+The local clean gate, the local native Supabase matrix, migration `0027`, the dedicated staging
+matrix, CI, deployed HTTPS/security smokes and the complete authenticated public acceptance matrix
+all passed. The acceptance run additionally verified password recovery through Mailtrap, rejection
+of the former password, new-session login, logout and `finally` cleanup. The staging preflight after
+the run reported 27 applied migrations, zero pending migrations and zero disposable test artifacts.
