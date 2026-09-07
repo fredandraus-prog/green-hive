@@ -3,6 +3,19 @@
 All notable Green Hive changes are recorded here. Internal platform packages use coordinated
 semantic versioning.
 
+## [0.28.0] - 2026-09-07
+
+### Added
+
+- GH-0702 shared accessible UI primitives: `@green-hive/ui` now provides native labeled fields,
+  selects, status messages and polite loading state semantics; the Reference App uses them for its
+  common controls without moving product navigation or workspace behavior into the package.
+
+### Status
+
+- GH-0702 is `DONE` after focused primitive and Reference App wiring tests plus the clean release
+  gate. The coordinated platform release is `0.28.0`; `REFERENCE_APP` remains `0.1.0`.
+
 ## [0.27.0] - 2026-09-07
 
 ### Added

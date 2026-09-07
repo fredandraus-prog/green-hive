@@ -41,6 +41,9 @@
       "path": "../../packages/i18n"
     },
     {
+      "path": "../../packages/ui"
+    },
+    {
       "path": "../../packages/cost-guard"
     },
     {
