@@ -18,10 +18,12 @@ semantic versioning.
 
 ### Status
 
-- GH-0803 remains `PARTIAL` until the two dedicated private GitHub Actions secrets are configured
-  and a manual staging run emits `BACKUP_SUCCESS` with one encrypted artifact and checksum. No live
-  dump, managed Supabase backup, PITR, storage-object replication or restore was run by this source
-  release.
+- GH-0803 is `DONE`: its private manual staging run #3 emitted `BACKUP_SUCCESS`, verified the
+  roles/schema/data manifest before encryption, removed plaintext before upload and produced one
+  one-day encrypted artifact with a recorded SHA-256 digest. GH-0804 remains the separate
+  disposable-target restore proof.
+- No managed Supabase backup, PITR, storage-object replication or production restore was activated
+  or run by this release.
 
 ## [0.32.0] - 2026-09-07
 
