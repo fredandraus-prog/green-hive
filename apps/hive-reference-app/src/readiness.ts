@@ -1,4 +1,4 @@
-export const REFERENCE_APP_EXPECTED_MIGRATION_VERSION = 26;
+export const REFERENCE_APP_EXPECTED_MIGRATION_VERSION = 27;
 
 interface ReadinessRow extends Record<string, unknown> {
   readonly migration_count: number;

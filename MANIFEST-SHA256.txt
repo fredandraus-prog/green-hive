@@ -19,7 +19,7 @@ b8284c852f59aa0506f2418c75bd3588c29ad64f09c5f142e2b89654b5374a64 | 3937 | apps/h
 29cf2a2982c98a420086d1b9b3b00a6c53827f6581540100497931ec6287a50a | 26545 | apps/hive-reference-app/src/http-server.ts
 244344f392ad7774f7b2979b04dd5ed5ec3491e87eaee9a04ffba73a8adc84af | 353 | apps/hive-reference-app/src/index.ts
 0661ff8332e72de5f89a4fa3f2b6f6ce96352c712ad2b354ba7b930bca1b0ef1 | 1056 | apps/hive-reference-app/src/manifest.ts
-52be9e77e2125c310fb8b069a2d1563bc10c940e76727367dbe7725fbfa389f5 | 10093 | apps/hive-reference-app/src/readiness.ts
+03408e5d704cc391af918e635212ba20188ce0fa23f61c013d8d5cea0171b734 | 10093 | apps/hive-reference-app/src/readiness.ts
 6a324fb535341df48d7e2b8105223d923484fdad0316f3b139e499129e70643a | 8441 | apps/hive-reference-app/src/runtime-config.ts
 1cd244688dde0103cf2883498fa5c2e444da56a09c86224fa62becb50d0bd572 | 8739 | apps/hive-reference-app/src/security-rate-limit.ts
 3c8e04c4f18a422d0df14a1ae977eb8eea78871c1c3d4cfcef3481c2377cd8d4 | 16903 | apps/hive-reference-app/src/server.ts
@@ -426,7 +426,7 @@ c3e4ebaaeaf8dc20c54176aa4685466b6881635b4a4986d4798df1e4f7b0f4e1 | 5949 | tests/
 6e13251fbe208107edbff5ee73024739df643b4d622fb84f9114ab81a320170e | 21532 | tests/unit/reference-app-http.test.mjs
 03acea919dbdca2b562071781e219eed6acf2a157872c5eae9e30194802fcc46 | 4245 | tests/unit/reference-document-render-worker.test.mjs
 68d0e2fbb27ab33242a527dbbde9d0de37905417c8e7451a740fc6707463fb80 | 676 | tests/unit/release-content.test.mjs
-29456cd8f969990e6ca50ee05569e422850cec55e3d689f5dfbde06053ad2b0e | 5691 | tests/unit/runtime-config.test.mjs
+bc3c5a16bdeec476086b9dfe5c422f3228812aaa0ba121c96c991ad11dd55ac6 | 5691 | tests/unit/runtime-config.test.mjs
 c34291eee533fa74d6df58a4c35ed8baee6409a164802f488e755f3435e69a09 | 19241 | tests/unit/search-gateway.test.mjs
 5afeaf66adaa71795447baceee66c4d4d063939d0cb8f6b76b271464ad7c5e3a | 6870 | tests/unit/search-provider.test.mjs
 1658dfbe88f6e250e04bf99b69c5c01a656e90d95e6ad30d4665baa45b016e8f | 8395 | tests/unit/security-rate-limit.test.mjs
