@@ -10,7 +10,7 @@ import {
   projectMatchesSearch,
   type AppRoute,
 } from '../frontend-contracts.js';
-import type { AccountView, AuditEvent, HiveNotification, Profile, Project, Workspace } from './types.js';
+import type { AccountView, AuditEvent, HiveNotification, OperationalAdminOverview, Profile, Project, Workspace } from './types.js';
 import { Brand, Breadcrumbs, Field, LoadingPanel, Message, SelectField } from './ui.js';
 import { CreateWorkspaceDialog, WorkspaceSwitcher } from './workspace-switcher.js';
 import { useI18n } from './i18n.js';
@@ -55,10 +55,11 @@ function NavLink({ href, active, children, onNavigate }: {
   );
 }
 
-function AppSidebar({ route, workspaces, activeWorkspace, workspaceBusy, onSelectWorkspace, onCreateWorkspace, onSignOut }: {
+function AppSidebar({ route, workspaces, activeWorkspace, isPlatformAdmin, workspaceBusy, onSelectWorkspace, onCreateWorkspace, onSignOut }: {
   readonly route: AppRoute;
   readonly workspaces: readonly Workspace[];
   readonly activeWorkspace: Workspace | null;
+  readonly isPlatformAdmin: boolean;
   readonly workspaceBusy: boolean;
   readonly onSelectWorkspace: (workspaceId: string) => Promise<boolean>;
   readonly onCreateWorkspace: () => void;
@@ -116,6 +117,14 @@ function AppSidebar({ route, workspaces, activeWorkspace, workspaceBusy, onSelec
             <span aria-hidden="true">⚙</span> {t('nav.settings')}
           </NavLink>
         </div>
+        {isPlatformAdmin && (
+          <div className="nav-group">
+            <span className="nav-label">Plataforma</span>
+            <NavLink href={APP_ROUTES.adminOverview} active={route === 'adminOverview'} onNavigate={closeMobile}>
+              <span aria-hidden="true">▦</span> Administração operacional
+            </NavLink>
+          </div>
+        )}
       </nav>
       <button className="signout" type="button" onClick={() => void onSignOut()}>{t('nav.signOut')}</button>
     </aside>
@@ -178,6 +187,15 @@ function DashboardView({ workspaces, onOpenWorkspace }: {
       </section>
     </>
   );
+}
+
+function AdminOverviewView({ overview }: { readonly overview: OperationalAdminOverview }): ReactNode {
+  const cards = [
+    ['Usuários', overview.users], ['Workspaces', overview.workspaces],
+    ['Projetos ativos', overview.projects.ACTIVE], ['Jobs com falha', overview.jobs.FAILED ?? 0],
+    ['Pagamentos pagos', overview.payments.PAID ?? 0], ['Operações por provedor', Object.values(overview.providerOperations).reduce((sum, value) => sum + value, 0)],
+  ] as const;
+  return <section className="content-panel"><Breadcrumbs items={[{ label: 'Admin operacional' }]} /><div className="page-heading"><div><span className="eyebrow">Acesso restrito</span><h1>Visão operacional</h1><p>Somente contagens e estados seguros. Esta área não altera dados.</p></div></div><div className="dashboard-grid">{cards.map(([label, value]) => <article className="workspace-card" key={label}><span>{label}</span><strong>{value}</strong></article>)}</div></section>;
 }
 
 function ProjectsView({ workspace, projects, busy, onCreate, onAction }: {
@@ -376,6 +394,7 @@ export function AuthenticatedApp({ route }: { readonly route: AppRoute }): React
   const [projects, setProjects] = useState<readonly Project[]>([]);
   const [events, setEvents] = useState<readonly AuditEvent[]>([]);
   const [notifications, setNotifications] = useState<readonly HiveNotification[]>([]);
+  const [adminOverview, setAdminOverview] = useState<OperationalAdminOverview | null>(null);
   const [loadingBase, setLoadingBase] = useState(true);
   const [loadingPage, setLoadingPage] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -392,6 +411,14 @@ export function AuthenticatedApp({ route }: { readonly route: AppRoute }): React
     if (failure instanceof ApiFailure && failure.status === 401) go('/auth/sign-in');
     else setError(failure instanceof Error ? failure.message : fallback);
   }
+
+  useEffect(() => {
+    if (loadingBase || route !== 'adminOverview') return;
+    let active = true;
+    setLoadingPage(true);
+    void api<{ overview: OperationalAdminOverview }>('/api/admin/overview').then((result) => { if (active) setAdminOverview(result.overview); }).catch((failure: unknown) => { if (active) handleFailure(failure, 'Você não possui acesso administrativo.'); }).finally(() => { if (active) setLoadingPage(false); });
+    return () => { active = false; };
+  }, [route, loadingBase]);
 
   useEffect(() => {
     let active = true;
@@ -587,6 +614,7 @@ export function AuthenticatedApp({ route }: { readonly route: AppRoute }): React
         route={route}
         workspaces={workspaces}
         activeWorkspace={activeWorkspace}
+        isPlatformAdmin={account?.isPlatformAdmin === true}
         workspaceBusy={busy === 'workspace-select'}
         onSelectWorkspace={selectWorkspace}
         onCreateWorkspace={() => { setWorkspaceDialogError(null); setWorkspaceDialogOpen(true); }}
@@ -602,6 +630,7 @@ export function AuthenticatedApp({ route }: { readonly route: AppRoute }): React
             {route === 'workspaceNotifications' && (loadingPage ? <LoadingPanel /> : <NotificationsView workspace={activeWorkspace} notifications={notifications} busy={busy} onMarkRead={markNotificationRead} />)}
             {route === 'settingsProfile' && <ProfileSettingsView account={account} busy={busy === 'profile-save'} notice={notice} onSave={saveProfile} />}
             {route === 'settingsOrganization' && <OrganizationSettingsView workspace={activeWorkspace} busy={busy === 'organization-save'} notice={notice} onRename={renameOrganization} />}
+            {route === 'adminOverview' && (loadingPage || !adminOverview ? <LoadingPanel /> : <AdminOverviewView overview={adminOverview} />)}
           </>
         )}
       </main>

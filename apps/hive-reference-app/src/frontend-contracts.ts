@@ -19,6 +19,7 @@ const FRIENDLY_ERRORS: Readonly<Record<string, string>> = {
   AUTH_ORGANIZATION_ACCESS_DENIED: 'Sua sessão não possui acesso a este workspace.',
   AUDIT_ACCESS_DENIED: 'Você não possui acesso ao histórico deste workspace.',
   AUDIT_OPERATION_FAILED: 'Não foi possível carregar o histórico de atividades.',
+  ADMIN_ACCESS_DENIED: 'Você não possui acesso à área administrativa.',
 };
 
 const FRIENDLY_CATEGORIES: Readonly<Record<PlatformErrorCategory, string>> = {
@@ -50,6 +51,7 @@ export const APP_ROUTES = Object.freeze({
   workspaceNotifications: '/app/workspace/notifications',
   settingsProfile: '/app/settings/profile',
   settingsOrganization: '/app/settings/organization',
+  adminOverview: '/app/admin',
 } as const);
 
 export type AppRoute = keyof typeof APP_ROUTES;

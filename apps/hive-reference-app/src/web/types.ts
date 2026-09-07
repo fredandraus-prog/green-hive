@@ -10,6 +10,7 @@ export interface Profile {
 export interface AccountView {
   readonly email: string;
   readonly profile: Profile;
+  readonly isPlatformAdmin: boolean;
 }
 
 export interface Project {
@@ -47,4 +48,16 @@ export interface HiveNotification {
   readonly status: 'UNREAD' | 'READ';
   readonly createdAt: string;
   readonly readAt: string | null;
+}
+
+export interface OperationalAdminOverview {
+  readonly users: number;
+  readonly workspaces: number;
+  readonly projects: Readonly<Record<'DRAFT' | 'ACTIVE' | 'ARCHIVED' | 'DELETED', number>>;
+  readonly purchases: Readonly<Record<string, number>>;
+  readonly payments: Readonly<Record<string, number>>;
+  readonly jobs: Readonly<Record<string, number>>;
+  readonly budgets: Readonly<Record<string, number>>;
+  readonly costs: Readonly<Record<string, number>>;
+  readonly providerOperations: Readonly<Record<string, number>>;
 }

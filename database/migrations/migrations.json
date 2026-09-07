@@ -235,6 +235,15 @@
       "description": "Create tenant-safe in-app job-completion notifications with owner-only read acknowledgement.",
       "rollbackStrategyCode": "FORWARD_FIX_OR_VERIFIED_NOTIFICATION_EXPORT_RESTORE",
       "rollbackStrategy": "Prefer a forward fix; export and verify scoped notification records and completed-job references before a controlled restoration."
+    },
+    {
+      "version": 27,
+      "file": "0027_add_operational_admin_commercial_read.sql",
+      "sha256": "e0b5a768c7b2c3c2eccf4f4319508b486c0939fec4274c918baf5e156b48cad2",
+      "checkpoint": "GH-0801",
+      "description": "Create a platform-admin-only aggregate overview without exposing account, project or commercial rows.",
+      "rollbackStrategyCode": "FORWARD_FIX_OR_REVIEWED_OPERATIONAL_AGGREGATE_EXPORT_RESTORE",
+      "rollbackStrategy": "Prefer a forward fix; review aggregate access evidence and bounded operational metadata before a controlled restoration."
     }
   ]
 }

@@ -24,6 +24,11 @@ The published sequence is immutable:
 20. exclusive Worker leases, heartbeat, deterministic retry, terminal transitions and expired-lease recovery.
 21. AI Gateway operation metadata, server-only lifecycle writers, RLS and minimized Audit transitions.
 22. Search Gateway operation metadata, server-only lifecycle writers, RLS and minimized terminal Audit transitions.
+23. private generated-file metadata and owner-only RLS.
+24. private download grants and audit evidence.
+25. rendering-worker file lifecycle integration.
+26. in-app job-completion notifications.
+27. read-only platform-admin commercial-state inspection.
 
 Files `0001` through `0006` remain byte-for-byte unchanged. GH-0250 is expressed only through the
 next-numbered migrations `0007` through `0010`. GH-0203 is expressed only through migration
@@ -70,7 +75,9 @@ GH-0601, GH-0602 and GH-0603 are expressed only through migrations `0023`, `0024
 migrations `0001` through `0022` remain unchanged. `0026` expresses GH-0604 only: a completed job
 creates one bounded owner notification, with no input, output, lease or storage metadata copied
 into the notification record. Owners can acknowledge their own scoped notifications; platform
-administrators are limited to read access.
+administrators are limited to read access. `0027` expresses GH-0801 only: `PLATFORM_ADMIN` can
+read the existing permitted commercial columns to produce aggregate purchase/payment status counts;
+the migration grants no write policy and does not expand the provider-reference column grants.
 
 Every SQL file begins with parseable migration ID, checkpoint, description and rollback strategy
 metadata. `migrations.json` stores the same description and strategy plus the immutable SHA-256.

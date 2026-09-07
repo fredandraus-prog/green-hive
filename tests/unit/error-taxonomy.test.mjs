@@ -26,6 +26,13 @@ test('public error taxonomy maps published codes to stable categories and HTTP s
     retryable: false,
     message: 'Request could not be completed.',
   });
+  assert.deepEqual(toPublicError({ code: 'ADMIN_ACCESS_DENIED' }), {
+    code: 'ADMIN_ACCESS_DENIED',
+    category: 'FORBIDDEN',
+    status: 403,
+    retryable: false,
+    message: 'Request could not be completed.',
+  });
 });
 
 test('unknown failures never disclose their code, message, stack or details', () => {

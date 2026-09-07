@@ -67,6 +67,9 @@ adds no remote configuration, persistent mutation or authorization behavior.
 Version `0.30.0` completes **GH-0704 (Stable Error Taxonomy and Client Mapping)** with one
 typed transport contract for public failures. Unknown implementation errors are masked at the
 server boundary, while the Reference App renders local, friendly messages from stable codes.
+Version `0.31.0` implements **GH-0801 (Minimal Operational Admin)** with a backend-verified,
+aggregate-only dashboard for platform administrators. It adds no tenant-content browser, provider
+reference access or administrative mutation path.
 
 The checkpoint is deliberately narrow. The only public Billing ingress is the verified fake-provider
 webhook used to prove the platform contract. The real AI adapter is server-only and has no Render

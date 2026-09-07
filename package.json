@@ -1,9 +1,9 @@
 {
   "name": "green-hive",
-  "version": "0.30.0",
+  "version": "0.31.0",
   "private": true,
   "type": "module",
-  "description": "Green Hive platform monorepo - GH-0704 stable public error taxonomy",
+  "description": "Green Hive platform monorepo - GH-0801 read-only operational administration",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -40,6 +40,7 @@
     "ai:test:supabase": "npm run build:types --silent && node --test --test-reporter=spec database/tests/ai-gateway-service.supabase.integration.test.mjs",
     "search:test:supabase": "npm run build:types --silent && node --test --test-reporter=spec database/tests/search-gateway-service.supabase.integration.test.mjs",
     "files:test:supabase": "npm run build:types --silent && node --test --test-reporter=spec database/tests/file-service.supabase.integration.test.mjs",
+    "admin:test:supabase": "npm run build:types --silent && node --test --test-reporter=spec database/tests/operational-admin.supabase.integration.test.mjs",
     "files:storage:test:supabase": "npm run build:types --silent && node --test --test-reporter=spec database/tests/file-storage.integration.test.mjs",
     "files:storage:test:local": "node scripts/files-storage-test-supabase.mjs",
     "ai:real:test:staging": "pwsh -NoProfile -File scripts/staging-database-windows.ps1 ai-real-test",
